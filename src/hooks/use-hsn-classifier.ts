@@ -27,6 +27,7 @@ export function useHSNClassifier() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Classification failed");
+        if (data.error) throw new Error(data.error);
         setResult(data);
       } catch (err) {
         setError((err as Error).message);

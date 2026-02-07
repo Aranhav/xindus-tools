@@ -4,40 +4,49 @@ import { proxyFetch, errorResponse } from "@/lib/api";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
- * Transform the HSN classifier backend response to match frontend types.
+ * Transform a single item from the backend into our frontend format.
+ */
+function transformItem(item: any) {
+  return {
+    classification: {
+      hsn_code: item.classifications?.IN?.code?.fullCode || "",
+      hts_code: item.classifications?.US?.code?.fullCode || "",
+      description: item.humanTitle || "",
+      confidence: item.confidence?.top1 ?? item.confidence ?? 0,
+    },
+    alternatives: (item.alternatives || []).map((alt: any) => ({
+      hsn_code: alt.classifications?.IN?.code?.fullCode || "",
+      hts_code: alt.classifications?.US?.code?.fullCode || "",
+      description: alt.humanTitle || "",
+      confidence: alt.confidence?.top1 ?? alt.confidence ?? 0,
+    })),
+  };
+}
+
+/**
+ * Transform the HSN classifier backend response.
  *
- * Backend returns:
- *   { ok, data: { kind, humanTitle, classifications: { US: { code: { fullCode } }, IN: { code: { fullCode } } },
- *     confidence: { top1 }, alternatives: [...] } }
- *
- * Frontend expects:
- *   { classification: { hsn_code, hts_code, description, confidence }, alternatives: [...] }
+ * Backend can return two formats:
+ *   kind: "single" — one product with classifications directly on data
+ *   kind: "multi"  — multiple products in data.items[]
  */
 function transformClassifyResponse(raw: any) {
   if (!raw.ok || !raw.data) {
-    return { error: raw.error || "Classification failed" };
+    return { error: raw.error || "Classification failed", products: [] };
   }
 
   const d = raw.data;
+  let products;
 
-  const classification = {
-    hsn_code: d.classifications?.IN?.code?.fullCode || "",
-    hts_code: d.classifications?.US?.code?.fullCode || "",
-    description: d.humanTitle || "",
-    confidence: d.confidence?.top1 ?? 0,
-  };
-
-  const alternatives = (d.alternatives || []).map((alt: any) => ({
-    hsn_code: alt.classifications?.IN?.code?.fullCode || "",
-    hts_code: alt.classifications?.US?.code?.fullCode || "",
-    description: alt.humanTitle || "",
-    confidence: alt.confidence ?? 0,
-  }));
+  if (d.kind === "multi" && Array.isArray(d.items)) {
+    products = d.items.map(transformItem);
+  } else {
+    // Single product — data itself has classifications
+    products = [transformItem(d)];
+  }
 
   return {
-    classification,
-    alternatives,
-    product_description: d.humanTitle || undefined,
+    products,
     source: d.modelVersion || undefined,
   };
 }

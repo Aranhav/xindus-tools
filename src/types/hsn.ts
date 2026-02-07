@@ -7,10 +7,13 @@ export interface HSNClassification {
   section?: string;
 }
 
-export interface ClassificationResult {
+export interface ProductClassification {
   classification: HSNClassification;
   alternatives?: HSNClassification[];
-  product_description?: string;
+}
+
+export interface ClassificationResult {
+  products: ProductClassification[];
   source?: string;
   error?: string;
 }
