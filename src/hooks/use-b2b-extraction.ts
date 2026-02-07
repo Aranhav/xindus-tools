@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import type { ExtractionJob } from "@/types/b2b";
+import type { JobStatus } from "@/types/b2b";
 
 export type B2BState = "upload" | "processing" | "results";
 
@@ -14,51 +14,34 @@ const PROGRESS_STEPS = [
 
 export function useB2BExtraction() {
   const [state, setState] = useState<B2BState>("upload");
-  const [job, setJob] = useState<ExtractionJob | null>(null);
+  const [job, setJob] = useState<JobStatus | null>(null);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const pollingRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  const progressRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
-  const pollJob = useCallback((jobId: string) => {
-    let stepIndex = 0;
+  const stopProgress = useCallback(() => {
+    if (progressRef.current) {
+      clearInterval(progressRef.current);
+      progressRef.current = undefined;
+    }
+  }, []);
 
-    // Simulate progress between polls
-    const progressTimer = setInterval(() => {
-      if (stepIndex < PROGRESS_STEPS.length) {
-        setCurrentStep(stepIndex);
-        setProgress(PROGRESS_STEPS[stepIndex].progress);
-        stepIndex++;
-      }
-    }, 3000);
+  const startProgress = useCallback(() => {
+    let prog = 5;
+    let step = 0;
 
-    pollingRef.current = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/b2b/jobs/${jobId}`);
-        const data: ExtractionJob = await res.json();
+    progressRef.current = setInterval(() => {
+      prog += Math.random() * 3 + 1;
+      if (prog >= 95) prog = 95;
 
-        if (data.status === "completed") {
-          clearInterval(pollingRef.current);
-          clearInterval(progressTimer);
-          setProgress(100);
-          setCurrentStep(PROGRESS_STEPS.length - 1);
-          setJob(data);
-          setTimeout(() => setState("results"), 500);
-        } else if (data.status === "failed") {
-          clearInterval(pollingRef.current);
-          clearInterval(progressTimer);
-          setError(data.error || "Extraction failed");
-          setState("upload");
-        }
-      } catch {
-        // Keep polling on transient errors
-      }
-    }, 2000);
+      if (prog > 70 && step < 3) step = 3;
+      else if (prog > 40 && step < 2) step = 2;
+      else if (prog > 15 && step < 1) step = 1;
 
-    return () => {
-      clearInterval(pollingRef.current);
-      clearInterval(progressTimer);
-    };
+      setProgress(Math.round(prog));
+      setCurrentStep(step);
+    }, 800);
   }, []);
 
   const extract = useCallback(
@@ -67,6 +50,7 @@ export function useB2BExtraction() {
       setState("processing");
       setProgress(5);
       setCurrentStep(0);
+      startProgress();
 
       try {
         const formData = new FormData();
@@ -81,33 +65,37 @@ export function useB2BExtraction() {
           method: "POST",
           body: formData,
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Upload failed");
+        stopProgress();
+        const data: JobStatus = await res.json();
+        if (!res.ok) throw new Error(data.message || "Extraction failed");
 
-        if (data.job_id) {
-          pollJob(data.job_id);
-        } else {
-          // Direct result (no polling needed)
-          setProgress(100);
-          setJob(data);
-          setState("results");
+        if (data.status === "failed") {
+          throw new Error(
+            data.result?.errors?.join(", ") || data.message || "Extraction failed",
+          );
         }
+
+        setProgress(100);
+        setCurrentStep(PROGRESS_STEPS.length - 1);
+        setJob(data);
+        setTimeout(() => setState("results"), 500);
       } catch (err) {
+        stopProgress();
         setError((err as Error).message);
         setState("upload");
       }
     },
-    [pollJob],
+    [startProgress, stopProgress],
   );
 
   const reset = useCallback(() => {
-    if (pollingRef.current) clearInterval(pollingRef.current);
+    stopProgress();
     setState("upload");
     setJob(null);
     setProgress(0);
     setCurrentStep(0);
     setError(null);
-  }, []);
+  }, [stopProgress]);
 
   return {
     state,

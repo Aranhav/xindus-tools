@@ -29,6 +29,9 @@ export interface DPVAnalysis {
 export interface AddressValidationResult {
   input_address: AddressInput;
   normalized_address?: AddressInput;
+  validated_address?: AddressInput;
+  delivery_line?: string;
+  last_line?: string;
   is_valid: boolean;
   dpv_analysis?: DPVAnalysis;
   metadata?: {

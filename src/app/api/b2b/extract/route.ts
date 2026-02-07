@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     const res = await proxyFetch("b2b", "/api/extract", {
       method: "POST",
       body: formData,
-      timeout: 120000,
+      timeout: 180000,
     });
     const data = await res.json();
     return Response.json(data);

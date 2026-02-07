@@ -4,13 +4,13 @@ import { proxyFetch, errorResponse } from "@/lib/api";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
- * Transform the Smarty raw response to match the frontend AddressValidationResult type.
+ * Transform the backend raw response to match the frontend AddressValidationResult type.
  *
  * Backend returns:
- *   { validation: [{ components, metadata, analysis, delivery_line_1, ... }], isValid, isUS }
+ *   { validation: [...], normalized?: {...}, timings, isValid, isUS }
  *
  * Frontend expects:
- *   { is_valid, input_address, normalized_address, dpv_analysis, metadata, footnotes }
+ *   { is_valid, input_address, normalized_address (Claude), validated_address (Smarty), ... }
  */
 function transformValidationResponse(input: any, data: any) {
   const candidate = data.validation?.[0];
@@ -25,8 +25,22 @@ function transformValidationResponse(input: any, data: any) {
     country: input.country || "US",
   };
 
-  // Build normalized address from Smarty components
+  // Claude AI normalized address (only when skipNormalization is false)
   let normalized_address = undefined;
+  if (data.normalized) {
+    const n = data.normalized;
+    normalized_address = {
+      street: n.street || "",
+      secondary: n.secondary || "",
+      city: n.city || "",
+      state: n.state || "",
+      zipcode: n.zipcode || "",
+      country: n.country || input.country || "US",
+    };
+  }
+
+  // Smarty validated address (from components)
+  let validated_address = undefined;
   if (candidate?.components) {
     const c = candidate.components;
     const streetParts = [
@@ -43,7 +57,7 @@ function transformValidationResponse(input: any, data: any) {
       .filter(Boolean)
       .join(" ");
 
-    normalized_address = {
+    validated_address = {
       street: streetParts || candidate.delivery_line_1 || input.street,
       secondary: secondaryParts || candidate.delivery_line_2 || "",
       city: c.city_name || input.city,
@@ -52,6 +66,10 @@ function transformValidationResponse(input: any, data: any) {
       country: input.country || "US",
     };
   }
+
+  // Delivery lines for display
+  const delivery_line = candidate?.delivery_line_1 || undefined;
+  const last_line = candidate?.last_line || undefined;
 
   // Map DPV analysis
   let dpv_analysis = undefined;
@@ -68,7 +86,7 @@ function transformValidationResponse(input: any, data: any) {
     };
   }
 
-  // Map metadata (pass through all fields from Smarty)
+  // Map metadata
   let metadata = undefined;
   if (candidate?.metadata) {
     const m = candidate.metadata;
@@ -113,6 +131,9 @@ function transformValidationResponse(input: any, data: any) {
     is_valid: data.isValid ?? false,
     input_address,
     normalized_address,
+    validated_address,
+    delivery_line,
+    last_line,
     dpv_analysis,
     metadata,
     timings,
