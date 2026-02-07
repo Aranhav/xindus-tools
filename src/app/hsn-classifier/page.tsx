@@ -22,7 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-import type { ProductClassification, HSNClassification } from "@/types/hsn";
+import type { ClassificationItem, Alternative } from "@/types/hsn";
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                             */
@@ -72,20 +72,18 @@ function CopyCode({ code }: { code: string }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Product Card                                                        */
+/*  Product Card — renders a single ClassificationItem directly        */
 /* ------------------------------------------------------------------ */
 
 function ProductCard({
-  product,
+  item,
   index,
   total,
 }: {
-  product: ProductClassification;
+  item: ClassificationItem;
   index: number;
   total: number;
 }) {
-  const c = product.classification;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -101,9 +99,9 @@ function ProductCard({
                   Product {index + 1}
                 </Badge>
               )}
-              {c.description || "Classification Result"}
+              {item.humanTitle}
             </span>
-            <ConfidenceBadge value={c.confidence} />
+            <ConfidenceBadge value={item.confidence.top1} />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -113,42 +111,35 @@ function ProductCard({
               <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 HSN Code (India)
               </p>
-              <CopyCode code={c.hsn_code} />
+              <CopyCode code={item.classifications.IN.code.fullCode} />
             </div>
-            {c.hts_code && (
-              <div>
-                <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  HTS Code (US)
-                </p>
-                <CopyCode code={c.hts_code} />
-              </div>
-            )}
+            <div>
+              <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                HTS Code (US)
+              </p>
+              <CopyCode code={item.classifications.US.code.fullCode} />
+            </div>
           </div>
 
           {/* Alternatives */}
-          {product.alternatives && product.alternatives.length > 0 && (
+          {item.alternatives.length > 0 && (
             <div>
               <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Alternatives
               </p>
               <div className="space-y-2">
-                {product.alternatives.map((alt: HSNClassification, i: number) => (
+                {item.alternatives.map((alt: Alternative, i: number) => (
                   <div
                     key={i}
                     className="flex items-center justify-between rounded-lg border px-3 py-2"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-sm">{alt.hsn_code}</span>
-                      {alt.hts_code && (
-                        <span className="text-xs text-muted-foreground">
-                          HTS: {alt.hts_code}
-                        </span>
-                      )}
-                      {alt.description && (
-                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">
-                          {alt.description}
-                        </span>
-                      )}
+                      <span className="font-mono text-sm">
+                        {alt.classifications.IN.code.fullCode}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        HTS: {alt.classifications.US.code.fullCode}
+                      </span>
                     </div>
                     <ConfidenceBadge value={alt.confidence} />
                   </div>
@@ -199,6 +190,14 @@ export default function HSNClassifierPage() {
     reset();
   };
 
+  // Extract items from the response (handles both single and multi)
+  const items: ClassificationItem[] = (() => {
+    if (!result || !result.ok) return [];
+    const d = result.data;
+    if (d.kind === "multi") return d.items;
+    return [d]; // single item wrapped in array
+  })();
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
       <PageHeader
@@ -222,7 +221,6 @@ export default function HSNClassifierPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Image upload */}
               <FileUploadZone
                 accept="image/*"
                 onFiles={handleFiles}
@@ -239,10 +237,9 @@ export default function HSNClassifierPage() {
                 </div>
               )}
 
-              {/* Text description */}
               <div className="space-y-2">
                 <Textarea
-                  placeholder="Or describe the product (e.g., 'Cotton t-shirt with printed design', 'laptop with charger')"
+                  placeholder="Or describe the product (e.g., 'Cotton t-shirt', 'laptop with charger')"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={3}
@@ -285,7 +282,7 @@ export default function HSNClassifierPage() {
 
         {/* Results */}
         <AnimatePresence mode="wait">
-          {result && result.products && result.products.length > 0 && (
+          {items.length > 0 && (
             <motion.div
               key="results"
               initial={{ opacity: 0 }}
@@ -293,17 +290,17 @@ export default function HSNClassifierPage() {
               exit={{ opacity: 0 }}
               className="space-y-4"
             >
-              {result.products.length > 1 && (
+              {items.length > 1 && (
                 <p className="text-sm text-muted-foreground">
-                  {result.products.length} products identified
+                  {items.length} products identified
                 </p>
               )}
-              {result.products.map((product, i) => (
+              {items.map((item, i) => (
                 <ProductCard
                   key={i}
-                  product={product}
+                  item={item}
                   index={i}
-                  total={result.products.length}
+                  total={items.length}
                 />
               ))}
             </motion.div>

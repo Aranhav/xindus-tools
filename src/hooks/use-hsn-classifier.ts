@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { ClassificationResult, DutyCalculation } from "@/types/hsn";
+import type { ClassifyResponse, DutyCalculation } from "@/types/hsn";
 
 export function useHSNClassifier() {
-  const [result, setResult] = useState<ClassificationResult | null>(null);
+  const [result, setResult] = useState<ClassifyResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,9 +25,11 @@ export function useHSNClassifier() {
           method: "POST",
           body: formData,
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Classification failed");
-        if (data.error) throw new Error(data.error);
+        const data: ClassifyResponse = await res.json();
+
+        if (!res.ok) throw new Error("Classification failed");
+        if (!data.ok) throw new Error(data.error);
+
         setResult(data);
       } catch (err) {
         setError((err as Error).message);
