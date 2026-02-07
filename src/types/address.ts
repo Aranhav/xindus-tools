@@ -23,6 +23,7 @@ export interface DPVAnalysis {
   dpv_vacant: string;
   dpv_no_stat: string;
   active: string;
+  enhanced_match?: string;
 }
 
 export interface AddressValidationResult {
@@ -31,17 +32,25 @@ export interface AddressValidationResult {
   is_valid: boolean;
   dpv_analysis?: DPVAnalysis;
   metadata?: {
+    record_type?: string;
+    zip_type?: string;
     county_name?: string;
+    county_fips?: string;
     carrier_route?: string;
+    congressional_district?: string;
     building_default_indicator?: string;
     rdi?: string;
     latitude?: number;
     longitude?: number;
+    precision?: string;
+    time_zone?: string;
+    utc_offset?: number;
+    dst?: boolean;
   };
-  analysis?: {
-    dpv_match_code?: string;
-    footnotes?: string;
-    active?: string;
+  timings?: {
+    claude_ms?: number;
+    smarty_ms?: number;
+    total_ms?: number;
   };
   footnotes?: string[];
   error?: string;

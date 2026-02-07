@@ -64,31 +64,49 @@ function transformValidationResponse(input: any, data: any) {
       dpv_vacant: a.dpv_vacant || "",
       dpv_no_stat: a.dpv_no_stat || "",
       active: a.active || "",
+      enhanced_match: a.enhanced_match || undefined,
     };
   }
 
-  // Map metadata
+  // Map metadata (pass through all fields from Smarty)
   let metadata = undefined;
   if (candidate?.metadata) {
     const m = candidate.metadata;
     metadata = {
+      record_type: m.record_type || undefined,
+      zip_type: m.zip_type || undefined,
       county_name: m.county_name || undefined,
+      county_fips: m.county_fips || undefined,
       carrier_route: m.carrier_route || undefined,
+      congressional_district: m.congressional_district || undefined,
       building_default_indicator: m.building_default_indicator || undefined,
       rdi: m.rdi || undefined,
       latitude: m.latitude ?? undefined,
       longitude: m.longitude ?? undefined,
+      precision: m.precision || undefined,
+      time_zone: m.time_zone || undefined,
+      utc_offset: m.utc_offset ?? undefined,
+      dst: m.dst ?? undefined,
     };
   }
 
   // Map footnotes
   const footnotes: string[] = [];
   if (candidate?.analysis?.footnotes) {
-    // Smarty footnotes are 2-char codes concatenated, e.g. "N#"
     const fn = candidate.analysis.footnotes;
     for (let i = 0; i < fn.length; i += 2) {
       footnotes.push(fn.substring(i, i + 2));
     }
+  }
+
+  // Extract timings
+  let timings = undefined;
+  if (data.timings) {
+    timings = {
+      claude_ms: data.timings.claudeNormalization?.actualFetchTime ?? undefined,
+      smarty_ms: data.timings.smartyValidation?.actualFetchTime ?? undefined,
+      total_ms: data.timings.total?.duration ?? undefined,
+    };
   }
 
   return {
@@ -97,6 +115,7 @@ function transformValidationResponse(input: any, data: any) {
     normalized_address,
     dpv_analysis,
     metadata,
+    timings,
     footnotes: footnotes.length > 0 ? footnotes : undefined,
   };
 }

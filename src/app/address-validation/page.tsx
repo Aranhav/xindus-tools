@@ -84,6 +84,60 @@ function dpvBoolLabel(value: string) {
   return { text: value || "--", className: "text-muted-foreground" };
 }
 
+/** DPV footnote code descriptions (from Smarty documentation) */
+const dpvFootnoteDescriptions: Record<string, { meaning: string; category: "success" | "warning" | "error" }> = {
+  AA: { meaning: "Street, city, state, and ZIP are all valid", category: "success" },
+  A1: { meaning: "Address not found in USPS data", category: "error" },
+  BB: { meaning: "Entire address is valid and deliverable", category: "success" },
+  CC: { meaning: "Secondary (apt/suite) not recognized, but not required", category: "warning" },
+  C1: { meaning: "Secondary required but not recognized", category: "error" },
+  F1: { meaning: "Military address", category: "success" },
+  G1: { meaning: "General delivery address", category: "success" },
+  M1: { meaning: "Primary number missing", category: "error" },
+  M3: { meaning: "Primary number invalid", category: "error" },
+  N1: { meaning: "Secondary required but missing", category: "error" },
+  PB: { meaning: "PO Box street address", category: "warning" },
+  P1: { meaning: "PO Box missing or invalid", category: "warning" },
+  P3: { meaning: "PO Box number invalid", category: "error" },
+  RR: { meaning: "Rural route/highway contract matched", category: "warning" },
+  R1: { meaning: "Rural route/highway contract not matched", category: "warning" },
+  R7: { meaning: "Phantom carrier route", category: "warning" },
+  TA: { meaning: "Primary number matched with range", category: "warning" },
+  U1: { meaning: "Unique ZIP code match", category: "warning" },
+};
+
+/** Smarty analysis footnote descriptions */
+const smartyFootnoteDescriptions: Record<string, string> = {
+  "A#": "Corrected ZIP Code",
+  "B#": "Fixed city/state spelling",
+  "C#": "Invalid city/state/ZIP, corrected",
+  "D#": "No ZIP+4 assigned",
+  "E#": "Multiple ZIP+4 matches",
+  "F#": "Address not found",
+  "G#": "Used firm data",
+  "H#": "Missing secondary address",
+  "I#": "Insufficient data",
+  "J#": "Dual address detected",
+  "K#": "Multiple response from cardinal rule",
+  "L#": "Address matched to CMRA",
+  "LL": "Used LACS Link",
+  "LI": "LACS Link indicator",
+  "M#": "Street corrected",
+  "N#": "Fixed abbreviations",
+  "O#": "Multiple ZIP match, used default",
+  "P#": "Better address exists",
+  "Q#": "Unique ZIP match",
+  "R#": "No match, EWS data",
+  "S#": "Incorrect secondary",
+  "T#": "Multiple matches, first used",
+  "U#": "Unusual identifier, suppressed",
+  "V#": "Unverifiable city/state",
+  "W#": "Invalid delivery address",
+  "X#": "Unique ZIP, no city/state match",
+  "Y#": "Military match",
+  "Z#": "Multiple record match found",
+};
+
 /* ------------------------------------------------------------------ */
 /*  Single Validate Tab                                                */
 /* ------------------------------------------------------------------ */
@@ -349,12 +403,33 @@ function SingleValidateTab() {
                   </div>
                 )}
 
+                {/* Timing */}
+                {result.timings && (
+                  <div className="flex items-center gap-4 rounded-lg border bg-muted/30 px-4 py-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-muted-foreground">API Response:</span>
+                      <span className="font-mono font-semibold">{result.timings.total_ms}ms</span>
+                    </div>
+                    {result.timings.claude_ms != null && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className="h-2 w-2 rounded-full bg-blue-400" />
+                        Claude {result.timings.claude_ms}ms
+                      </div>
+                    )}
+                    {result.timings.smarty_ms != null && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                        Smarty {result.timings.smarty_ms}ms
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* DPV Analysis */}
                 {result.dpv_analysis && (
                   <div>
                     <p className="mb-3 text-sm font-medium text-muted-foreground">DPV Analysis</p>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                      {/* Match Code */}
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                       <DPVItem
                         label="Match Code"
                         value={
@@ -402,12 +477,57 @@ function SingleValidateTab() {
                           </span>
                         }
                       />
+                      {result.dpv_analysis.enhanced_match && (
+                        <DPVItem
+                          label="Match Type"
+                          value={
+                            <span className="text-sm capitalize">
+                              {result.dpv_analysis.enhanced_match.replace("-", " ")}
+                            </span>
+                          }
+                        />
+                      )}
                     </div>
+
+                    {/* DPV Footnotes with descriptions */}
                     {result.dpv_analysis.dpv_footnotes && (
-                      <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
-                        <Info className="mt-0.5 h-3 w-3 shrink-0" />
-                        Footnotes: {result.dpv_analysis.dpv_footnotes}
-                      </p>
+                      <div className="mt-3">
+                        <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                          <Info className="h-3 w-3" />
+                          DPV Footnotes
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {(() => {
+                            const fn = result.dpv_analysis.dpv_footnotes;
+                            const codes: string[] = [];
+                            for (let i = 0; i < fn.length; i += 2) {
+                              codes.push(fn.substring(i, i + 2));
+                            }
+                            return codes.map((code) => {
+                              const info = dpvFootnoteDescriptions[code];
+                              const colorClass = info
+                                ? info.category === "success"
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  : info.category === "warning"
+                                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                                    : "bg-red-50 text-red-700 border-red-200"
+                                : "bg-muted text-muted-foreground";
+                              return (
+                                <div
+                                  key={code}
+                                  className={`rounded-md border px-2.5 py-1.5 text-xs ${colorClass}`}
+                                  title={info?.meaning || code}
+                                >
+                                  <span className="font-mono font-semibold">{code}</span>
+                                  {info && (
+                                    <span className="ml-1.5">{info.meaning}</span>
+                                  )}
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      </div>
                     )}
                   </div>
                 )}
@@ -426,6 +546,21 @@ function SingleValidateTab() {
                       {result.metadata.rdi && (
                         <MetaItem label="RDI" value={result.metadata.rdi} />
                       )}
+                      {result.metadata.record_type && (
+                        <MetaItem label="Record Type" value={result.metadata.record_type} />
+                      )}
+                      {result.metadata.zip_type && (
+                        <MetaItem label="ZIP Type" value={result.metadata.zip_type} />
+                      )}
+                      {result.metadata.congressional_district && (
+                        <MetaItem label="Congressional District" value={result.metadata.congressional_district} />
+                      )}
+                      {result.metadata.time_zone && (
+                        <MetaItem label="Time Zone" value={result.metadata.time_zone} />
+                      )}
+                      {result.metadata.precision && (
+                        <MetaItem label="Precision" value={result.metadata.precision} />
+                      )}
                       {result.metadata.latitude != null && result.metadata.longitude != null && (
                         <MetaItem
                           label="Lat / Lng"
@@ -436,15 +571,23 @@ function SingleValidateTab() {
                   </div>
                 )}
 
-                {/* Footnotes */}
+                {/* Footnotes (Smarty analysis footnotes) */}
                 {result.footnotes && result.footnotes.length > 0 && (
                   <div>
-                    <p className="mb-2 text-sm font-medium text-muted-foreground">Footnotes</p>
-                    <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-                      {result.footnotes.map((fn, i) => (
-                        <li key={i}>{fn}</li>
-                      ))}
-                    </ul>
+                    <p className="mb-2 text-sm font-medium text-muted-foreground">Analysis Footnotes</p>
+                    <div className="space-y-1.5">
+                      {result.footnotes.map((fn, i) => {
+                        const desc = smartyFootnoteDescriptions[fn];
+                        return (
+                          <div key={i} className="flex items-baseline gap-2 text-sm">
+                            <span className="font-mono font-semibold text-muted-foreground">{fn}</span>
+                            <span className="text-muted-foreground">
+                              {desc || "Unknown footnote code"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </CardContent>
