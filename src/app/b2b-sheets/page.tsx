@@ -15,8 +15,11 @@ import {
 } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
+import { PageContainer } from "@/components/page-container";
 import { FileUploadZone } from "@/components/file-upload-zone";
 import { ErrorDisplay } from "@/components/error-display";
+import { ConfidenceBadge } from "@/components/confidence-badge";
+import { StatusAlert } from "@/components/status-alert";
 import { useB2BExtraction } from "@/hooks/use-b2b-extraction";
 import type {
   ExtractionOptions,
@@ -31,7 +34,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
   Select,
@@ -85,24 +87,6 @@ const fadeUp = {
   initial: { opacity: 0, y: 16 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.35 } },
 };
-
-/* ------------------------------------------------------------------ */
-/*  Confidence badge                                                   */
-/* ------------------------------------------------------------------ */
-
-function ConfidenceBadge({ value }: { value?: number }) {
-  if (value == null) return <span className="text-muted-foreground">--</span>;
-  const pct = Math.round(value * 100);
-  let colorClass: string;
-  if (pct >= 90) colorClass = "bg-emerald-500/15 text-emerald-600 border-emerald-500/25";
-  else if (pct >= 70) colorClass = "bg-amber-500/15 text-amber-600 border-amber-500/25";
-  else colorClass = "bg-red-500/15 text-red-600 border-red-500/25";
-  return (
-    <Badge variant="outline" className={colorClass}>
-      {pct}%
-    </Badge>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /*  Address card                                                       */
@@ -272,7 +256,7 @@ export default function B2BSheetsPage() {
   const packing = result?.packing_list;
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10">
+    <PageContainer wide>
       <PageHeader
         icon={<FileSpreadsheet className="h-5 w-5" />}
         title="B2B Sheet Generator"
@@ -621,22 +605,20 @@ export default function B2BSheetsPage() {
             {result && (result.warnings?.length > 0 || result.errors?.length > 0) && (
               <motion.div variants={fadeUp} className="space-y-3">
                 {result.errors?.map((err, i) => (
-                  <div
+                  <StatusAlert
                     key={`err-${i}`}
-                    className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
-                  >
-                    <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                    {err}
-                  </div>
+                    variant="error"
+                    icon={<XCircle className="mt-0.5 h-4 w-4 shrink-0" />}
+                    title={err}
+                  />
                 ))}
                 {result.warnings?.map((w, i) => (
-                  <div
+                  <StatusAlert
                     key={`warn-${i}`}
-                    className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300"
-                  >
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                    {w}
-                  </div>
+                    variant="warning"
+                    icon={<AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
+                    title={w}
+                  />
                 ))}
               </motion.div>
             )}
@@ -680,7 +662,7 @@ export default function B2BSheetsPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </PageContainer>
   );
 }
 
@@ -702,37 +684,17 @@ function StatCard({ label, value }: { label: string; value: string | null }) {
 function ResultBanner({ job }: { job: JobStatus }) {
   const isReview = job.status === "review_needed";
   return (
-    <div
-      className={`flex items-center gap-3 rounded-lg border px-4 py-3 ${
-        isReview
-          ? "border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/30"
-          : "border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-950/30"
-      }`}
+    <StatusAlert
+      variant={isReview ? "warning" : "success"}
+      icon={isReview ? <AlertTriangle className="h-5 w-5" /> : <Check className="h-5 w-5" />}
+      title={isReview ? "Review Needed" : "Extraction Complete"}
+      description={job.message || `Job ${job.job_id}`}
     >
-      {isReview ? (
-        <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-      ) : (
-        <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-      )}
-      <div>
-        <p
-          className={`text-sm font-semibold ${
-            isReview
-              ? "text-amber-800 dark:text-amber-300"
-              : "text-emerald-800 dark:text-emerald-300"
-          }`}
-        >
-          {isReview ? "Review Needed" : "Extraction Complete"}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {job.message || `Job ${job.job_id}`}
-        </p>
-      </div>
       {job.result?.overall_confidence != null && (
         <div className="ml-auto">
           <ConfidenceBadge value={job.result.overall_confidence} />
         </div>
       )}
-    </div>
+    </StatusAlert>
   );
 }

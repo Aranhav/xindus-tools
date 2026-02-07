@@ -18,40 +18,21 @@ import {
 } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
+import { PageContainer } from "@/components/page-container";
 import { FileUploadZone } from "@/components/file-upload-zone";
 import { ErrorDisplay } from "@/components/error-display";
+import { ConfidenceBadge } from "@/components/confidence-badge";
 import { useHSNClassifier, useDutyCalculation } from "@/hooks/use-hsn-classifier";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-
 import type { ClassificationItem, Alternative, DutyData } from "@/types/hsn";
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                             */
 /* ------------------------------------------------------------------ */
-
-function ConfidenceBadge({ value }: { value: number }) {
-  const pct = Math.round(value * 100);
-  let colorClass: string;
-
-  if (pct >= 80) {
-    colorClass = "bg-emerald-100 text-emerald-700 border-emerald-200";
-  } else if (pct >= 60) {
-    colorClass = "bg-amber-100 text-amber-700 border-amber-200";
-  } else {
-    colorClass = "bg-red-100 text-red-700 border-red-200";
-  }
-
-  return (
-    <Badge variant="outline" className={colorClass}>
-      {pct}%
-    </Badge>
-  );
-}
 
 function CopyCode({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
@@ -69,7 +50,7 @@ function CopyCode({ code }: { code: string }) {
     >
       {code}
       {copied ? (
-        <Check className="h-3 w-3 text-emerald-500" />
+        <Check className="h-3 w-3 text-success" />
       ) : (
         <Copy className="h-3 w-3 text-muted-foreground" />
       )}
@@ -91,23 +72,23 @@ function DutyResult({ data }: { data: DutyData }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-lg border bg-emerald-50 p-3 text-center">
+        <div className="rounded-lg border bg-success-muted p-3 text-center">
           <p className="text-xs font-medium text-muted-foreground">Duty</p>
-          <p className="text-lg font-semibold text-emerald-700">
+          <p className="text-lg font-semibold text-success-foreground">
             {formatCurrency(data.duty_in_destination_currency, sym)}
           </p>
           <p className="text-xs text-muted-foreground">{data.duty_percentage}%</p>
         </div>
-        <div className="rounded-lg border bg-blue-50 p-3 text-center">
+        <div className="rounded-lg border bg-info-muted p-3 text-center">
           <p className="text-xs font-medium text-muted-foreground">Tax</p>
-          <p className="text-lg font-semibold text-blue-700">
+          <p className="text-lg font-semibold text-info-foreground">
             {formatCurrency(data.tax_in_destination_currency, sym)}
           </p>
           <p className="text-xs text-muted-foreground">{data.tax_percentage}%</p>
         </div>
-        <div className="rounded-lg border bg-violet-50 p-3 text-center">
+        <div className="rounded-lg border bg-accent p-3 text-center">
           <p className="text-xs font-medium text-muted-foreground">Total Cost</p>
-          <p className="text-lg font-semibold text-violet-700">
+          <p className="text-lg font-semibold text-accent-foreground">
             {formatCurrency(data.total_cost, sym)}
           </p>
         </div>
@@ -519,7 +500,7 @@ export default function HSNClassifierPage() {
   })();
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
+    <PageContainer>
       <PageHeader
         icon={<ScanSearch className="h-5 w-5" />}
         title="HSN Classifier"
@@ -615,6 +596,6 @@ export default function HSNClassifierPage() {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </PageContainer>
   );
 }

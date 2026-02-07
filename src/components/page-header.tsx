@@ -22,7 +22,7 @@ export function PageHeader({ title, description, icon }: PageHeaderProps) {
         </div>
         <h1 className="font-serif text-3xl font-bold tracking-tight">{title}</h1>
       </div>
-      <p className="text-muted-foreground ml-13">{description}</p>
+      <p className="text-muted-foreground ml-[3.25rem]">{description}</p>
     </motion.div>
   );
 }

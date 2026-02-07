@@ -19,9 +19,11 @@ import {
 import * as XLSX from "xlsx";
 
 import { PageHeader } from "@/components/page-header";
+import { PageContainer } from "@/components/page-container";
 import { FileUploadZone } from "@/components/file-upload-zone";
 import { ErrorDisplay } from "@/components/error-display";
 import { StatusBadge } from "@/components/status-badge";
+import { StatusAlert } from "@/components/status-alert";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,15 +79,15 @@ const fadeIn = {
 /* ------------------------------------------------------------------ */
 
 const dpvMatchLabels: Record<string, { label: string; color: string }> = {
-  Y: { label: "Confirmed", color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400" },
-  N: { label: "Not Confirmed", color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" },
-  S: { label: "Secondary Missing", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400" },
-  D: { label: "Default", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" },
+  Y: { label: "Confirmed", color: "bg-success-muted text-success-foreground" },
+  N: { label: "Not Confirmed", color: "bg-destructive/10 text-destructive" },
+  S: { label: "Secondary Missing", color: "bg-warning-muted text-warning-foreground" },
+  D: { label: "Default", color: "bg-info-muted text-info-foreground" },
 };
 
 function dpvBoolLabel(value: string) {
-  if (value === "Y") return { text: "Yes", className: "text-emerald-600 dark:text-emerald-400" };
-  if (value === "N") return { text: "No", className: "text-red-600 dark:text-red-400" };
+  if (value === "Y") return { text: "Yes", className: "text-success" };
+  if (value === "N") return { text: "No", className: "text-destructive" };
   return { text: value || "--", className: "text-muted-foreground" };
 }
 
@@ -432,22 +434,13 @@ function CompareResults({
       </div>
 
       {/* Match indicator */}
-      <div
-        className={`flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium ${
-          result.addressesMatch
-            ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300"
-            : "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300"
-        }`}
-      >
-        {result.addressesMatch ? (
-          <CheckCircle2 className="h-4 w-4" />
-        ) : (
-          <Info className="h-4 w-4" />
-        )}
-        {result.addressesMatch
+      <StatusAlert
+        variant={result.addressesMatch ? "success" : "warning"}
+        icon={result.addressesMatch ? <CheckCircle2 className="h-4 w-4" /> : <Info className="h-4 w-4" />}
+        title={result.addressesMatch
           ? "Both workflows returned the same validated address"
           : "Workflows returned different validated addresses"}
-      </div>
+      />
 
       {/* Side-by-side address comparison */}
       <Card>
@@ -474,12 +467,12 @@ function CompareResults({
               </p>
               {cs.normalized_address && (
                 <div>
-                  <p className="text-[11px] font-medium text-blue-600 dark:text-blue-400">Normalized (Claude)</p>
+                  <p className="text-[11px] font-medium text-info">Normalized (Claude)</p>
                   <p className="text-sm">{formatAddress(cs.normalized_address)}</p>
                 </div>
               )}
               <div>
-                <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Validated (Smarty)</p>
+                <p className="text-[11px] font-medium text-success">Validated (Smarty)</p>
                 <p className="text-sm font-medium">
                   {cs.delivery_line ? `${cs.delivery_line}, ${cs.last_line || ""}` : formatAddress(cs.validated_address)}
                 </p>
@@ -493,7 +486,7 @@ function CompareResults({
                 Smarty Only
               </p>
               <div>
-                <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Validated (Smarty)</p>
+                <p className="text-[11px] font-medium text-success">Validated (Smarty)</p>
                 <p className="text-sm font-medium">
                   {so.delivery_line ? `${so.delivery_line}, ${so.last_line || ""}` : formatAddress(so.validated_address)}
                 </p>
@@ -541,9 +534,9 @@ function SingleResult({
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2 text-base">
               {result.is_valid ? (
-                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                <CheckCircle2 className="h-5 w-5 text-success" />
               ) : (
-                <XCircle className="h-5 w-5 text-red-500" />
+                <XCircle className="h-5 w-5 text-destructive" />
               )}
               Validation Result
             </span>
@@ -558,10 +551,10 @@ function SingleResult({
           <div className="space-y-3">
             <AddressStep label="Entered" address={result.input_address} />
             {mode === "claude_smarty" && result.normalized_address && (
-              <AddressStep label="Normalized (Claude)" address={result.normalized_address} color="text-blue-600 dark:text-blue-400" />
+              <AddressStep label="Normalized (Claude)" address={result.normalized_address} color="text-info" />
             )}
             {result.validated_address && (
-              <AddressStep label="Validated (Smarty)" address={result.validated_address} color="text-emerald-600 dark:text-emerald-400" highlight />
+              <AddressStep label="Validated (Smarty)" address={result.validated_address} color="text-success" highlight />
             )}
           </div>
         </CardContent>
@@ -617,13 +610,13 @@ function SummaryCard({
           <div className="flex gap-3 text-xs text-muted-foreground">
             {result.timings.claude_ms != null && (
               <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-blue-400" />
+                <span className="h-2 w-2 rounded-full bg-info" />
                 Claude {result.timings.claude_ms}ms
               </span>
             )}
             {result.timings.smarty_ms != null && (
               <span className="flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="h-2 w-2 rounded-full bg-success" />
                 Smarty {result.timings.smarty_ms}ms
               </span>
             )}
@@ -639,7 +632,7 @@ function SummaryCard({
           <div className="flex items-center gap-2">
             <span
               className={`h-2.5 w-2.5 rounded-full ${
-                dpvCode === "Y" ? "bg-emerald-500" : dpvCode === "N" ? "bg-red-500" : "bg-amber-500"
+                dpvCode === "Y" ? "bg-success" : dpvCode === "N" ? "bg-destructive" : "bg-warning"
               }`}
             />
             <span className="text-sm font-medium">{dpvInfo.label}</span>
@@ -660,13 +653,13 @@ function TimingBar({ timings }: { timings: NonNullable<AddressValidationResult["
       </div>
       {timings.claude_ms != null && (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="h-2 w-2 rounded-full bg-blue-400" />
+          <span className="h-2 w-2 rounded-full bg-info" />
           Claude {timings.claude_ms}ms
         </div>
       )}
       {timings.smarty_ms != null && (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+          <span className="h-2 w-2 rounded-full bg-success" />
           Smarty {timings.smarty_ms}ms
         </div>
       )}
@@ -710,10 +703,10 @@ function DPVFootnoteBadges({ footnotes }: { footnotes: string }) {
         const info = dpvFootnoteDescriptions[code];
         const colorClass = info
           ? info.category === "success"
-            ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800"
+            ? "bg-success-muted text-success-foreground border-success/20"
             : info.category === "warning"
-              ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800"
-              : "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800"
+              ? "bg-warning-muted text-warning-foreground border-warning/20"
+              : "bg-destructive/10 text-destructive border-destructive/20"
           : "bg-muted text-muted-foreground";
         return (
           <span
@@ -776,10 +769,10 @@ function DPVAnalysisSection({ dpv }: { dpv: NonNullable<AddressValidationResult[
                   const info = dpvFootnoteDescriptions[code];
                   const colorClass = info
                     ? info.category === "success"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800"
+                      ? "bg-success-muted text-success-foreground border-success/20"
                       : info.category === "warning"
-                        ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800"
-                        : "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800"
+                        ? "bg-warning-muted text-warning-foreground border-warning/20"
+                        : "bg-destructive/10 text-destructive border-destructive/20"
                     : "bg-muted text-muted-foreground";
                   return (
                     <div key={code} className={`rounded-md border px-2.5 py-1.5 text-xs ${colorClass}`} title={info?.meaning || code}>
@@ -1069,8 +1062,8 @@ function BulkUploadTab() {
           >
             <div className="grid grid-cols-3 gap-4">
               <BulkSummaryCard label="Total" value={summary.total} color="text-foreground" />
-              <BulkSummaryCard label="Valid" value={summary.valid} color="text-emerald-600 dark:text-emerald-400" />
-              <BulkSummaryCard label="Invalid" value={summary.invalid} color="text-red-600 dark:text-red-400" />
+              <BulkSummaryCard label="Valid" value={summary.valid} color="text-success" />
+              <BulkSummaryCard label="Invalid" value={summary.invalid} color="text-destructive" />
             </div>
             <Card>
               <CardHeader>
@@ -1148,7 +1141,7 @@ function BulkSummaryCard({ label, value, color }: { label: string; value: number
 
 export default function AddressValidationPage() {
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
+    <PageContainer>
       <PageHeader
         icon={<MapPin className="h-5 w-5" />}
         title="Address Validation"
@@ -1169,6 +1162,6 @@ export default function AddressValidationPage() {
           <BulkUploadTab />
         </TabsContent>
       </Tabs>
-    </div>
+    </PageContainer>
   );
 }

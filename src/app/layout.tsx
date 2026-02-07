@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Inter, Instrument_Serif } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { Navbar } from "@/components/navbar";
 import "./globals.css";
@@ -28,12 +29,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${instrumentSerif.variable} font-sans antialiased`}>
-        <Navbar />
-        <main className="min-h-[calc(100vh-8rem)] pt-14">{children}</main>
-        <Footer />
-        <Toaster />
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <Navbar />
+          <main className="min-h-[calc(100vh-8rem)] pt-14">{children}</main>
+          <Footer />
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

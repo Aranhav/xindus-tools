@@ -6,6 +6,7 @@ import { Package, Search, Download, ChevronDown, ChevronRight } from "lucide-rea
 import * as XLSX from "xlsx";
 
 import { PageHeader } from "@/components/page-header";
+import { PageContainer } from "@/components/page-container";
 import { CopyButton } from "@/components/copy-button";
 import { StatusBadge } from "@/components/status-badge";
 import { ErrorDisplay } from "@/components/error-display";
@@ -37,9 +38,9 @@ import type { TrackingEvent, TrackingResult } from "@/types/tracking";
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getEventColor(event: string): "emerald" | "blue" | "gray" {
+function getEventColor(event: string): "success" | "info" | "muted" {
   const lower = event.toLowerCase();
-  if (lower.includes("delivered")) return "emerald";
+  if (lower.includes("delivered")) return "success";
   if (
     lower.includes("transit") ||
     lower.includes("dispatched") ||
@@ -48,20 +49,20 @@ function getEventColor(event: string): "emerald" | "blue" | "gray" {
     lower.includes("arrived") ||
     lower.includes("received")
   )
-    return "blue";
-  return "gray";
+    return "info";
+  return "muted";
 }
 
 const dotColor: Record<string, string> = {
-  emerald: "bg-emerald-500",
-  blue: "bg-blue-500",
-  gray: "bg-gray-400 dark:bg-gray-500",
+  success: "bg-success",
+  info: "bg-info",
+  muted: "bg-muted-foreground",
 };
 
 const lineColor: Record<string, string> = {
-  emerald: "border-emerald-300 dark:border-emerald-700",
-  blue: "border-blue-300 dark:border-blue-700",
-  gray: "border-gray-300 dark:border-gray-600",
+  success: "border-success/40",
+  info: "border-info/40",
+  muted: "border-border",
 };
 
 // ---------------------------------------------------------------------------
@@ -412,7 +413,7 @@ function BulkTrackTab() {
             Track All{count > 0 ? ` (${count})` : ""}
           </Button>
           {parsedIds.length > 10 && (
-            <p className="text-xs text-amber-600 dark:text-amber-400">
+            <p className="text-xs text-warning-foreground">
               Only the first 10 IDs will be tracked.
             </p>
           )}
@@ -476,38 +477,39 @@ function BulkTrackTab() {
 
 export default function TrackingPage() {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
-      className="mx-auto max-w-4xl px-4 py-8"
-    >
-      <PageHeader
-        title="IndiaPost Tracker"
-        description="Track your India Post shipments in real-time. Single or bulk tracking with export support."
-        icon={<Package className="h-5 w-5" />}
-      />
-
+    <PageContainer>
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.15 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
       >
-        <Tabs defaultValue="single">
-          <TabsList>
-            <TabsTrigger value="single">Single Track</TabsTrigger>
-            <TabsTrigger value="bulk">Bulk Track</TabsTrigger>
-          </TabsList>
+        <PageHeader
+          title="IndiaPost Tracker"
+          description="Track your India Post shipments in real-time. Single or bulk tracking with export support."
+          icon={<Package className="h-5 w-5" />}
+        />
 
-          <TabsContent value="single" className="mt-6">
-            <SingleTrackTab />
-          </TabsContent>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+        >
+          <Tabs defaultValue="single">
+            <TabsList>
+              <TabsTrigger value="single">Single Track</TabsTrigger>
+              <TabsTrigger value="bulk">Bulk Track</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="bulk" className="mt-6">
-            <BulkTrackTab />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="single" className="mt-6">
+              <SingleTrackTab />
+            </TabsContent>
+
+            <TabsContent value="bulk" className="mt-6">
+              <BulkTrackTab />
+            </TabsContent>
+          </Tabs>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </PageContainer>
   );
 }

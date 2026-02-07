@@ -9,6 +9,7 @@ import { Menu, X, Package, MapPin, FileSpreadsheet, ScanSearch } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navItems = [
   { href: "/tracking", label: "Tracking", icon: Package },
@@ -63,6 +64,8 @@ export function Navbar() {
             );
           })}
         </nav>
+
+        <ThemeToggle />
 
         {/* Mobile nav */}
         <Sheet open={open} onOpenChange={setOpen}>
