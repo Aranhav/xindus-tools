@@ -2,6 +2,7 @@ const BACKEND_URLS = {
   tracking: process.env.INDIAPOST_TRACKER_URL!,
   address: process.env.ADDRESS_VALIDATION_URL!,
   b2b: process.env.B2B_SHEET_GENERATOR_URL!,
+  hsn: process.env.HSN_CLASSIFIER_URL!,
 } as const;
 
 type BackendService = keyof typeof BACKEND_URLS;

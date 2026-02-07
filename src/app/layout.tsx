@@ -18,7 +18,7 @@ const dmSerif = DM_Serif_Display({
 export const metadata: Metadata = {
   title: "Xindus Tools",
   description:
-    "Unified portal for IndiaPost tracking, address validation, and B2B sheet generation.",
+    "Unified portal for IndiaPost tracking, address validation, B2B sheet generation, and HSN classification.",
 };
 
 export default function RootLayout({
