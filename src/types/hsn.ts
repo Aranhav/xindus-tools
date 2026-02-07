@@ -49,12 +49,42 @@ export interface ClassifyError {
 
 export type ClassifyResponse = ClassifySuccess | ClassifyError;
 
-/** Duty calculation types */
-export interface DutyCalculation {
-  hts_code: string;
-  duty_rate?: string;
-  duty_amount?: number;
-  destination_country: string;
-  tariff_description?: string;
-  error?: string;
+/** Duty calculation types — matches classify.kaiross.in/api/duty */
+
+export interface DutyBreakdown {
+  percentage: number;
+  type: string;
 }
+
+export interface DutyData {
+  destination_currency: string;
+  destination_currency_symbol: string;
+  duty: number;
+  duty_breakdown: DutyBreakdown[];
+  duty_in_destination_currency: number;
+  duty_percentage: number;
+  hsn_code: string;
+  required_documents: string[];
+  source: string;
+  tariff: number;
+  tariff_percentage: number;
+  tax: number;
+  tax_breakdown: DutyBreakdown[];
+  tax_in_destination_currency: number;
+  tax_percentage: number;
+  total_cost: number;
+}
+
+export interface DutySuccess {
+  ok: true;
+  data: DutyData;
+  timestamp: string;
+}
+
+export interface DutyError {
+  ok: false;
+  error: string;
+  timestamp: string;
+}
+
+export type DutyResponse = DutySuccess | DutyError;
