@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
-      timeout: 30000,
+      timeout: 90000,
     });
     const data = await res.json();
     return Response.json(data);
