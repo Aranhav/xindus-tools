@@ -205,6 +205,39 @@ export default function B2BAgentPage() {
     [agent, selectedDraftId],
   );
 
+  const handleBulkApprove = useCallback(
+    async (ids: string[]) => {
+      await agent.bulkApprove(ids);
+    },
+    [agent],
+  );
+
+  const handleBulkReject = useCallback(
+    async (ids: string[]) => {
+      await agent.bulkReject(ids);
+    },
+    [agent],
+  );
+
+  const handleBulkArchive = useCallback(
+    async (ids: string[]) => {
+      await agent.bulkArchive(ids);
+    },
+    [agent],
+  );
+
+  const handleBulkDelete = useCallback(
+    async (ids: string[]) => {
+      await agent.bulkDelete(ids);
+      // If any of the deleted drafts was currently open, close the detail sheet
+      if (selectedDraftId && ids.includes(selectedDraftId)) {
+        setSelectedDraftId(null);
+        agent.setActiveDraft(null);
+      }
+    },
+    [agent, selectedDraftId],
+  );
+
   return (
     <PageContainer>
       <PageHeader
@@ -267,11 +300,16 @@ export default function B2BAgentPage() {
               drafts={filteredDrafts}
               loading={agent.loading}
               selectedId={selectedDraftId}
+              activeTab={agent.activeTab}
               onView={handleSelectDraft}
               onApprove={handleApprove}
               onReject={handleReject}
               onArchive={handleArchive}
               onDelete={handleDelete}
+              onBulkApprove={handleBulkApprove}
+              onBulkReject={handleBulkReject}
+              onBulkArchive={handleBulkArchive}
+              onBulkDelete={handleBulkDelete}
             />
           </TabsContent>
         ))}

@@ -113,7 +113,7 @@ export function Toolbar({
             Upload
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Upload Shipment Documents</DialogTitle>
           </DialogHeader>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   Loader2,
   CheckCircle2,
@@ -13,10 +13,12 @@ import {
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -56,6 +58,7 @@ import {
 } from "@/components/ui/select";
 import { formatRelativeDate } from "./helpers";
 import type { DraftSummary } from "@/types/agent";
+import type { DraftTab } from "@/hooks/use-b2b-agent";
 
 /* ── Status badge ──────────────────────────────────────────── */
 
@@ -128,37 +131,128 @@ function SortableHead({
   );
 }
 
+/* ── Bulk action bar ──────────────────────────────────────── */
+
+interface BulkBarProps {
+  count: number;
+  activeTab: DraftTab;
+  selectedStatuses: string[];
+  onApprove: () => void;
+  onReject: () => void;
+  onArchive: () => void;
+  onDelete: () => void;
+  onClear: () => void;
+}
+
+function BulkActionBar({
+  count,
+  activeTab,
+  selectedStatuses,
+  onApprove,
+  onReject,
+  onArchive,
+  onDelete,
+  onClear,
+}: BulkBarProps) {
+  const allPending = selectedStatuses.every((s) => s === "pending_review");
+  const allDeletable = selectedStatuses.every(
+    (s) => s === "pending_review" || s === "rejected",
+  );
+  const allArchivable = selectedStatuses.every((s) => s !== "archived");
+
+  const showApprove = allPending;
+  const showReject = allPending;
+  const showArchive = allArchivable && activeTab !== "archived";
+  const showDelete = allDeletable;
+
+  return (
+    <div className="sticky bottom-4 z-20 mx-auto flex w-fit items-center gap-2 rounded-lg border bg-background px-4 py-2 shadow-lg">
+      <span className="text-sm font-medium tabular-nums">
+        {count} selected
+      </span>
+
+      <div className="mx-1 h-4 w-px bg-border" />
+
+      {showApprove && (
+        <Button variant="outline" size="sm" onClick={onApprove}>
+          <CheckCircle2 className="mr-1.5 h-3.5 w-3.5 text-success" />
+          Approve
+        </Button>
+      )}
+      {showReject && (
+        <Button variant="outline" size="sm" onClick={onReject}>
+          <XCircle className="mr-1.5 h-3.5 w-3.5 text-destructive" />
+          Reject
+        </Button>
+      )}
+      {showArchive && (
+        <Button variant="outline" size="sm" onClick={onArchive}>
+          <Archive className="mr-1.5 h-3.5 w-3.5" />
+          Archive
+        </Button>
+      )}
+      {showDelete && (
+        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={onDelete}>
+          <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+          Delete
+        </Button>
+      )}
+
+      <div className="mx-1 h-4 w-px bg-border" />
+
+      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClear}>
+        <X className="h-3.5 w-3.5" />
+      </Button>
+    </div>
+  );
+}
+
 /* ── Draft table ───────────────────────────────────────────── */
 
 interface DraftTableProps {
   drafts: DraftSummary[];
   loading: boolean;
   selectedId: string | null;
+  activeTab: DraftTab;
   onView: (id: string) => void;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   onArchive: (id: string) => void;
   onDelete: (id: string) => void;
+  onBulkApprove: (ids: string[]) => void;
+  onBulkReject: (ids: string[]) => void;
+  onBulkArchive: (ids: string[]) => void;
+  onBulkDelete: (ids: string[]) => void;
 }
 
 export function DraftTable({
   drafts,
   loading,
   selectedId,
+  activeTab,
   onView,
   onApprove,
   onReject,
   onArchive,
   onDelete,
+  onBulkApprove,
+  onBulkReject,
+  onBulkArchive,
+  onBulkDelete,
 }: DraftTableProps) {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [bulkDeletePending, setBulkDeletePending] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  // Reset to first page when drafts change (filters, search, tab switch)
-  useMemo(() => { setPage(0); }, [drafts]);
+  // Reset to first page + clear selection when drafts change
+  useMemo(() => {
+    setPage(0);
+    setSelected(new Set());
+  }, [drafts]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -201,6 +295,40 @@ export function DraftTable({
   const totalPages = Math.ceil(sortedDrafts.length / pageSize);
   const pagedDrafts = sortedDrafts.slice(page * pageSize, (page + 1) * pageSize);
 
+  // Selection helpers
+  const toggleOne = useCallback((id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const pageIds = pagedDrafts.map((d) => d.id);
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const somePageSelected = pageIds.some((id) => selected.has(id));
+
+  const togglePage = useCallback(() => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) {
+        pageIds.forEach((id) => next.delete(id));
+      } else {
+        pageIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  }, [allPageSelected, pageIds]);
+
+  // Statuses of currently selected drafts
+  const selectedStatuses = useMemo(() => {
+    const draftMap = new Map(drafts.map((d) => [d.id, d.status]));
+    return [...selected].map((id) => draftMap.get(id) || "").filter(Boolean);
+  }, [selected, drafts]);
+
+  const selectedIds = [...selected];
+
   if (loading && drafts.length === 0) {
     return (
       <div className="py-12 text-center">
@@ -229,6 +357,13 @@ export function DraftTable({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-10">
+              <Checkbox
+                checked={allPageSelected ? true : somePageSelected ? "indeterminate" : false}
+                onCheckedChange={togglePage}
+                aria-label="Select all on page"
+              />
+            </TableHead>
             <SortableHead label="Shipper" sortKey="shipper_name" activeSortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
             <SortableHead label="Invoice" sortKey="invoice_number" activeSortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
             <SortableHead label="Receiver" sortKey="receiver_name" activeSortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
@@ -243,14 +378,24 @@ export function DraftTable({
         <TableBody>
           {pagedDrafts.map((draft) => {
             const isPending = draft.status === "pending_review";
+            const isSelected = selected.has(draft.id);
 
             return (
               <TableRow
                 key={draft.id}
                 data-state={draft.id === selectedId ? "selected" : undefined}
-                className="cursor-pointer"
+                className={`cursor-pointer ${isSelected ? "bg-muted/50" : ""}`}
                 onClick={() => onView(draft.id)}
               >
+                {/* Checkbox */}
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => toggleOne(draft.id)}
+                    aria-label={`Select draft ${draft.invoice_number || draft.id}`}
+                  />
+                </TableCell>
+
                 {/* Shipper */}
                 <TableCell className="max-w-[160px] truncate font-medium">
                   {draft.shipper_name || "\u2014"}
@@ -419,7 +564,30 @@ export function DraftTable({
         </div>
       )}
 
-      {/* Delete confirmation dialog */}
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <BulkActionBar
+          count={selected.size}
+          activeTab={activeTab}
+          selectedStatuses={selectedStatuses}
+          onApprove={() => {
+            onBulkApprove(selectedIds);
+            setSelected(new Set());
+          }}
+          onReject={() => {
+            onBulkReject(selectedIds);
+            setSelected(new Set());
+          }}
+          onArchive={() => {
+            onBulkArchive(selectedIds);
+            setSelected(new Set());
+          }}
+          onDelete={() => setBulkDeletePending(true)}
+          onClear={() => setSelected(new Set())}
+        />
+      )}
+
+      {/* Single delete confirmation dialog */}
       <AlertDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => {
@@ -446,6 +614,39 @@ export function DraftTable({
               }}
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk delete confirmation dialog */}
+      <AlertDialog
+        open={bulkDeletePending}
+        onOpenChange={(open) => {
+          if (!open) setBulkDeletePending(false);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Permanently delete {selected.size} draft{selected.size !== 1 ? "s" : ""}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. All selected drafts and their associated
+              data will be permanently removed from the database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                onBulkDelete(selectedIds);
+                setSelected(new Set());
+                setBulkDeletePending(false);
+              }}
+            >
+              Delete {selected.size} draft{selected.size !== 1 ? "s" : ""}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -79,7 +79,7 @@ export function FileUploadZone({
       </div>
 
       {selectedFiles.length > 0 && (
-        <div className="space-y-2">
+        <div className="max-h-[30vh] space-y-2 overflow-y-auto">
           {selectedFiles.map((file, i) => (
             <div
               key={`${file.name}-${i}`}

@@ -364,6 +364,92 @@ export function useB2BAgent() {
     [fetchDrafts],
   );
 
+  // ── Bulk operations ──────────────────────────────────────
+
+  const bulkApprove = useCallback(
+    async (ids: string[]) => {
+      setLoading(true);
+      try {
+        const results = await Promise.allSettled(
+          ids.map((id) =>
+            fetch(`/api/b2b-agent/drafts/${id}/approve`, { method: "POST" }),
+          ),
+        );
+        const failed = results.filter((r) => r.status === "rejected").length;
+        if (failed > 0) setError(`${failed} of ${ids.length} approvals failed`);
+        fetchDrafts();
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchDrafts],
+  );
+
+  const bulkReject = useCallback(
+    async (ids: string[]) => {
+      setLoading(true);
+      try {
+        const results = await Promise.allSettled(
+          ids.map((id) =>
+            fetch(`/api/b2b-agent/drafts/${id}`, { method: "DELETE" }),
+          ),
+        );
+        const failed = results.filter((r) => r.status === "rejected").length;
+        if (failed > 0) setError(`${failed} of ${ids.length} rejections failed`);
+        fetchDrafts();
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchDrafts],
+  );
+
+  const bulkArchive = useCallback(
+    async (ids: string[]) => {
+      setLoading(true);
+      try {
+        const results = await Promise.allSettled(
+          ids.map((id) =>
+            fetch(`/api/b2b-agent/drafts/${id}/archive`, { method: "POST" }),
+          ),
+        );
+        const failed = results.filter((r) => r.status === "rejected").length;
+        if (failed > 0) setError(`${failed} of ${ids.length} archives failed`);
+        fetchDrafts();
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchDrafts],
+  );
+
+  const bulkDelete = useCallback(
+    async (ids: string[]) => {
+      setLoading(true);
+      try {
+        const results = await Promise.allSettled(
+          ids.map((id) =>
+            fetch(`/api/b2b-agent/drafts/${id}/delete`, { method: "POST" }),
+          ),
+        );
+        const failed = results.filter((r) => r.status === "rejected").length;
+        if (failed > 0) setError(`${failed} of ${ids.length} deletions failed`);
+        fetchDrafts();
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchDrafts],
+  );
+
   return {
     // Tab state
     activeTab,
@@ -390,6 +476,10 @@ export function useB2BAgent() {
     rejectDraft,
     archiveDraft,
     deleteDraft,
+    bulkApprove,
+    bulkReject,
+    bulkArchive,
+    bulkDelete,
     setActiveDraft,
     setError,
   };
