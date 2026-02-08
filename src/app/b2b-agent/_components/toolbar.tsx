@@ -20,6 +20,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -116,6 +117,9 @@ export function Toolbar({
         <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Upload Shipment Documents</DialogTitle>
+            <DialogDescription>
+              Upload PDF invoices, packing lists, and certificates for AI processing.
+            </DialogDescription>
           </DialogHeader>
           <FileUploadZone
             accept=".pdf"

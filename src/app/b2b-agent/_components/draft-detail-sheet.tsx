@@ -157,11 +157,13 @@ function EditableSelect({
   options: string[];
   onChanged: (path: string, oldVal: unknown, newVal: string) => void;
 }) {
+  // Radix Select doesn't allow empty string values
+  const safeOptions = options.filter(Boolean);
   return (
     <div>
       <span className="text-[10px] text-muted-foreground">{label}</span>
       <Select
-        value={value || ""}
+        value={value || undefined}
         onValueChange={(v) => {
           if (v !== value) onChanged(fieldPath, value, v);
         }}
@@ -170,7 +172,7 @@ function EditableSelect({
           <SelectValue placeholder="\u2014" />
         </SelectTrigger>
         <SelectContent>
-          {options.map((opt) => (
+          {safeOptions.map((opt) => (
             <SelectItem key={opt} value={opt}>
               {opt}
             </SelectItem>
@@ -538,7 +540,7 @@ export function DraftDetailSheet({
                     label="Marketplace"
                     value={data.marketplace}
                     fieldPath="marketplace"
-                    options={["AMAZON_FBA", "WALMART_WFS", "FAIRE", "OTHER", ""]}
+                    options={["AMAZON_FBA", "WALMART_WFS", "FAIRE", "OTHER", "NONE"]}
                     onChanged={addFieldCorrection}
                   />
                   <EditableField
