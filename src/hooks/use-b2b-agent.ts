@@ -13,7 +13,7 @@ import type {
   ActiveBatchesResponse,
 } from "@/types/agent";
 
-export type DraftTab = "all" | "pending_review" | "approved" | "rejected";
+export type DraftTab = "all" | "pending_review" | "approved" | "rejected" | "archived";
 
 const STEP_LABELS: Record<SSEProgress["step"], string> = {
   classifying: "Classifying documents",
@@ -62,6 +62,8 @@ export function useB2BAgent() {
         });
         if (tab !== "all") {
           qs.set("status", tab);
+        } else {
+          qs.set("exclude_status", "archived");
         }
         const res = await fetch(`/api/b2b-agent/drafts?${qs.toString()}`);
         if (!res.ok) throw new Error("Failed to load drafts");
@@ -322,6 +324,46 @@ export function useB2BAgent() {
     [fetchDrafts],
   );
 
+  // ── Archive draft ──────────────────────────────────────────
+
+  const archiveDraft = useCallback(
+    async (draftId: string) => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/b2b-agent/drafts/${draftId}/archive`, {
+          method: "POST",
+        });
+        if (!res.ok) throw new Error("Failed to archive draft");
+        fetchDrafts();
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchDrafts],
+  );
+
+  // ── Delete draft (permanent) ───────────────────────────────
+
+  const deleteDraft = useCallback(
+    async (draftId: string) => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/b2b-agent/drafts/${draftId}/delete`, {
+          method: "POST",
+        });
+        if (!res.ok) throw new Error("Failed to delete draft");
+        fetchDrafts();
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchDrafts],
+  );
+
   return {
     // Tab state
     activeTab,
@@ -346,6 +388,8 @@ export function useB2BAgent() {
     applyCorrections,
     approveDraft,
     rejectDraft,
+    archiveDraft,
+    deleteDraft,
     setActiveDraft,
     setError,
   };

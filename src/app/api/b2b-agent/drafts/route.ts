@@ -5,11 +5,13 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status") || "";
+    const excludeStatus = searchParams.get("exclude_status") || "";
     const limit = searchParams.get("limit") || "50";
     const offset = searchParams.get("offset") || "0";
 
     const qs = new URLSearchParams();
     if (status) qs.set("status", status);
+    if (excludeStatus) qs.set("exclude_status", excludeStatus);
     qs.set("limit", limit);
     qs.set("offset", offset);
 

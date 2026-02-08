@@ -1,6 +1,18 @@
 "use client";
 
-import { Loader2, Eye, CheckCircle2, XCircle, Package } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  Loader2,
+  Eye,
+  CheckCircle2,
+  XCircle,
+  MoreHorizontal,
+  Archive,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +30,22 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { formatRelativeDate } from "./helpers";
 import type { DraftSummary } from "@/types/agent";
 
@@ -28,6 +56,7 @@ const STATUS_STYLES: Record<string, string> = {
   approved: "bg-success-muted text-success-foreground",
   rejected: "bg-destructive/10 text-destructive",
   pushed: "bg-info-muted text-info-foreground",
+  archived: "bg-muted text-muted-foreground",
 };
 
 export function DraftStatusBadge({ status }: { status: string }) {
@@ -41,21 +70,53 @@ export function DraftStatusBadge({ status }: { status: string }) {
   );
 }
 
-/* ── Confidence dot ────────────────────────────────────────── */
+/* ── Column sorting ────────────────────────────────────────── */
 
-function ConfidenceDot({ value }: { value: number }) {
-  const color =
-    value >= 85 ? "bg-success" : value >= 65 ? "bg-warning" : "bg-destructive";
+type SortKey =
+  | "shipper_name"
+  | "invoice_number"
+  | "receiver_name"
+  | "box_count"
+  | "total_value"
+  | "created_at"
+  | "status";
+type SortDir = "asc" | "desc";
 
+function SortableHead({
+  label,
+  sortKey,
+  activeSortKey,
+  sortDir,
+  onSort,
+  className,
+}: {
+  label: string;
+  sortKey: SortKey;
+  activeSortKey: SortKey | null;
+  sortDir: SortDir;
+  onSort: (key: SortKey) => void;
+  className?: string;
+}) {
+  const isActive = activeSortKey === sortKey;
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${color}`} />
-        </TooltipTrigger>
-        <TooltipContent side="top">{Math.round(value)}% confidence</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <TableHead className={className}>
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+        onClick={() => onSort(sortKey)}
+      >
+        {label}
+        {isActive ? (
+          sortDir === "asc" ? (
+            <ArrowUp className="h-3 w-3" />
+          ) : (
+            <ArrowDown className="h-3 w-3" />
+          )
+        ) : (
+          <ArrowUpDown className="h-3 w-3 opacity-40" />
+        )}
+      </button>
+    </TableHead>
   );
 }
 
@@ -68,6 +129,8 @@ interface DraftTableProps {
   onView: (id: string) => void;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
+  onArchive: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
 export function DraftTable({
@@ -77,7 +140,51 @@ export function DraftTable({
   onView,
   onApprove,
   onReject,
+  onArchive,
+  onDelete,
 }: DraftTableProps) {
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
+  const sortedDrafts = useMemo(() => {
+    if (!sortKey) return drafts;
+
+    return [...drafts].sort((a, b) => {
+      const dir = sortDir === "asc" ? 1 : -1;
+
+      const valA = a[sortKey];
+      const valB = b[sortKey];
+
+      // Nulls to bottom
+      if (valA == null && valB == null) return 0;
+      if (valA == null) return 1;
+      if (valB == null) return -1;
+
+      // Date column
+      if (sortKey === "created_at") {
+        return (new Date(valA as string).getTime() - new Date(valB as string).getTime()) * dir;
+      }
+
+      // Numeric columns
+      if (sortKey === "box_count" || sortKey === "total_value") {
+        return ((valA as number) - (valB as number)) * dir;
+      }
+
+      // String columns
+      return String(valA).localeCompare(String(valB)) * dir;
+    });
+  }, [drafts, sortKey, sortDir]);
+
   if (loading && drafts.length === 0) {
     return (
       <div className="py-12 text-center">
@@ -97,111 +204,102 @@ export function DraftTable({
     );
   }
 
+  const canDelete = (status: string) =>
+    status === "pending_review" || status === "rejected";
+  const canArchive = (status: string) => status !== "archived";
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-10 text-center">Conf.</TableHead>
-          <TableHead>Invoice</TableHead>
-          <TableHead>Shipper</TableHead>
-          <TableHead>Receiver</TableHead>
-          <TableHead className="w-16 text-right">Boxes</TableHead>
-          <TableHead className="w-24 text-right">Value</TableHead>
-          <TableHead className="w-14 text-right">Files</TableHead>
-          <TableHead className="w-24 text-right">Created</TableHead>
-          <TableHead className="w-28 text-center">Status</TableHead>
-          <TableHead className="w-28 text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {drafts.map((draft) => {
-          const overall = (
-            draft.confidence_scores as Record<string, number> | undefined
-          )?._overall;
-          const isPending = draft.status === "pending_review";
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <SortableHead label="Shipper" sortKey="shipper_name" activeSortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+            <SortableHead label="Invoice" sortKey="invoice_number" activeSortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+            <SortableHead label="Receiver" sortKey="receiver_name" activeSortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+            <SortableHead label="Boxes" sortKey="box_count" activeSortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="w-16 text-right" />
+            <SortableHead label="Value" sortKey="total_value" activeSortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="w-24 text-right" />
+            <TableHead className="w-14 text-right">Files</TableHead>
+            <SortableHead label="Created" sortKey="created_at" activeSortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="w-24 text-right" />
+            <SortableHead label="Status" sortKey="status" activeSortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="w-28 text-center" />
+            <TableHead className="w-32 text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sortedDrafts.map((draft) => {
+            const isPending = draft.status === "pending_review";
 
-          return (
-            <TableRow
-              key={draft.id}
-              data-state={draft.id === selectedId ? "selected" : undefined}
-              className="cursor-pointer"
-              onClick={() => onView(draft.id)}
-            >
-              {/* Confidence */}
-              <TableCell className="text-center">
-                {overall != null ? (
-                  <ConfidenceDot value={overall} />
-                ) : (
-                  <Package className="mx-auto h-3.5 w-3.5 text-muted-foreground" />
-                )}
-              </TableCell>
+            return (
+              <TableRow
+                key={draft.id}
+                data-state={draft.id === selectedId ? "selected" : undefined}
+                className="cursor-pointer"
+                onClick={() => onView(draft.id)}
+              >
+                {/* Shipper */}
+                <TableCell className="max-w-[160px] truncate font-medium">
+                  {draft.shipper_name || "\u2014"}
+                </TableCell>
 
-              {/* Invoice */}
-              <TableCell className="font-medium">
-                {draft.invoice_number || "Draft"}
-              </TableCell>
+                {/* Invoice */}
+                <TableCell className="text-muted-foreground">
+                  {draft.invoice_number || "Draft"}
+                </TableCell>
 
-              {/* Shipper */}
-              <TableCell className="max-w-[160px] truncate text-muted-foreground">
-                {draft.shipper_name || "\u2014"}
-              </TableCell>
+                {/* Receiver */}
+                <TableCell className="max-w-[160px] truncate text-muted-foreground">
+                  {draft.receiver_name || "\u2014"}
+                </TableCell>
 
-              {/* Receiver */}
-              <TableCell className="max-w-[160px] truncate text-muted-foreground">
-                {draft.receiver_name || "\u2014"}
-              </TableCell>
+                {/* Boxes */}
+                <TableCell className="text-right tabular-nums text-muted-foreground">
+                  {draft.box_count ?? "\u2014"}
+                </TableCell>
 
-              {/* Boxes */}
-              <TableCell className="text-right tabular-nums text-muted-foreground">
-                {draft.box_count ?? "\u2014"}
-              </TableCell>
+                {/* Value */}
+                <TableCell className="text-right tabular-nums">
+                  {draft.total_value != null
+                    ? `$${draft.total_value.toLocaleString()}`
+                    : "\u2014"}
+                </TableCell>
 
-              {/* Value */}
-              <TableCell className="text-right tabular-nums">
-                {draft.total_value != null
-                  ? `$${draft.total_value.toLocaleString()}`
-                  : "\u2014"}
-              </TableCell>
+                {/* Files */}
+                <TableCell className="text-right tabular-nums text-muted-foreground">
+                  {draft.file_count}
+                </TableCell>
 
-              {/* Files */}
-              <TableCell className="text-right tabular-nums text-muted-foreground">
-                {draft.file_count}
-              </TableCell>
+                {/* Created */}
+                <TableCell className="text-right text-muted-foreground">
+                  {formatRelativeDate(draft.created_at)}
+                </TableCell>
 
-              {/* Created */}
-              <TableCell className="text-right text-muted-foreground">
-                {formatRelativeDate(draft.created_at)}
-              </TableCell>
+                {/* Status */}
+                <TableCell className="text-center">
+                  <DraftStatusBadge status={draft.status} />
+                </TableCell>
 
-              {/* Status */}
-              <TableCell className="text-center">
-                <DraftStatusBadge status={draft.status} />
-              </TableCell>
+                {/* Actions */}
+                <TableCell className="text-right">
+                  <div
+                    className="flex items-center justify-end gap-1"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => onView(draft.id)}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>View</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
 
-              {/* Actions */}
-              <TableCell className="text-right">
-                <div
-                  className="flex items-center justify-end gap-1"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => onView(draft.id)}
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>View</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-
-                  {isPending && (
-                    <>
+                    {isPending && (
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -217,30 +315,83 @@ export function DraftTable({
                           <TooltipContent>Approve</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                    )}
 
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-destructive hover:text-destructive"
+                    {/* Overflow menu for Reject / Archive / Delete */}
+                    {(isPending || canArchive(draft.status) || canDelete(draft.status)) && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <MoreHorizontal className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {isPending && (
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
                               onClick={() => onReject(draft.id)}
                             >
-                              <XCircle className="h-3.5 w-3.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Reject</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </>
-                  )}
-                </div>
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+                              <XCircle className="mr-2 h-3.5 w-3.5" />
+                              Reject
+                            </DropdownMenuItem>
+                          )}
+                          {canArchive(draft.status) && (
+                            <DropdownMenuItem onClick={() => onArchive(draft.id)}>
+                              <Archive className="mr-2 h-3.5 w-3.5" />
+                              Archive
+                            </DropdownMenuItem>
+                          )}
+                          {canDelete(draft.status) && (
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setDeleteTarget(draft.id)}
+                            >
+                              <Trash2 className="mr-2 h-3.5 w-3.5" />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Permanently delete this draft?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The draft and all associated data will
+              be permanently removed from the database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) {
+                  onDelete(deleteTarget);
+                  setDeleteTarget(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

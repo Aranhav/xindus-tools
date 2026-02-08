@@ -58,16 +58,16 @@ export function AppSidebar() {
       style={{ width: mounted ? (collapsed ? "var(--sidebar-width-collapsed)" : "var(--sidebar-width)") : "var(--sidebar-width)" }}
     >
       {/* Header */}
-      <div className="flex h-12 items-center gap-2.5 overflow-hidden border-b border-border px-4">
+      <div className="flex h-12 items-center gap-2.5 overflow-hidden border-b border-border px-3">
         <Image
           src="/xindus-logo.png"
           alt="Xindus"
-          width={24}
-          height={24}
+          width={32}
+          height={32}
           className="shrink-0 rounded"
         />
         {!collapsed && (
-          <span className="truncate font-serif text-sm font-bold text-foreground">
+          <span className="truncate font-serif text-base font-bold text-foreground">
             Xindus Tools
           </span>
         )}

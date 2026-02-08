@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/page-header";
 import { PageContainer } from "@/components/page-container";
 import { useB2BAgent, type DraftTab } from "@/hooks/use-b2b-agent";
-import { Toolbar } from "./_components/toolbar";
+import { Toolbar, DEFAULT_FILTERS, type DraftFilters } from "./_components/toolbar";
 import { ProcessingBar } from "./_components/processing-bar";
 import { DraftTable } from "./_components/draft-table";
 import { DraftDetailSheet } from "./_components/draft-detail-sheet";
@@ -18,11 +18,13 @@ const TAB_OPTIONS: { value: DraftTab; label: string }[] = [
   { value: "pending_review", label: "Pending Review" },
   { value: "approved", label: "Approved" },
   { value: "rejected", label: "Rejected" },
+  { value: "archived", label: "Archived" },
 ];
 
 export default function B2BAgentPage() {
   const agent = useB2BAgent();
   const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<DraftFilters>(DEFAULT_FILTERS);
   const [selectedDraftId, setSelectedDraftId] = useState<string | null>(null);
 
   // Load drafts + check for in-flight jobs on mount
@@ -32,17 +34,81 @@ export default function B2BAgentPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Client-side search filter
+  // Client-side search + filters
   const filteredDrafts = useMemo(() => {
-    if (!search.trim()) return agent.drafts;
-    const q = search.toLowerCase();
-    return agent.drafts.filter(
-      (d) =>
-        d.invoice_number?.toLowerCase().includes(q) ||
-        d.shipper_name?.toLowerCase().includes(q) ||
-        d.receiver_name?.toLowerCase().includes(q),
-    );
-  }, [agent.drafts, search]);
+    let result = agent.drafts;
+
+    // Search filter
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (d) =>
+          d.invoice_number?.toLowerCase().includes(q) ||
+          d.shipper_name?.toLowerCase().includes(q) ||
+          d.receiver_name?.toLowerCase().includes(q),
+      );
+    }
+
+    // Date range filter
+    if (filters.dateRange !== "all") {
+      const now = Date.now();
+      const cutoff: Record<string, number> = {
+        today: now - 86400000,
+        "7d": now - 7 * 86400000,
+        "30d": now - 30 * 86400000,
+      };
+      if (cutoff[filters.dateRange]) {
+        result = result.filter(
+          (d) => d.created_at && new Date(d.created_at).getTime() >= cutoff[filters.dateRange],
+        );
+      }
+    }
+
+    // Value range filter
+    if (filters.valueRange !== "all") {
+      const bounds: Record<string, [number, number]> = {
+        lt1k: [0, 1000],
+        "1k-5k": [1000, 5000],
+        "5k-10k": [5000, 10000],
+        gt10k: [10000, Infinity],
+      };
+      const [min, max] = bounds[filters.valueRange] ?? [0, Infinity];
+      result = result.filter(
+        (d) => d.total_value != null && d.total_value >= min && d.total_value < max,
+      );
+    }
+
+    // Shipper filter
+    if (filters.shipper !== "all") {
+      result = result.filter((d) => d.shipper_name === filters.shipper);
+    }
+
+    // Receiver filter
+    if (filters.receiver !== "all") {
+      result = result.filter((d) => d.receiver_name === filters.receiver);
+    }
+
+    // Box count filter
+    if (filters.boxCount !== "all") {
+      const boxBounds: Record<string, [number, number]> = {
+        "1": [1, 1],
+        "2-5": [2, 5],
+        "6-10": [6, 10],
+        gt10: [11, Infinity],
+      };
+      const [min, max] = boxBounds[filters.boxCount] ?? [0, Infinity];
+      result = result.filter(
+        (d) => d.box_count != null && d.box_count >= min && d.box_count <= max,
+      );
+    }
+
+    // Seller filter
+    if (filters.seller !== "all") {
+      result = result.filter((d) => d.seller_id === filters.seller);
+    }
+
+    return result;
+  }, [agent.drafts, search, filters]);
 
   // Per-status counts (computed from all drafts in current tab's data)
   const statusCounts = useMemo(() => {
@@ -51,6 +117,7 @@ export default function B2BAgentPage() {
       pending_review: 0,
       approved: 0,
       rejected: 0,
+      archived: 0,
     };
     // If we're on "all" tab, count from the loaded drafts
     if (agent.activeTab === "all") {
@@ -74,6 +141,7 @@ export default function B2BAgentPage() {
     (tab: string) => {
       agent.switchTab(tab as DraftTab);
       setSearch("");
+      setFilters(DEFAULT_FILTERS);
     },
     [agent],
   );
@@ -119,6 +187,24 @@ export default function B2BAgentPage() {
     [agent],
   );
 
+  const handleArchive = useCallback(
+    async (draftId: string) => {
+      await agent.archiveDraft(draftId);
+    },
+    [agent],
+  );
+
+  const handleDelete = useCallback(
+    async (draftId: string) => {
+      await agent.deleteDraft(draftId);
+      if (selectedDraftId === draftId) {
+        setSelectedDraftId(null);
+        agent.setActiveDraft(null);
+      }
+    },
+    [agent, selectedDraftId],
+  );
+
   return (
     <PageContainer>
       <PageHeader
@@ -131,6 +217,9 @@ export default function B2BAgentPage() {
       <Toolbar
         search={search}
         onSearchChange={setSearch}
+        filters={filters}
+        onFiltersChange={setFilters}
+        allDrafts={agent.drafts}
         onUpload={handleUpload}
         draftsTotal={filteredDrafts.length}
       />
@@ -182,6 +271,8 @@ export default function B2BAgentPage() {
               onView={handleSelectDraft}
               onApprove={handleApprove}
               onReject={handleReject}
+              onArchive={handleArchive}
+              onDelete={handleDelete}
             />
           </TabsContent>
         ))}

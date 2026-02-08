@@ -46,11 +46,11 @@ export function TopBar() {
               <Image
                 src="/xindus-logo.png"
                 alt="Xindus"
-                width={24}
-                height={24}
+                width={32}
+                height={32}
                 className="rounded"
               />
-              <span className="font-serif text-sm font-bold text-foreground">
+              <span className="font-serif text-base font-bold text-foreground">
                 Xindus Tools
               </span>
             </div>
@@ -90,11 +90,11 @@ export function TopBar() {
           <Image
             src="/xindus-logo.png"
             alt="Xindus"
-            width={22}
-            height={22}
+            width={32}
+            height={32}
             className="rounded"
           />
-          <span className="font-serif text-sm font-bold text-foreground">
+          <span className="font-serif text-base font-bold text-foreground">
             Xindus Tools
           </span>
         </Link>
