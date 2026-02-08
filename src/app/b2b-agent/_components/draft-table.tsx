@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import {
   Loader2,
-  Eye,
   CheckCircle2,
   XCircle,
   MoreHorizontal,
@@ -300,42 +299,44 @@ export function DraftTable({
                     className="flex items-center justify-end gap-1"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => onView(draft.id)}
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>View</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-
                     {isPending && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-success hover:text-success"
-                              onClick={() => onApprove(draft.id)}
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>Approve</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-success hover:text-success"
+                                onClick={() => onApprove(draft.id)}
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Approve</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive hover:text-destructive"
+                                onClick={() => onReject(draft.id)}
+                              >
+                                <XCircle className="h-3.5 w-3.5" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Reject</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </>
                     )}
 
-                    {/* Overflow menu for Reject / Archive / Delete */}
-                    {(isPending || canArchive(draft.status) || canDelete(draft.status)) && (
+                    {/* Overflow menu for Archive / Delete */}
+                    {(canArchive(draft.status) || canDelete(draft.status)) && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -343,15 +344,6 @@ export function DraftTable({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          {isPending && (
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => onReject(draft.id)}
-                            >
-                              <XCircle className="mr-2 h-3.5 w-3.5" />
-                              Reject
-                            </DropdownMenuItem>
-                          )}
                           {canArchive(draft.status) && (
                             <DropdownMenuItem onClick={() => onArchive(draft.id)}>
                               <Archive className="mr-2 h-3.5 w-3.5" />
