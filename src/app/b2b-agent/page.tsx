@@ -4,13 +4,21 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/page-header";
 import { PageContainer } from "@/components/page-container";
 import { useB2BAgent, type DraftTab } from "@/hooks/use-b2b-agent";
 import { Toolbar } from "./_components/toolbar";
 import { ProcessingBar } from "./_components/processing-bar";
-import { DraftList } from "./_components/draft-list";
+import { DraftTable } from "./_components/draft-table";
 import { DraftDetailSheet } from "./_components/draft-detail-sheet";
+
+const TAB_OPTIONS: { value: DraftTab; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "pending_review", label: "Pending Review" },
+  { value: "approved", label: "Approved" },
+  { value: "rejected", label: "Rejected" },
+];
 
 export default function B2BAgentPage() {
   const agent = useB2BAgent();
@@ -36,12 +44,24 @@ export default function B2BAgentPage() {
     );
   }, [agent.drafts, search]);
 
-  // Filter label for empty state
-  const filterLabel = useMemo(() => {
-    if (search.trim()) return "matching";
-    if (agent.activeTab === "all") return "";
-    return agent.activeTab.replace("_", " ");
-  }, [agent.activeTab, search]);
+  // Per-status counts (computed from all drafts in current tab's data)
+  const statusCounts = useMemo(() => {
+    const counts: Record<DraftTab, number> = {
+      all: agent.draftsTotal,
+      pending_review: 0,
+      approved: 0,
+      rejected: 0,
+    };
+    // If we're on "all" tab, count from the loaded drafts
+    if (agent.activeTab === "all") {
+      for (const d of agent.drafts) {
+        if (d.status in counts) {
+          counts[d.status as DraftTab]++;
+        }
+      }
+    }
+    return counts;
+  }, [agent.drafts, agent.draftsTotal, agent.activeTab]);
 
   const handleUpload = useCallback(
     (files: File[]) => {
@@ -51,8 +71,8 @@ export default function B2BAgentPage() {
   );
 
   const handleTabChange = useCallback(
-    (tab: DraftTab) => {
-      agent.switchTab(tab);
+    (tab: string) => {
+      agent.switchTab(tab as DraftTab);
       setSearch("");
     },
     [agent],
@@ -107,10 +127,8 @@ export default function B2BAgentPage() {
         icon={<Bot className="h-5 w-5" />}
       />
 
-      {/* Toolbar: Upload + Filter + Search */}
+      {/* Toolbar: Upload + Search */}
       <Toolbar
-        activeTab={agent.activeTab}
-        onTabChange={handleTabChange}
         search={search}
         onSearchChange={setSearch}
         onUpload={handleUpload}
@@ -139,15 +157,35 @@ export default function B2BAgentPage() {
         )}
       </AnimatePresence>
 
-      {/* Draft list */}
-      <DraftList
-        drafts={filteredDrafts}
-        total={filteredDrafts.length}
-        loading={agent.loading}
-        selectedId={selectedDraftId}
-        onSelect={handleSelectDraft}
-        filterLabel={filterLabel}
-      />
+      {/* Tabs + data table */}
+      <Tabs value={agent.activeTab} onValueChange={handleTabChange}>
+        <TabsList variant="line">
+          {TAB_OPTIONS.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              {tab.label}
+              {agent.activeTab === "all" && statusCounts[tab.value] > 0 && (
+                <span className="ml-1 text-xs text-muted-foreground">
+                  {statusCounts[tab.value]}
+                </span>
+              )}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {/* Single content area — all tabs render the same table with filtered data */}
+        {TAB_OPTIONS.map((tab) => (
+          <TabsContent key={tab.value} value={tab.value}>
+            <DraftTable
+              drafts={filteredDrafts}
+              loading={agent.loading}
+              selectedId={selectedDraftId}
+              onView={handleSelectDraft}
+              onApprove={handleApprove}
+              onReject={handleReject}
+            />
+          </TabsContent>
+        ))}
+      </Tabs>
 
       {/* Detail sheet (slides in from right) */}
       <DraftDetailSheet

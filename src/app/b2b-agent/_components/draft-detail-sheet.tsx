@@ -30,7 +30,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { AddressForm } from "./address-form";
-import { DraftStatusBadge } from "./draft-row";
+import { DraftStatusBadge } from "./draft-table";
 import { formatAddress, getNestedValue } from "./helpers";
 import type {
   DraftDetail,

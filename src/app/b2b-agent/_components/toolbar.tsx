@@ -11,35 +11,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { FileUploadZone } from "@/components/file-upload-zone";
-import type { DraftTab } from "@/hooks/use-b2b-agent";
 
 interface ToolbarProps {
-  activeTab: DraftTab;
-  onTabChange: (tab: DraftTab) => void;
   search: string;
   onSearchChange: (value: string) => void;
   onUpload: (files: File[]) => void;
   draftsTotal: number;
 }
 
-const FILTER_OPTIONS: { value: DraftTab; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "pending_review", label: "Pending Review" },
-  { value: "approved", label: "Approved" },
-  { value: "rejected", label: "Rejected" },
-];
-
 export function Toolbar({
-  activeTab,
-  onTabChange,
   search,
   onSearchChange,
   onUpload,
@@ -95,20 +76,6 @@ export function Toolbar({
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Status filter */}
-      <Select value={activeTab} onValueChange={(v) => onTabChange(v as DraftTab)}>
-        <SelectTrigger className="h-8 w-[160px] text-sm">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {FILTER_OPTIONS.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
 
       {/* Search */}
       <div className="relative flex-1">
