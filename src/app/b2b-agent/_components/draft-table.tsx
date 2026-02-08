@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Download,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -480,33 +481,37 @@ export function DraftTable({
                       </>
                     )}
 
-                    {/* Overflow menu for Archive / Delete */}
-                    {(canArchive(draft.status) || canDelete(draft.status)) && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7">
-                            <MoreHorizontal className="h-3.5 w-3.5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {canArchive(draft.status) && (
-                            <DropdownMenuItem onClick={() => onArchive(draft.id)}>
-                              <Archive className="mr-2 h-3.5 w-3.5" />
-                              Archive
-                            </DropdownMenuItem>
-                          )}
-                          {canDelete(draft.status) && (
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => setDeleteTarget(draft.id)}
-                            >
-                              <Trash2 className="mr-2 h-3.5 w-3.5" />
-                              Delete
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
+                    {/* Overflow menu for Download / Archive / Delete */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <MoreHorizontal className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => window.open(`/api/b2b-agent/drafts/${draft.id}/download`, "_blank")}
+                        >
+                          <Download className="mr-2 h-3.5 w-3.5" />
+                          Download Excel
+                        </DropdownMenuItem>
+                        {canArchive(draft.status) && (
+                          <DropdownMenuItem onClick={() => onArchive(draft.id)}>
+                            <Archive className="mr-2 h-3.5 w-3.5" />
+                            Archive
+                          </DropdownMenuItem>
+                        )}
+                        {canDelete(draft.status) && (
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setDeleteTarget(draft.id)}
+                          >
+                            <Trash2 className="mr-2 h-3.5 w-3.5" />
+                            Delete
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </TableCell>
               </TableRow>
