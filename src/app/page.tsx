@@ -1,13 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
-import { Package, MapPin, FileSpreadsheet, ScanSearch, ArrowRight } from "lucide-react";
-
-/* ------------------------------------------------------------------ */
-/*  Tool card data                                                     */
-/* ------------------------------------------------------------------ */
+import { Package, MapPin, FileSpreadsheet, ScanSearch, Bot, ArrowRight } from "lucide-react";
 
 const tools = [
   {
@@ -38,114 +33,72 @@ const tools = [
     icon: ScanSearch,
     href: "/hsn-classifier",
   },
+  {
+    title: "B2B Booking Agent",
+    description:
+      "Upload shipment documents in bulk, AI extracts and groups into draft shipments for review.",
+    icon: Bot,
+    href: "/b2b-agent",
+  },
 ];
-
-/* ------------------------------------------------------------------ */
-/*  Framer-motion variants                                             */
-/* ------------------------------------------------------------------ */
 
 const container = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.3 },
+    transition: { staggerChildren: 0.06, delayChildren: 0.15 },
   },
 };
 
 const item = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 12 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: [0.25, 0.4, 0.25, 1] as const },
+    transition: { duration: 0.4, ease: [0.25, 0.4, 0.25, 1] as const },
   },
 };
 
-const heroItem = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: {
-      delay: 0.1 * i,
-      duration: 0.6,
-      ease: [0.25, 0.4, 0.25, 1] as const,
-    },
-  }),
-};
-
-/* ------------------------------------------------------------------ */
-/*  Page                                                               */
-/* ------------------------------------------------------------------ */
-
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero */}
-      <div className="mx-auto flex max-w-4xl flex-col items-center px-6 pt-24 pb-16 text-center">
-        <motion.div
-          custom={0}
-          variants={heroItem}
-          initial="hidden"
-          animate="visible"
-        >
-          <Image
-            src="/xindus-logo.png"
-            alt="Xindus"
-            width={64}
-            height={64}
-            className="mx-auto rounded-xl"
-          />
-        </motion.div>
+    <div className="mx-auto w-full max-w-5xl px-6 py-8">
+      {/* Heading */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.25, 0.4, 0.25, 1] as const }}
+      >
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          Dashboard
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Select a tool to get started.
+        </p>
+      </motion.div>
 
-        <motion.h1
-          custom={1}
-          variants={heroItem}
-          initial="hidden"
-          animate="visible"
-          className="mt-6 font-serif text-4xl font-bold tracking-tight text-foreground sm:text-5xl"
-        >
-          Xindus Tools
-        </motion.h1>
-
-        <motion.p
-          custom={2}
-          variants={heroItem}
-          initial="hidden"
-          animate="visible"
-          className="mt-4 max-w-lg text-lg text-muted-foreground"
-        >
-          Internal tools for shipping, address validation, document intelligence,
-          and product classification.
-        </motion.p>
-      </div>
-
-      {/* Tool cards */}
+      {/* Tool cards grid */}
       <motion.div
         variants={container}
         initial="hidden"
         animate="visible"
-        className="mx-auto grid max-w-4xl grid-cols-1 gap-4 px-6 pb-24 sm:grid-cols-2"
+        className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
       >
         {tools.map((tool) => (
           <motion.div key={tool.href} variants={item}>
-            <Link href={tool.href} className="group block">
-              <div className="flex h-full flex-col gap-3 rounded-xl border border-border bg-card p-6 transition-colors hover:bg-accent/50">
-                {/* Icon */}
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-foreground">
-                  <tool.icon className="h-5 w-5" />
+            <Link href={tool.href} className="group block h-full">
+              <div className="flex h-full flex-col gap-3 rounded-xl border border-border bg-card p-5 transition-colors hover:bg-accent/50">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-foreground">
+                  <tool.icon className="h-4.5 w-4.5" />
                 </div>
 
-                {/* Title + arrow */}
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-foreground">
+                  <h2 className="text-sm font-semibold text-foreground">
                     {tool.title}
                   </h2>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" />
+                  <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100" />
                 </div>
 
-                {/* Description */}
-                <p className="text-sm leading-relaxed text-muted-foreground">
+                <p className="text-xs leading-relaxed text-muted-foreground">
                   {tool.description}
                 </p>
               </div>
