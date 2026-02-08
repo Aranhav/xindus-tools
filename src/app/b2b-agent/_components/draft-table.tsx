@@ -12,6 +12,8 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,6 +48,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatRelativeDate } from "./helpers";
 import type { DraftSummary } from "@/types/agent";
 
@@ -146,6 +155,11 @@ export function DraftTable({
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset to first page when drafts change (filters, search, tab switch)
+  useMemo(() => { setPage(0); }, [drafts]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -184,6 +198,9 @@ export function DraftTable({
       return String(valA).localeCompare(String(valB)) * dir;
     });
   }, [drafts, sortKey, sortDir]);
+
+  const totalPages = Math.ceil(sortedDrafts.length / pageSize);
+  const pagedDrafts = sortedDrafts.slice(page * pageSize, (page + 1) * pageSize);
 
   if (loading && drafts.length === 0) {
     return (
@@ -225,7 +242,7 @@ export function DraftTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedDrafts.map((draft) => {
+          {pagedDrafts.map((draft) => {
             const isPending = draft.status === "pending_review";
 
             return (
@@ -360,6 +377,55 @@ export function DraftTable({
           })}
         </TableBody>
       </Table>
+
+      {/* Pagination */}
+      {sortedDrafts.length > 0 && (
+        <div className="flex items-center justify-between border-t px-2 py-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Rows per page</span>
+            <Select
+              value={String(pageSize)}
+              onValueChange={(v) => {
+                setPageSize(Number(v));
+                setPage(0);
+              }}
+            >
+              <SelectTrigger className="h-7 w-[70px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              {page * pageSize + 1}–{Math.min((page + 1) * pageSize, sortedDrafts.length)} of{" "}
+              {sortedDrafts.length}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
+              disabled={page === 0}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Delete confirmation dialog */}
       <AlertDialog

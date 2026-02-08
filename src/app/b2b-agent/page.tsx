@@ -221,7 +221,6 @@ export default function B2BAgentPage() {
         onFiltersChange={setFilters}
         allDrafts={agent.drafts}
         onUpload={handleUpload}
-        draftsTotal={filteredDrafts.length}
       />
 
       {/* Error banner */}

@@ -52,7 +52,6 @@ interface ToolbarProps {
   onFiltersChange: (filters: DraftFilters) => void;
   allDrafts: DraftSummary[];
   onUpload: (files: File[]) => void;
-  draftsTotal: number;
 }
 
 export function Toolbar({
@@ -62,7 +61,6 @@ export function Toolbar({
   onFiltersChange,
   allDrafts,
   onUpload,
-  draftsTotal,
 }: ToolbarProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
@@ -293,11 +291,6 @@ export function Toolbar({
           </div>
         </PopoverContent>
       </Popover>
-
-      {/* Draft count */}
-      <span className="shrink-0 text-xs text-muted-foreground">
-        {draftsTotal} draft{draftsTotal !== 1 ? "s" : ""}
-      </span>
     </div>
   );
 }
