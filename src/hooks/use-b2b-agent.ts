@@ -10,6 +10,7 @@ import type {
   CorrectionItem,
   ApprovalResponse,
   SellerProfile,
+  SellerMatchResult,
   ActiveBatchesResponse,
 } from "@/types/agent";
 
@@ -450,6 +451,69 @@ export function useB2BAgent() {
     [fetchDrafts],
   );
 
+  // ── Search / match seller by name ─────────────────────────
+
+  const searchSellers = useCallback(
+    async (name: string): Promise<SellerMatchResult | null> => {
+      try {
+        const qs = new URLSearchParams({ name });
+        const res = await fetch(`/api/b2b-agent/sellers?${qs.toString()}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        // Backend returns a seller profile or match result
+        if (data.seller) {
+          return {
+            seller: data.seller,
+            confidence: data.confidence ?? 0,
+            match_reason: data.match_reason,
+          };
+        }
+        // If it returns the profile directly (no wrapper)
+        if (data.id && data.name) {
+          return {
+            seller: data as SellerProfile,
+            confidence: data.confidence ?? 0.8,
+            match_reason: "Name match",
+          };
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    },
+    [],
+  );
+
+  // ── Link seller to draft ─────────────────────────────────
+
+  const linkSellerToDraft = useCallback(
+    async (draftId: string, sellerId: string) => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/b2b-agent/drafts/${draftId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            corrections: [
+              { field_path: "seller_id", old_value: null, new_value: sellerId },
+            ],
+          }),
+        });
+        if (!res.ok) throw new Error("Failed to link seller");
+        const data: DraftDetail = await res.json();
+        setActiveDraft(data);
+        setSellerProfile(data.seller ?? null);
+        return data;
+      } catch (err) {
+        setError((err as Error).message);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
+
   return {
     // Tab state
     activeTab,
@@ -480,6 +544,8 @@ export function useB2BAgent() {
     bulkReject,
     bulkArchive,
     bulkDelete,
+    searchSellers,
+    linkSellerToDraft,
     setActiveDraft,
     setError,
   };

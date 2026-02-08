@@ -8,7 +8,6 @@ import {
   Pencil,
   Check,
   X,
-  User,
   Sparkles,
   Download,
   Plus,
@@ -46,6 +45,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddressForm } from "./address-form";
 import { BoxEditor } from "./box-editor";
+import { SellerMatch } from "./seller-match";
 import { DraftStatusBadge } from "./draft-table";
 import { getNestedValue } from "./helpers";
 import type {
@@ -55,14 +55,14 @@ import type {
   ShipmentBox,
   ProductDetail,
   SellerProfile,
+  SellerMatchResult,
 } from "@/types/agent";
 
 /* ── Option constants ─────────────────────────────────────── */
 
 const PURPOSE_OPTIONS = ["Sold", "Sample", "Gift", "Not Sold", "Personal Effects", "Return and Repair"];
 const TERMS_OPTIONS = ["DDP", "DDU", "DAP", "CIF"];
-const ORIGIN_CLEARANCE_OPTIONS = ["Commercial", "CSB IV", "CSB V"];
-const DEST_CLEARANCE_OPTIONS = ["Formal", "Informal"];
+const DEST_CLEARANCE_OPTIONS = ["Formal", "Informal", "T86"];
 const TAX_OPTIONS = ["GST", "LUT"];
 const CURRENCY_OPTIONS = ["USD", "EUR", "GBP", "INR", "AUD", "CAD", "AED", "SGD", "JPY", "CNY"];
 const MARKETPLACE_OPTIONS = ["AMAZON_FBA", "WALMART_WFS", "FAIRE", "OTHER", "NONE"];
@@ -317,6 +317,8 @@ interface DraftDetailSheetProps {
   onReject: (draftId: string) => void;
   loading: boolean;
   sellerProfile?: SellerProfile | null;
+  onSearchSeller: (name: string) => Promise<SellerMatchResult | null>;
+  onLinkSeller: (draftId: string, sellerId: string) => Promise<unknown>;
 }
 
 export function DraftDetailSheet({
@@ -328,6 +330,8 @@ export function DraftDetailSheet({
   onReject,
   loading,
   sellerProfile,
+  onSearchSeller,
+  onLinkSeller,
 }: DraftDetailSheetProps) {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -501,16 +505,22 @@ export function DraftDetailSheet({
             <Stat label="Invoice Date" value={data.invoice_date || "---"} />
           </div>
 
-          {/* Seller banner */}
-          {sellerProfile && sellerProfile.shipment_count > 0 && (
-            <div className="mt-2 flex items-center gap-2 rounded-md border border-primary/15 bg-primary/5 px-3 py-1.5 text-xs">
-              <User className="h-3 w-3 text-primary" />
-              <span className="font-medium">{sellerProfile.name}</span>
-              <span className="text-muted-foreground">
-                {sellerProfile.shipment_count} past shipment{sellerProfile.shipment_count !== 1 ? "s" : ""}
-              </span>
-            </div>
-          )}
+          {/* Seller match */}
+          <div className="mt-2">
+            <SellerMatch
+              shipperName={data.shipper_address?.name}
+              currentSeller={sellerProfile}
+              isActionable={isActionable}
+              onSearch={onSearchSeller}
+              onLink={(sellerId) => onLinkSeller(draft.id, sellerId)}
+              onApplyDefaults={(corrections) => {
+                if (corrections.length > 0) {
+                  setPendingCorrections((prev) => [...prev, ...corrections]);
+                }
+              }}
+              loading={loading}
+            />
+          </div>
         </SheetHeader>
 
         {/* ── Tabbed content ────────────────────────────────── */}
@@ -542,13 +552,10 @@ export function DraftDetailSheet({
               {/* Shipment Configuration */}
               <SectionHeader icon={Settings2} title="Shipment Configuration" />
               <div className="grid grid-cols-3 gap-x-4 gap-y-3">
-                <SelectField
-                  label="Origin Clearance"
-                  value={data.origin_clearance_type}
-                  fieldPath="origin_clearance_type"
-                  options={ORIGIN_CLEARANCE_OPTIONS}
-                  onChanged={addFieldCorrection}
-                />
+                <div className="space-y-1">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Origin Clearance</Label>
+                  <p className="text-sm font-medium">Commercial</p>
+                </div>
                 <SelectField
                   label="Dest. Clearance"
                   value={data.destination_clearance_type}

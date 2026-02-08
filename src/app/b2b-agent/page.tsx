@@ -325,6 +325,8 @@ export default function B2BAgentPage() {
         onReject={handleReject}
         loading={agent.loading}
         sellerProfile={agent.sellerProfile}
+        onSearchSeller={agent.searchSellers}
+        onLinkSeller={agent.linkSellerToDraft}
       />
     </PageContainer>
   );

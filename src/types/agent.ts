@@ -180,6 +180,27 @@ export interface SellersListResponse {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Seller match result (for AI matching)                              */
+/* ------------------------------------------------------------------ */
+
+export interface SellerMatchResult {
+  seller: SellerProfile;
+  confidence: number;
+  match_reason?: string;
+}
+
+export interface SellerHistoricalDefaults {
+  destination_clearance?: string;
+  destination_clearance_count?: number;
+  destination_clearance_total?: number;
+  terms_of_trade?: string;
+  terms_count?: number;
+  terms_total?: number;
+  billing_address?: ShipmentAddress;
+  ior_address?: ShipmentAddress;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Draft shipment                                                     */
 /* ------------------------------------------------------------------ */
 
