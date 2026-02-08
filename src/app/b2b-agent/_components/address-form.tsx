@@ -165,7 +165,7 @@ export function AddressForm({
             return (
               <div key={f.key} className="flex items-center gap-2 text-xs">
                 <span className="w-12 shrink-0 text-muted-foreground">{f.label}</span>
-                <span className="min-w-0 flex-1 truncate">{val || "\u2014"}</span>
+                <span className={`min-w-0 flex-1 truncate ${!val ? "italic text-muted-foreground/60" : ""}`}>{val || "Not set"}</span>
                 {fieldConf != null && fieldConf > 0 && <ConfidenceBadge value={fieldConf} />}
               </div>
             );
