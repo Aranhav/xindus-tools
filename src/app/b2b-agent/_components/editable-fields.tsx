@@ -158,7 +158,7 @@ export function SelectField({
           if (v !== value) onChanged(fieldPath, value, v);
         }}
       >
-        <SelectTrigger className="h-7 text-xs">
+        <SelectTrigger className="h-7 w-full text-xs">
           <SelectValue placeholder="Select..." />
         </SelectTrigger>
         <SelectContent>

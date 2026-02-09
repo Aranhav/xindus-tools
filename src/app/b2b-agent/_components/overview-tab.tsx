@@ -14,6 +14,9 @@ import {
   Plus,
   Loader2,
   Globe,
+  Package,
+  Weight,
+  DollarSign,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -103,6 +106,32 @@ function SectionCard({
         </h4>
       </div>
       {children}
+    </div>
+  );
+}
+
+/* ── Summary Stat ─────────────────────────────────────────── */
+
+function SummaryStat({
+  icon: Icon,
+  label,
+  value,
+  iconColor,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string | number;
+  iconColor: string;
+}) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className={`rounded-md p-1.5 ${iconColor.replace("text-", "bg-").replace("600", "500/10").replace("400", "500/10")}`}>
+        <Icon className={`h-3.5 w-3.5 ${iconColor}`} />
+      </div>
+      <div>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+        <p className="text-sm font-semibold">{value || "---"}</p>
+      </div>
     </div>
   );
 }
@@ -222,6 +251,81 @@ export function OverviewTab({
 
   return (
     <TabsContent value="overview" className="mt-0 px-6 py-4 space-y-4">
+      {/* ── Shipment Summary (top) ───────────────────────── */}
+      <div className="rounded-lg border bg-muted/30 p-4">
+        <div className="grid grid-cols-4 gap-4">
+          <SummaryStat
+            icon={Package}
+            label="Boxes"
+            value={data.total_boxes ?? 0}
+            iconColor="text-blue-600 dark:text-blue-400"
+          />
+          <SummaryStat
+            icon={Weight}
+            label="Gross Weight"
+            value={data.total_gross_weight_kg != null ? `${data.total_gross_weight_kg} kg` : "---"}
+            iconColor="text-slate-600 dark:text-slate-400"
+          />
+          <SummaryStat
+            icon={DollarSign}
+            label="Total Value"
+            value={data.total_amount != null ? `${data.shipping_currency || ""} ${data.total_amount}`.trim() : "---"}
+            iconColor="text-emerald-600 dark:text-emerald-400"
+          />
+          <SummaryStat
+            icon={Paperclip}
+            label="Documents"
+            value={draft.files.length}
+            iconColor="text-rose-600 dark:text-rose-400"
+          />
+        </div>
+      </div>
+
+      {/* ── Source Documents ──────────────────────────────── */}
+      {(draft.files.length > 0 || isActionable) && (
+        <SectionCard
+          icon={Paperclip}
+          title={`Source Documents (${draft.files.length})`}
+          iconColor="text-rose-600 dark:text-rose-400"
+          bgColor="bg-rose-50/30 dark:bg-rose-950/20"
+          borderColor="border-rose-200/50 dark:border-rose-900/40"
+        >
+          <div className="flex flex-wrap gap-2">
+            {draft.files.map((f) => (
+              <Badge key={f.id} variant="outline" className="gap-1.5 pr-1 font-normal bg-background/80">
+                <FileText className="h-3 w-3" />
+                {f.filename}
+                {f.file_type && (
+                  <span className="text-muted-foreground">({f.file_type})</span>
+                )}
+                <button
+                  type="button"
+                  className="ml-0.5 rounded p-0.5 hover:bg-muted"
+                  onClick={() => onDownloadFile(draft.id, f.id)}
+                  title="Download"
+                >
+                  <Download className="h-3 w-3 text-muted-foreground" />
+                </button>
+                {isActionable && draft.files.length > 1 && (
+                  <button
+                    type="button"
+                    className="rounded p-0.5 hover:bg-destructive/10"
+                    onClick={() => onRemoveFile(draft.id, f.id)}
+                    title="Remove file (auto re-extracts)"
+                    disabled={loading}
+                  >
+                    <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                  </button>
+                )}
+              </Badge>
+            ))}
+          </div>
+          {isActionable && (
+            <AddFilesButton draftId={draft.id} onAddFiles={onAddFiles} />
+          )}
+        </SectionCard>
+      )}
+
       {/* ── Clearance & Shipping ─────────────────────────── */}
       <SectionCard
         icon={Settings2}
@@ -230,7 +334,7 @@ export function OverviewTab({
         bgColor="bg-blue-50/40 dark:bg-blue-950/20"
         borderColor="border-blue-200/60 dark:border-blue-900/40"
       >
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
             <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Origin Clearance</Label>
             <p className="text-sm font-medium">Commercial</p>
@@ -243,7 +347,7 @@ export function OverviewTab({
             onChanged={addFieldCorrection}
             sellerDefault={sellerDefaults?.destination_clearance_type as string | undefined}
           />
-          <div className="space-y-1">
+          <div className="col-span-2 space-y-1">
             <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Shipping Method</Label>
             <Select
               value={data.shipping_method || undefined}
@@ -251,7 +355,7 @@ export function OverviewTab({
                 if (v !== data.shipping_method) addFieldCorrection("shipping_method", data.shipping_method, v);
               }}
             >
-              <SelectTrigger className="h-7 text-xs">
+              <SelectTrigger className="h-7 w-full text-xs">
                 <SelectValue placeholder="Select..." />
               </SelectTrigger>
               <SelectContent>
@@ -284,7 +388,7 @@ export function OverviewTab({
         bgColor="bg-violet-50/30 dark:bg-violet-950/20"
         borderColor="border-violet-200/50 dark:border-violet-900/40"
       >
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <SelectField
             label="Purpose"
             value={data.purpose_of_booking}
@@ -348,7 +452,7 @@ export function OverviewTab({
         bgColor="bg-amber-50/30 dark:bg-amber-950/20"
         borderColor="border-amber-200/50 dark:border-amber-900/40"
       >
-        <div className="grid grid-cols-3 gap-x-4 gap-y-3">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
           <EditableField
             label="Invoice Number"
             value={data.invoice_number}
@@ -390,6 +494,8 @@ export function OverviewTab({
             fieldPath="export_reference"
             {...fieldProps}
           />
+        </div>
+        <div className="mt-3">
           <EditableField
             label="Shipment References"
             value={data.shipment_references}
@@ -443,15 +549,15 @@ export function OverviewTab({
         </div>
       </SectionCard>
 
-      {/* ── Weight Summary ───────────────────────────────── */}
+      {/* ── Weight & Dimensions ──────────────────────────── */}
       <SectionCard
         icon={Scale}
-        title="Weight Summary"
+        title="Weight & Dimensions"
         iconColor="text-slate-600 dark:text-slate-400"
         bgColor="bg-slate-50/40 dark:bg-slate-950/20"
         borderColor="border-slate-200/60 dark:border-slate-800/40"
       >
-        <div className="grid grid-cols-3 gap-x-4 gap-y-3">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
           <EditableField
             label="Total Boxes"
             value={data.total_boxes != null ? String(data.total_boxes) : ""}
@@ -475,51 +581,6 @@ export function OverviewTab({
           />
         </div>
       </SectionCard>
-
-      {/* ── Source Documents ──────────────────────────────── */}
-      {(draft.files.length > 0 || isActionable) && (
-        <SectionCard
-          icon={Paperclip}
-          title={`Source Documents (${draft.files.length})`}
-          iconColor="text-rose-600 dark:text-rose-400"
-          bgColor="bg-rose-50/30 dark:bg-rose-950/20"
-          borderColor="border-rose-200/50 dark:border-rose-900/40"
-        >
-          <div className="flex flex-wrap gap-2">
-            {draft.files.map((f) => (
-              <Badge key={f.id} variant="outline" className="gap-1.5 pr-1 font-normal bg-background/80">
-                <FileText className="h-3 w-3" />
-                {f.filename}
-                {f.file_type && (
-                  <span className="text-muted-foreground">({f.file_type})</span>
-                )}
-                <button
-                  type="button"
-                  className="ml-0.5 rounded p-0.5 hover:bg-muted"
-                  onClick={() => onDownloadFile(draft.id, f.id)}
-                  title="Download"
-                >
-                  <Download className="h-3 w-3 text-muted-foreground" />
-                </button>
-                {isActionable && draft.files.length > 1 && (
-                  <button
-                    type="button"
-                    className="rounded p-0.5 hover:bg-destructive/10"
-                    onClick={() => onRemoveFile(draft.id, f.id)}
-                    title="Remove file"
-                    disabled={loading}
-                  >
-                    <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                  </button>
-                )}
-              </Badge>
-            ))}
-          </div>
-          {isActionable && (
-            <AddFilesButton draftId={draft.id} onAddFiles={onAddFiles} />
-          )}
-        </SectionCard>
-      )}
     </TabsContent>
   );
 }
