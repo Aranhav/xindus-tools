@@ -110,24 +110,27 @@ export default function B2BAgentPage() {
     return result;
   }, [agent.drafts, search, filters]);
 
-  // Per-status counts (computed from all drafts in current tab's data)
-  const statusCounts = useMemo(() => {
-    const counts: Record<DraftTab, number> = {
-      all: agent.draftsTotal,
-      pending_review: 0,
-      approved: 0,
-      rejected: 0,
-      archived: 0,
-    };
-    // If we're on "all" tab, count from the loaded drafts
+  // Per-status counts — computed from "all" tab data, cached across tab switches
+  const [statusCounts, setStatusCounts] = useState<Record<DraftTab, number>>({
+    all: 0, pending_review: 0, approved: 0, rejected: 0, archived: 0,
+  });
+
+  useEffect(() => {
     if (agent.activeTab === "all") {
+      const counts: Record<DraftTab, number> = {
+        all: agent.draftsTotal,
+        pending_review: 0,
+        approved: 0,
+        rejected: 0,
+        archived: 0,
+      };
       for (const d of agent.drafts) {
         if (d.status in counts) {
           counts[d.status as DraftTab]++;
         }
       }
+      setStatusCounts(counts);
     }
-    return counts;
   }, [agent.drafts, agent.draftsTotal, agent.activeTab]);
 
   const handleUpload = useCallback(
@@ -284,7 +287,7 @@ export default function B2BAgentPage() {
           {TAB_OPTIONS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value}>
               {tab.label}
-              {agent.activeTab === "all" && statusCounts[tab.value] > 0 && (
+              {statusCounts[tab.value] > 0 && (
                 <span className="ml-1 text-xs text-muted-foreground">
                   {statusCounts[tab.value]}
                 </span>
