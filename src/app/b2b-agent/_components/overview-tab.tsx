@@ -5,7 +5,6 @@ import {
   FileText,
   Settings2,
   Truck,
-  Scale,
   Paperclip,
   Receipt,
   Sparkles,
@@ -558,38 +557,6 @@ export function OverviewTab({
         </div>
       </SectionCard>
 
-      {/* ── Weight & Dimensions ──────────────────────────── */}
-      <SectionCard
-        icon={Scale}
-        title="Weight & Dimensions"
-        iconColor="text-slate-600 dark:text-slate-400"
-        bgColor="bg-slate-50/40 dark:bg-slate-950/20"
-        borderColor="border-slate-200/60 dark:border-slate-800/40"
-      >
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-          <EditableField
-            label="Total Boxes"
-            value={data.total_boxes != null ? String(data.total_boxes) : ""}
-            fieldPath="total_boxes"
-            type="number"
-            {...fieldProps}
-          />
-          <EditableField
-            label="Gross Weight (kg)"
-            value={data.total_gross_weight_kg != null ? String(data.total_gross_weight_kg) : ""}
-            fieldPath="total_gross_weight_kg"
-            type="number"
-            {...fieldProps}
-          />
-          <EditableField
-            label="Net Weight (kg)"
-            value={data.total_net_weight_kg != null ? String(data.total_net_weight_kg) : ""}
-            fieldPath="total_net_weight_kg"
-            type="number"
-            {...fieldProps}
-          />
-        </div>
-      </SectionCard>
     </TabsContent>
   );
 }
