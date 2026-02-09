@@ -2,12 +2,13 @@ import { NextRequest } from "next/server";
 import { proxyFetch, errorResponse } from "@/lib/api";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ draftId: string }> },
 ) {
   try {
     const { draftId } = await params;
-    const res = await proxyFetch("b2b", `/api/agent/drafts/${draftId}/download`, {
+    const format = req.nextUrl.searchParams.get("format") || "summary";
+    const res = await proxyFetch("b2b", `/api/agent/drafts/${draftId}/download?format=${format}`, {
       timeout: 60000,
     });
 

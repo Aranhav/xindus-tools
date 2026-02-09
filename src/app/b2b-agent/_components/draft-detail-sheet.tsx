@@ -11,10 +11,19 @@ import {
   MapPin,
   Settings2,
   RefreshCw,
+  ChevronDown,
+  FileSpreadsheet,
+  Table2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Sheet,
   SheetContent,
@@ -287,15 +296,35 @@ export function DraftDetailSheet({
               </SheetDescription>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8"
-                onClick={() => window.open(`/api/b2b-agent/drafts/${draft.id}/download`, "_blank")}
-              >
-                <Download className="mr-1.5 h-3.5 w-3.5" />
-                Excel
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 gap-1">
+                    <Download className="h-3.5 w-3.5" />
+                    Excel
+                    <ChevronDown className="h-3 w-3 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={() => window.open(`/api/b2b-agent/drafts/${draft.id}/download?format=xpressb2b`, "_blank")}
+                  >
+                    <Table2 className="mr-2 h-4 w-4" />
+                    <div>
+                      <p className="text-sm font-medium">XpressB2B Sheet</p>
+                      <p className="text-xs text-muted-foreground">Xindus bulk upload format</p>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => window.open(`/api/b2b-agent/drafts/${draft.id}/download?format=summary`, "_blank")}
+                  >
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    <div>
+                      <p className="text-sm font-medium">Summary Sheet</p>
+                      <p className="text-xs text-muted-foreground">Full draft with all details</p>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
