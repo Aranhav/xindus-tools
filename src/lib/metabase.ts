@@ -33,6 +33,15 @@ export interface MetabaseResult {
   error?: string;
 }
 
+/* ── Common headers to avoid Cloudflare WAF blocks ───────── */
+
+const BROWSER_HEADERS: Record<string, string> = {
+  "User-Agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+  Accept: "application/json, text/plain, */*",
+  "Accept-Language": "en-US,en;q=0.9",
+};
+
 /* ── Session management (cached, 12-day refresh) ─────────── */
 
 let sessionToken: string | null = null;
@@ -52,12 +61,15 @@ async function getSession(): Promise<string> {
 
   const res = await fetch(`${METABASE_URL}/api/session`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      ...BROWSER_HEADERS,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({
       username: METABASE_USERNAME,
       password: METABASE_PASSWORD,
     }),
-    signal: AbortSignal.timeout(10000),
+    signal: AbortSignal.timeout(15000),
   });
 
   if (!res.ok) {
@@ -101,7 +113,10 @@ export function escapeSql(value: string): string {
  * Uses direct SQL (same pattern as the xindus-db MCP server).
  * Use `escapeSql()` to sanitize any user-provided values before embedding.
  */
-export async function queryMetabase(sql: string): Promise<MetabaseResult> {
+export async function queryMetabase(
+  sql: string,
+  _retry = true,
+): Promise<MetabaseResult> {
   const session = await getSession();
 
   const body = {
@@ -113,20 +128,23 @@ export async function queryMetabase(sql: string): Promise<MetabaseResult> {
   const res = await fetch(`${METABASE_URL}/api/dataset`, {
     method: "POST",
     headers: {
+      ...BROWSER_HEADERS,
       "Content-Type": "application/json",
       "X-Metabase-Session": session,
     },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(10000),
+    signal: AbortSignal.timeout(15000),
   });
 
   if (!res.ok) {
-    if (res.status === 401) {
+    // Invalidate session on any auth/block error and retry once
+    const text = await res.text().catch(() => "Unknown error");
+    const isCloudflareBlock = text.includes("Cloudflare") || text.includes("<!DOCTYPE");
+    if ((res.status === 401 || res.status === 403 || isCloudflareBlock) && _retry) {
       sessionToken = null;
       sessionExpiry = null;
-      throw new MetabaseError(401, "Metabase session expired. Please retry.");
+      return queryMetabase(sql, false);
     }
-    const text = await res.text().catch(() => "Unknown error");
     throw new MetabaseError(res.status, `Metabase query failed: ${text}`);
   }
 
