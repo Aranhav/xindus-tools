@@ -195,7 +195,9 @@ export function DraftDetailSheet({
   if (!draft || !data) {
     return (
       <Sheet open={open} onOpenChange={handleOpenChange}>
-        <SheetContent side="right" className="sm:max-w-2xl" />
+        <SheetContent side="right" className="sm:max-w-2xl" aria-describedby={undefined}>
+          <SheetTitle className="sr-only">Loading draft</SheetTitle>
+        </SheetContent>
       </Sheet>
     );
   }

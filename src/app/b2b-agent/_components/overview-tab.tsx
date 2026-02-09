@@ -13,15 +13,16 @@ import {
   X,
   Plus,
   Loader2,
+  Globe,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { TabsContent } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -38,7 +39,6 @@ import {
   EditableField,
   SelectField,
   ToggleField,
-  SectionHeader,
   PURPOSE_OPTIONS,
   TERMS_OPTIONS,
   DEST_CLEARANCE_OPTIONS,
@@ -75,7 +75,37 @@ interface OverviewTabProps {
   loading: boolean;
 }
 
-/* ── Component ────────────────────────────────────────────── */
+/* ── Section Card ─────────────────────────────────────────── */
+
+function SectionCard({
+  icon: Icon,
+  title,
+  iconColor,
+  bgColor,
+  borderColor,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  iconColor: string;
+  bgColor: string;
+  borderColor?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={`rounded-lg border p-4 ${bgColor} ${borderColor ?? ""}`}>
+      <div className="flex items-center gap-2 mb-3">
+        <div className={`rounded-md p-1 ${iconColor.replace("text-", "bg-").replace("600", "500/10").replace("400", "500/10")}`}>
+          <Icon className={`h-3 w-3 ${iconColor}`} />
+        </div>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {title}
+        </h4>
+      </div>
+      {children}
+    </div>
+  );
+}
 
 /* ── Add Files Dialog ─────────────────────────────────────── */
 
@@ -110,6 +140,9 @@ function AddFilesDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add Files to Draft</DialogTitle>
+          <DialogDescription>
+            Upload additional documents. The draft will re-extract automatically.
+          </DialogDescription>
         </DialogHeader>
         <FileUploadZone
           accept=".pdf,.png,.jpg,.jpeg,.xlsx,.xls,.csv"
@@ -188,223 +221,273 @@ export function OverviewTab({
   }, []);
 
   return (
-    <TabsContent value="overview" className="mt-0 px-6 py-4">
-      {/* Shipment Configuration */}
-      <SectionHeader icon={Settings2} title="Shipment Configuration" />
-      <div className="grid grid-cols-3 gap-x-4 gap-y-3">
-        <div className="space-y-1">
-          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Origin Clearance</Label>
-          <p className="text-sm font-medium">Commercial</p>
-        </div>
-        <SelectField
-          label="Dest. Clearance"
-          value={data.destination_clearance_type}
-          fieldPath="destination_clearance_type"
-          options={DEST_CLEARANCE_OPTIONS}
-          onChanged={addFieldCorrection}
-          sellerDefault={sellerDefaults?.destination_clearance_type as string | undefined}
-        />
-        <div className="space-y-1">
-          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Shipping Method</Label>
-          <Select
-            value={data.shipping_method || undefined}
-            onValueChange={(v) => {
-              if (v !== data.shipping_method) addFieldCorrection("shipping_method", data.shipping_method, v);
-            }}
-          >
-            <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder="Select..." />
-            </SelectTrigger>
-            <SelectContent>
-              {shippingMethods.map((m) => (
-                <SelectItem key={m.code} value={m.code}>
-                  {m.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {sellerDefaults?.shipping_method != null && sellerDefaults.shipping_method !== data.shipping_method ? (
-            <button
-              type="button"
-              className="flex items-center gap-1 text-[11px] text-primary/70 hover:text-primary"
-              onClick={() => addFieldCorrection("shipping_method", data.shipping_method, sellerDefaults.shipping_method as string)}
+    <TabsContent value="overview" className="mt-0 px-6 py-4 space-y-4">
+      {/* ── Clearance & Shipping ─────────────────────────── */}
+      <SectionCard
+        icon={Settings2}
+        title="Clearance & Shipping"
+        iconColor="text-blue-600 dark:text-blue-400"
+        bgColor="bg-blue-50/40 dark:bg-blue-950/20"
+        borderColor="border-blue-200/60 dark:border-blue-900/40"
+      >
+        <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Origin Clearance</Label>
+            <p className="text-sm font-medium">Commercial</p>
+          </div>
+          <SelectField
+            label="Dest. Clearance"
+            value={data.destination_clearance_type}
+            fieldPath="destination_clearance_type"
+            options={DEST_CLEARANCE_OPTIONS}
+            onChanged={addFieldCorrection}
+            sellerDefault={sellerDefaults?.destination_clearance_type as string | undefined}
+          />
+          <div className="space-y-1">
+            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Shipping Method</Label>
+            <Select
+              value={data.shipping_method || undefined}
+              onValueChange={(v) => {
+                if (v !== data.shipping_method) addFieldCorrection("shipping_method", data.shipping_method, v);
+              }}
             >
-              <Sparkles className="h-2.5 w-2.5" />
-              Default: {shippingMethods.find(m => m.code === sellerDefaults.shipping_method)?.name || String(sellerDefaults.shipping_method)}
-            </button>
-          ) : null}
+              <SelectTrigger className="h-7 text-xs">
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent>
+                {shippingMethods.map((m) => (
+                  <SelectItem key={m.code} value={m.code}>
+                    {m.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {sellerDefaults?.shipping_method != null && sellerDefaults.shipping_method !== data.shipping_method ? (
+              <button
+                type="button"
+                className="mt-1 flex items-center gap-1.5 rounded-md bg-primary/5 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10"
+                onClick={() => addFieldCorrection("shipping_method", data.shipping_method, sellerDefaults.shipping_method as string)}
+              >
+                <Sparkles className="h-2.5 w-2.5" />
+                Default: {shippingMethods.find(m => m.code === sellerDefaults.shipping_method)?.name || String(sellerDefaults.shipping_method)}
+              </button>
+            ) : null}
+          </div>
         </div>
-        <SelectField
-          label="Purpose"
-          value={data.purpose_of_booking}
-          fieldPath="purpose_of_booking"
-          options={PURPOSE_OPTIONS}
-          onChanged={addFieldCorrection}
-          sellerDefault={sellerDefaults?.purpose_of_booking as string | undefined}
-        />
-        <SelectField
-          label="Terms of Trade"
-          value={data.terms_of_trade}
-          fieldPath="terms_of_trade"
-          options={TERMS_OPTIONS}
-          onChanged={addFieldCorrection}
-          sellerDefault={sellerDefaults?.terms_of_trade as string | undefined}
-        />
-        <SelectField
-          label="Tax Type"
-          value={data.tax_type}
-          fieldPath="tax_type"
-          options={TAX_OPTIONS}
-          onChanged={addFieldCorrection}
-          sellerDefault={sellerDefaults?.tax_type as string | undefined}
-        />
-        <SelectField
-          label="Destination Country"
-          value={data.country}
-          fieldPath="country"
-          options={COUNTRY_OPTIONS}
-          onChanged={addFieldCorrection}
-          sellerDefault={sellerDefaults?.country as string | undefined}
-        />
-        <SelectField
-          label="Marketplace"
-          value={data.marketplace}
-          fieldPath="marketplace"
-          options={MARKETPLACE_OPTIONS}
-          onChanged={addFieldCorrection}
-          sellerDefault={sellerDefaults?.marketplace as string | undefined}
-        />
-      </div>
+      </SectionCard>
 
-      <Separator className="my-5" />
+      {/* ── Trade Configuration ──────────────────────────── */}
+      <SectionCard
+        icon={FileText}
+        title="Trade Configuration"
+        iconColor="text-violet-600 dark:text-violet-400"
+        bgColor="bg-violet-50/30 dark:bg-violet-950/20"
+        borderColor="border-violet-200/50 dark:border-violet-900/40"
+      >
+        <div className="grid grid-cols-3 gap-3">
+          <SelectField
+            label="Purpose"
+            value={data.purpose_of_booking}
+            fieldPath="purpose_of_booking"
+            options={PURPOSE_OPTIONS}
+            onChanged={addFieldCorrection}
+            sellerDefault={sellerDefaults?.purpose_of_booking as string | undefined}
+          />
+          <SelectField
+            label="Terms of Trade"
+            value={data.terms_of_trade}
+            fieldPath="terms_of_trade"
+            options={TERMS_OPTIONS}
+            onChanged={addFieldCorrection}
+            sellerDefault={sellerDefaults?.terms_of_trade as string | undefined}
+          />
+          <SelectField
+            label="Tax Type"
+            value={data.tax_type}
+            fieldPath="tax_type"
+            options={TAX_OPTIONS}
+            onChanged={addFieldCorrection}
+            sellerDefault={sellerDefaults?.tax_type as string | undefined}
+          />
+        </div>
+      </SectionCard>
 
-      {/* Invoice & References */}
-      <SectionHeader icon={Receipt} title="Invoice & References" />
-      <div className="grid grid-cols-3 gap-x-4 gap-y-3">
-        <EditableField
-          label="Invoice Number"
-          value={data.invoice_number}
-          fieldPath="invoice_number"
-          {...fieldProps}
-        />
-        <EditableField
-          label="Invoice Date"
-          value={data.invoice_date}
-          fieldPath="invoice_date"
-          {...fieldProps}
-        />
-        <EditableField
-          label="Total Amount"
-          value={data.total_amount != null ? String(data.total_amount) : ""}
-          fieldPath="total_amount"
-          type="number"
-          {...fieldProps}
-        />
-        <SelectField
-          label="Shipping Currency"
-          value={data.shipping_currency}
-          fieldPath="shipping_currency"
-          options={CURRENCY_OPTIONS}
-          onChanged={addFieldCorrection}
-          sellerDefault={sellerDefaults?.shipping_currency as string | undefined}
-        />
-        <SelectField
-          label="Billing Currency"
-          value={data.billing_currency}
-          fieldPath="billing_currency"
-          options={CURRENCY_OPTIONS}
-          onChanged={addFieldCorrection}
-          sellerDefault={sellerDefaults?.billing_currency as string | undefined}
-        />
-        <EditableField
-          label="Export Reference"
-          value={data.export_reference}
-          fieldPath="export_reference"
-          {...fieldProps}
-        />
-        <EditableField
-          label="Shipment References"
-          value={data.shipment_references}
-          fieldPath="shipment_references"
-          {...fieldProps}
-        />
-      </div>
+      {/* ── Destination ──────────────────────────────────── */}
+      <SectionCard
+        icon={Globe}
+        title="Destination"
+        iconColor="text-emerald-600 dark:text-emerald-400"
+        bgColor="bg-emerald-50/30 dark:bg-emerald-950/20"
+        borderColor="border-emerald-200/50 dark:border-emerald-900/40"
+      >
+        <div className="grid grid-cols-2 gap-3">
+          <SelectField
+            label="Country"
+            value={data.country}
+            fieldPath="country"
+            options={COUNTRY_OPTIONS}
+            onChanged={addFieldCorrection}
+            sellerDefault={sellerDefaults?.country as string | undefined}
+          />
+          <SelectField
+            label="Marketplace"
+            value={data.marketplace}
+            fieldPath="marketplace"
+            options={MARKETPLACE_OPTIONS}
+            onChanged={addFieldCorrection}
+            sellerDefault={sellerDefaults?.marketplace as string | undefined}
+          />
+        </div>
+      </SectionCard>
 
-      <Separator className="my-5" />
+      {/* ── Invoice & References ─────────────────────────── */}
+      <SectionCard
+        icon={Receipt}
+        title="Invoice & References"
+        iconColor="text-amber-600 dark:text-amber-400"
+        bgColor="bg-amber-50/30 dark:bg-amber-950/20"
+        borderColor="border-amber-200/50 dark:border-amber-900/40"
+      >
+        <div className="grid grid-cols-3 gap-x-4 gap-y-3">
+          <EditableField
+            label="Invoice Number"
+            value={data.invoice_number}
+            fieldPath="invoice_number"
+            {...fieldProps}
+          />
+          <EditableField
+            label="Invoice Date"
+            value={data.invoice_date}
+            fieldPath="invoice_date"
+            {...fieldProps}
+          />
+          <EditableField
+            label="Total Amount"
+            value={data.total_amount != null ? String(data.total_amount) : ""}
+            fieldPath="total_amount"
+            type="number"
+            {...fieldProps}
+          />
+          <SelectField
+            label="Shipping Currency"
+            value={data.shipping_currency}
+            fieldPath="shipping_currency"
+            options={CURRENCY_OPTIONS}
+            onChanged={addFieldCorrection}
+            sellerDefault={sellerDefaults?.shipping_currency as string | undefined}
+          />
+          <SelectField
+            label="Billing Currency"
+            value={data.billing_currency}
+            fieldPath="billing_currency"
+            options={CURRENCY_OPTIONS}
+            onChanged={addFieldCorrection}
+            sellerDefault={sellerDefaults?.billing_currency as string | undefined}
+          />
+          <EditableField
+            label="Export Reference"
+            value={data.export_reference}
+            fieldPath="export_reference"
+            {...fieldProps}
+          />
+          <EditableField
+            label="Shipment References"
+            value={data.shipment_references}
+            fieldPath="shipment_references"
+            {...fieldProps}
+          />
+        </div>
+      </SectionCard>
 
-      {/* Logistics */}
-      <SectionHeader icon={Truck} title="Logistics & Handling" />
-      <div className="grid grid-cols-3 gap-2">
-        <ToggleField
-          label="Self Drop"
-          value={data.self_drop}
-          fieldPath="self_drop"
-          onChanged={addFieldCorrection}
-        />
-        <ToggleField
-          label="Self Origin Clearance"
-          value={data.self_origin_clearance}
-          fieldPath="self_origin_clearance"
-          onChanged={addFieldCorrection}
-        />
-        <ToggleField
-          label="Self Dest. Clearance"
-          value={data.self_destination_clearance}
-          fieldPath="self_destination_clearance"
-          onChanged={addFieldCorrection}
-        />
-      </div>
-      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
-        <EditableField
-          label="Port of Entry"
-          value={data.port_of_entry}
-          fieldPath="port_of_entry"
-          {...fieldProps}
-        />
-        <EditableField
-          label="Destination CHA"
-          value={data.destination_cha}
-          fieldPath="destination_cha"
-          {...fieldProps}
-        />
-      </div>
+      {/* ── Logistics & Handling ─────────────────────────── */}
+      <SectionCard
+        icon={Truck}
+        title="Logistics & Handling"
+        iconColor="text-orange-600 dark:text-orange-400"
+        bgColor="bg-orange-50/30 dark:bg-orange-950/20"
+        borderColor="border-orange-200/50 dark:border-orange-900/40"
+      >
+        <div className="grid grid-cols-3 gap-2">
+          <ToggleField
+            label="Self Drop"
+            value={data.self_drop}
+            fieldPath="self_drop"
+            onChanged={addFieldCorrection}
+          />
+          <ToggleField
+            label="Self Origin Clearance"
+            value={data.self_origin_clearance}
+            fieldPath="self_origin_clearance"
+            onChanged={addFieldCorrection}
+          />
+          <ToggleField
+            label="Self Dest. Clearance"
+            value={data.self_destination_clearance}
+            fieldPath="self_destination_clearance"
+            onChanged={addFieldCorrection}
+          />
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+          <EditableField
+            label="Port of Entry"
+            value={data.port_of_entry}
+            fieldPath="port_of_entry"
+            {...fieldProps}
+          />
+          <EditableField
+            label="Destination CHA"
+            value={data.destination_cha}
+            fieldPath="destination_cha"
+            {...fieldProps}
+          />
+        </div>
+      </SectionCard>
 
-      <Separator className="my-5" />
+      {/* ── Weight Summary ───────────────────────────────── */}
+      <SectionCard
+        icon={Scale}
+        title="Weight Summary"
+        iconColor="text-slate-600 dark:text-slate-400"
+        bgColor="bg-slate-50/40 dark:bg-slate-950/20"
+        borderColor="border-slate-200/60 dark:border-slate-800/40"
+      >
+        <div className="grid grid-cols-3 gap-x-4 gap-y-3">
+          <EditableField
+            label="Total Boxes"
+            value={data.total_boxes != null ? String(data.total_boxes) : ""}
+            fieldPath="total_boxes"
+            type="number"
+            {...fieldProps}
+          />
+          <EditableField
+            label="Gross Weight (kg)"
+            value={data.total_gross_weight_kg != null ? String(data.total_gross_weight_kg) : ""}
+            fieldPath="total_gross_weight_kg"
+            type="number"
+            {...fieldProps}
+          />
+          <EditableField
+            label="Net Weight (kg)"
+            value={data.total_net_weight_kg != null ? String(data.total_net_weight_kg) : ""}
+            fieldPath="total_net_weight_kg"
+            type="number"
+            {...fieldProps}
+          />
+        </div>
+      </SectionCard>
 
-      {/* Weight Summary */}
-      <SectionHeader icon={Scale} title="Weight Summary" />
-      <div className="grid grid-cols-3 gap-x-4 gap-y-3">
-        <EditableField
-          label="Total Boxes"
-          value={data.total_boxes != null ? String(data.total_boxes) : ""}
-          fieldPath="total_boxes"
-          type="number"
-          {...fieldProps}
-        />
-        <EditableField
-          label="Gross Weight (kg)"
-          value={data.total_gross_weight_kg != null ? String(data.total_gross_weight_kg) : ""}
-          fieldPath="total_gross_weight_kg"
-          type="number"
-          {...fieldProps}
-        />
-        <EditableField
-          label="Net Weight (kg)"
-          value={data.total_net_weight_kg != null ? String(data.total_net_weight_kg) : ""}
-          fieldPath="total_net_weight_kg"
-          type="number"
-          {...fieldProps}
-        />
-      </div>
-
-      {/* Files */}
+      {/* ── Source Documents ──────────────────────────────── */}
       {(draft.files.length > 0 || isActionable) && (
-        <>
-          <Separator className="my-5" />
-          <SectionHeader icon={Paperclip} title={`Source Documents (${draft.files.length})`} />
+        <SectionCard
+          icon={Paperclip}
+          title={`Source Documents (${draft.files.length})`}
+          iconColor="text-rose-600 dark:text-rose-400"
+          bgColor="bg-rose-50/30 dark:bg-rose-950/20"
+          borderColor="border-rose-200/50 dark:border-rose-900/40"
+        >
           <div className="flex flex-wrap gap-2">
             {draft.files.map((f) => (
-              <Badge key={f.id} variant="outline" className="gap-1.5 pr-1 font-normal">
+              <Badge key={f.id} variant="outline" className="gap-1.5 pr-1 font-normal bg-background/80">
                 <FileText className="h-3 w-3" />
                 {f.filename}
                 {f.file_type && (
@@ -435,7 +518,7 @@ export function OverviewTab({
           {isActionable && (
             <AddFilesButton draftId={draft.id} onAddFiles={onAddFiles} />
           )}
-        </>
+        </SectionCard>
       )}
     </TabsContent>
   );
