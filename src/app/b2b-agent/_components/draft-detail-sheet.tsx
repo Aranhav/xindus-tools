@@ -357,7 +357,8 @@ export function DraftDetailSheet({
 
             {/* ── Addresses tab (Billing + IOR only) ────────── */}
             <TabsContent value="addresses" className="mt-0 px-6 py-4">
-              <div className="space-y-4">
+              <div className="relative space-y-0">
+                {/* Billing card */}
                 <AddressForm
                   label="Billing (Consignee)"
                   address={data.billing_address}
@@ -365,7 +366,15 @@ export function DraftDetailSheet({
                   confidence={draft.confidence_scores?.billing_address as Record<string, number> | undefined}
                   sellerDefault={sellerDefaults.billing_address as ShipmentAddress | undefined}
                   onCorrections={addCorrections}
+                  icon="billing"
                 />
+                {/* Connector */}
+                <div className="relative z-10 flex justify-center -my-1.5">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full border bg-background shadow-sm">
+                    <ArrowRight className="h-3.5 w-3.5 rotate-90 text-muted-foreground" />
+                  </div>
+                </div>
+                {/* IOR card */}
                 <AddressForm
                   label="Importer of Record"
                   address={data.ior_address}
@@ -373,6 +382,7 @@ export function DraftDetailSheet({
                   confidence={draft.confidence_scores?.ior_address as Record<string, number> | undefined}
                   sellerDefault={sellerDefaults.ior_address as ShipmentAddress | undefined}
                   onCorrections={addCorrections}
+                  icon="ior"
                 />
               </div>
             </TabsContent>
