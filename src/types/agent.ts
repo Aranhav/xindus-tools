@@ -189,6 +189,25 @@ export interface SellerMatchResult {
   match_reason?: string;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Xindus customer (from platform DB via Metabase)                   */
+/* ------------------------------------------------------------------ */
+
+export interface XindusCustomer {
+  id: number;
+  crn_number: string | null;
+  company: string;
+  contact_name: string | null;
+  email: string;
+  phone: string;
+  iec: string | null;
+  gstn: string | null;
+  status: string;
+  shipment_count: number | null;
+  city: string | null;
+  state: string | null;
+}
+
 export interface SellerHistoricalDefaults {
   destination_clearance?: string;
   destination_clearance_count?: number;
