@@ -49,6 +49,7 @@ import {
   CURRENCY_OPTIONS,
   MARKETPLACE_OPTIONS,
   COUNTRY_OPTIONS,
+  PORT_OF_ENTRY_OPTIONS,
 } from "./editable-fields";
 import type { ShipmentData, DraftDetail } from "@/types/agent";
 
@@ -513,7 +514,7 @@ export function OverviewTab({
         bgColor="bg-orange-50/30 dark:bg-orange-950/20"
         borderColor="border-orange-200/50 dark:border-orange-900/40"
       >
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <ToggleField
             label="Self Drop"
             value={data.self_drop}
@@ -532,13 +533,21 @@ export function OverviewTab({
             fieldPath="self_destination_clearance"
             onChanged={addFieldCorrection}
           />
+          <ToggleField
+            label="Multi Address Delivery"
+            value={data.multi_address_destination_delivery}
+            fieldPath="multi_address_destination_delivery"
+            onChanged={addFieldCorrection}
+          />
         </div>
         <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
-          <EditableField
+          <SelectField
             label="Port of Entry"
             value={data.port_of_entry}
             fieldPath="port_of_entry"
-            {...fieldProps}
+            options={PORT_OF_ENTRY_OPTIONS}
+            onChanged={addFieldCorrection}
+            sellerDefault={sellerDefaults?.port_of_entry as string | undefined}
           />
           <EditableField
             label="Destination CHA"

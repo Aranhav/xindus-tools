@@ -22,6 +22,27 @@ export const TAX_OPTIONS = ["GST", "LUT"];
 export const CURRENCY_OPTIONS = ["USD", "EUR", "GBP", "INR", "AUD", "CAD", "AED", "SGD", "JPY", "CNY"];
 export const MARKETPLACE_OPTIONS = ["AMAZON", "AMAZON_FBA", "ETSY", "ETSY_USA", "EBAY", "WALMART", "WALMART_WFS", "FAIRE", "SHOPIFY", "OTHER", "NONE"];
 export const COUNTRY_OPTIONS = ["US", "GB", "AU", "AE", "JP", "DE", "FR", "CA"];
+export const PORT_OF_ENTRY_OPTIONS = [
+  "JFK-DHL-ALS", "SFO-BoxC-BoxC", "JFK-SKP-IBC", "SFO-DHL-ALS", "JFK-UBI-WC",
+  "JFK-USPS-ALS", "JFK-SKP-ALS", "DFW-SKP-IBC", "SFO-SKP-ALS", "LHR-ARAMEX-ARAMEX",
+  "ORD-SKP-IBC", "JFK-BoxC-BoxC", "ORD-DHL-ALS", "JFK-NYSFS-ALS", "SFO-SKP-IBC",
+  "JFK-Maximyze-ALS", "JFK-Tusk-ALS", "ORD-SKP-ALS", "SFO-USPS-ALS", "JFK-DHL-IBC",
+  "ORD-USPS-ALS", "JFK-PANDION-ALS", "ORD-BoxC-BoxC", "JFK-UBI-ALS", "LAX-BoxC-BoxC",
+  "ORD-Tusk-ALS", "JFK-SmartKargo-WC", "JFK-NYSFS-WC", "JFK-BT-ALS", "JFK-PB-IBC",
+  "LAX-UBI-WC", "LAX-SKP-Longo", "JFK-SKP-Longo", "JFK-United-Longo", "JFK-United-Mark3",
+  "ORD-DHL-IBC", "ORD-BT-ALS", "JFK-Shipbae-WC", "LAX-SmartKargo-WC", "LAX-Shipbae-WC",
+  "LAX-SKP-Johnson", "LAX-United-Longo", "LAX-United-Mark3", "LAX-NYSFS-WC",
+  "SFO-SKP-GPS", "SFO-FAR800-ALS", "SFO-FAR800-ALS-GROUND", "SFO-FAR800-ALS-MWT",
+  "SFO-ONTRACK-ALS", "DFW-DHL-ALS", "DFW-PB-IBC", "DFW-Skypostal-ALS",
+  "DFW-FAR800-ALS-MWT", "ORD-Maximyze-ALS", "ORD-PANDION-ALS",
+  "ORD-FAR800-ALS-GROUND", "ORD-FAR800-ALS-MWT", "ORD-FAR800-PG-GROUND", "ORD-FAR800-PG-MWT",
+  "JFK-FAR800-ALS-GROUND", "JFK-FAR800-ALS-MWT", "JFK-FAR800-IBC-MWT", "JFK-FAR800-Silq-MWT",
+  "JFK-PANDION-IBC", "JFK-ShipX-ALS", "JFK-Amazon-ALS", "JFK-DHL-BOMBINO",
+  "JFK-USPS-IBC", "JFK-LTL/FTL",
+  "EWR-SKP-PG", "EWR-FAR800-PG-GROUND", "EWR-FAR800-PG-MWT",
+  "LHR-DPD", "LHR-RSA", "LHR-FAR800-PG-MWT", "LHR-Starlinks-BOMBINO",
+  "AUS-ARAMEX-ARAMEX", "UAE-Aramex-Aramex", "RSA-DXB",
+];
 
 /* ── Section header ───────────────────────────────────────── */
 
@@ -197,14 +218,14 @@ export function ToggleField({
   onChanged: (path: string, oldVal: unknown, newVal: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-md border px-3 py-2">
-      <span className="text-xs">{label}</span>
+    <div className="flex items-center justify-between rounded-md border px-3 py-2.5">
+      <span className="text-xs font-medium">{label}</span>
       <Switch
         checked={value}
         onCheckedChange={(v) => {
           if (v !== value) onChanged(fieldPath, value, v);
         }}
-        className="scale-90"
+        className="h-5 w-9 data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground/30 [&_[data-slot=switch-thumb]]:size-4"
       />
     </div>
   );
