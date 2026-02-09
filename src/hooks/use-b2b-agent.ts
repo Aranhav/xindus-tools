@@ -269,6 +269,8 @@ export function useB2BAgent() {
         if (!res.ok) throw new Error("Failed to apply corrections");
         const data: DraftDetail = await res.json();
         setActiveDraft(data);
+        // Refresh the drafts list so the table shows updated values
+        fetchDrafts();
         return data;
       } catch (err) {
         setError((err as Error).message);
@@ -277,7 +279,7 @@ export function useB2BAgent() {
         setLoading(false);
       }
     },
-    [],
+    [fetchDrafts],
   );
 
   // ── Approve draft ───────────────────────────────────────────
@@ -503,6 +505,8 @@ export function useB2BAgent() {
         const data: DraftDetail = await res.json();
         setActiveDraft(data);
         setSellerProfile(data.seller ?? null);
+        // Refresh the drafts list so the table reflects seller changes
+        fetchDrafts();
         return data;
       } catch (err) {
         setError((err as Error).message);
@@ -511,7 +515,7 @@ export function useB2BAgent() {
         setLoading(false);
       }
     },
-    [],
+    [fetchDrafts],
   );
 
   return {

@@ -107,6 +107,24 @@ ShipmentData {
 - `product_details` = customs declaration summary (separate list, not derived from boxes)
 - `shipment_box_items` = physical items inside each box (detailed item-level data)
 
+## B2B Sheet Generator (Python Backend)
+
+The B2B agent frontend proxies to a Python/FastAPI backend that handles document extraction, seller intelligence, and draft management.
+
+- **Repo**: `Aranhav/b2b-sheet-generator` at `/Users/aranhavsingh/Projects/B2b sheet generator/`
+- **Stack**: FastAPI, Python 3.11, asyncpg, PostgreSQL, Anthropic Claude
+- **Key endpoints** (proxied via `proxyFetch("b2b", ...)`):
+  - `POST /api/agent/upload` — Upload documents to a batch
+  - `GET /api/agent/stream/{batch_id}` — SSE stream for extraction progress
+  - `GET /api/agent/drafts/{draft_id}` — Get draft with seller, corrections
+  - `PATCH /api/agent/drafts/{draft_id}/correct` — Apply corrections (seller_id special-cased to update DB column)
+  - `GET /api/agent/sellers/match?name=X` — Match or create seller by name
+- **DB tables (Railway PostgreSQL)**:
+  - `sellers` — id UUID, name, normalized_name UNIQUE, defaults JSONB, shipper_address JSONB
+  - `draft_shipments` — seller_id UUID FK, shipment_data JSONB, corrected_data JSONB
+  - `corrections`, `upload_batches`, `uploaded_files`, `draft_shipment_files`
+- **Seller intelligence**: `match_or_create_seller()` always returns a seller (exact match → fuzzy@85% → create new). On approval, `harvest_seller_defaults()` learns from the shipment.
+
 ## Database Reference (Xindus UAT)
 - `customers` table — company name, IEC, GSTN for seller matching
 - `addresses` table — typed addresses (S/P/B/I/R) per customer
