@@ -142,6 +142,7 @@ export interface ShipmentData {
   // References
   export_reference: string;
   shipment_references: string;
+  expected_load: string;
   exporter_category: string;
   marketplace: string;
 

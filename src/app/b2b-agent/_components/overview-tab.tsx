@@ -466,13 +466,6 @@ export function OverviewTab({
             fieldPath="invoice_date"
             {...fieldProps}
           />
-          <EditableField
-            label="Total Amount"
-            value={data.total_amount != null ? String(data.total_amount) : ""}
-            fieldPath="total_amount"
-            type="number"
-            {...fieldProps}
-          />
           <SelectField
             label="Shipping Currency"
             value={data.shipping_currency}
@@ -490,17 +483,15 @@ export function OverviewTab({
             sellerDefault={sellerDefaults?.billing_currency as string | undefined}
           />
           <EditableField
-            label="Export Reference"
-            value={data.export_reference}
-            fieldPath="export_reference"
-            {...fieldProps}
-          />
-        </div>
-        <div className="mt-3">
-          <EditableField
-            label="Shipment References"
+            label="Order Number"
             value={data.shipment_references}
             fieldPath="shipment_references"
+            {...fieldProps}
+          />
+          <EditableField
+            label="Expected Load"
+            value={data.expected_load || ""}
+            fieldPath="expected_load"
             {...fieldProps}
           />
         </div>
