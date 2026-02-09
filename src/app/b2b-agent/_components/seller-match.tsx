@@ -109,6 +109,7 @@ export function SellerMatch({
   const handleSelectCustomer = useCallback(
     async (customer: XindusCustomer) => {
       setNoMatchName(null);
+      setAutoMatch(null);
       setLinking(true);
       try {
         // Search Python backend by company name to get the correct seller UUID
@@ -116,15 +117,25 @@ export function SellerMatch({
         if (match) {
           setLinkedCustomer(customer);
           setChangingSeller(false);
-          await onLink(match.seller.id); // Correct Python backend seller ID
+          await onLink(match.seller.id);
         } else {
-          setNoMatchName(customer.company);
+          // No Python seller profile — apply shipper info from Xindus customer
+          const corrections: CorrectionItem[] = [];
+          if (customer.company)
+            corrections.push({ field_path: "shipper_address.name", old_value: null, new_value: customer.company });
+          if (customer.email)
+            corrections.push({ field_path: "shipper_address.email", old_value: null, new_value: customer.email });
+          if (customer.phone)
+            corrections.push({ field_path: "shipper_address.phone", old_value: null, new_value: customer.phone });
+          if (corrections.length > 0) onApplyDefaults(corrections);
+          setLinkedCustomer(customer);
+          setChangingSeller(false);
         }
       } finally {
         setLinking(false);
       }
     },
-    [onSearch, onLink],
+    [onSearch, onLink, onApplyDefaults],
   );
 
   const handleLinkAutoMatch = useCallback(async () => {
@@ -151,28 +162,40 @@ export function SellerMatch({
 
   /* ── LINKED STATE ───────────────────────────────────────── */
 
-  if (currentSeller && !changingSeller) {
-    const defaults = currentSeller.defaults || {};
+  if ((currentSeller || linkedCustomer) && !changingSeller) {
+    const isFullyLinked = !!currentSeller;
+    const displayName = currentSeller?.name ?? linkedCustomer?.company ?? "";
+    const defaults = currentSeller?.defaults || {};
     const defaultCount = Object.keys(defaults).length;
     return (
-      <div className="rounded-lg border border-emerald-200/60 bg-emerald-50/40 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+      <div className={`rounded-lg border ${
+        isFullyLinked
+          ? "border-emerald-200/60 bg-emerald-50/40 dark:border-emerald-900/40 dark:bg-emerald-950/20"
+          : "border-blue-200/60 bg-blue-50/30 dark:border-blue-900/40 dark:bg-blue-950/20"
+      }`}>
         {/* Header */}
         <div
           className="flex cursor-pointer items-center gap-2.5 px-4 py-2.5"
           onClick={() => setExpanded(!expanded)}
         >
-          <UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+          <UserCheck className={`h-4 w-4 ${isFullyLinked ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"}`} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-sm font-medium">{currentSeller.name}</span>
+              <span className="text-sm font-medium">{displayName}</span>
               {linkedCustomer?.crn_number && (
                 <Badge variant="outline" className="text-[10px] font-mono font-normal">
                   {linkedCustomer.crn_number}
                 </Badge>
               )}
-              <Badge variant="outline" className="text-[10px] font-normal text-emerald-700 dark:text-emerald-300">
-                {currentSeller.shipment_count} shipment{currentSeller.shipment_count !== 1 ? "s" : ""}
-              </Badge>
+              {isFullyLinked ? (
+                <Badge variant="outline" className="text-[10px] font-normal text-emerald-700 dark:text-emerald-300">
+                  {currentSeller.shipment_count} shipment{currentSeller.shipment_count !== 1 ? "s" : ""}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-[10px] font-normal text-blue-700 dark:text-blue-300">
+                  Xindus Customer
+                </Badge>
+              )}
             </div>
           </div>
           {isActionable && (
@@ -193,10 +216,12 @@ export function SellerMatch({
 
         {/* Expanded details */}
         {expanded && (
-          <div className="space-y-3 border-t border-emerald-200/60 px-4 py-3 dark:border-emerald-900/40">
+          <div className={`space-y-3 border-t px-4 py-3 ${
+            isFullyLinked ? "border-emerald-200/60 dark:border-emerald-900/40" : "border-blue-200/40 dark:border-blue-900/30"
+          }`}>
             {linkedCustomer && <CustomerProfile customer={linkedCustomer} />}
 
-            {defaultCount > 0 && isActionable && (
+            {isFullyLinked && defaultCount > 0 && isActionable && (
               <div>
                 <p className="mb-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
                   Learned Defaults
@@ -227,6 +252,12 @@ export function SellerMatch({
                 </Button>
               </div>
             )}
+
+            {!isFullyLinked && (
+              <p className="text-[10px] text-muted-foreground">
+                Shipper info queued from Xindus. Click Save to apply.
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -235,14 +266,15 @@ export function SellerMatch({
 
   /* ── CHANGING STATE ─────────────────────────────────────── */
 
-  if (changingSeller && currentSeller) {
+  if (changingSeller) {
+    const previousName = currentSeller?.name ?? linkedCustomer?.company ?? "";
     return (
       <div className="rounded-lg border border-blue-200/60 bg-blue-50/30 dark:border-blue-900/40 dark:bg-blue-950/20">
         <div className="flex items-center gap-2.5 px-4 py-2.5">
           <RefreshCw className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Change seller</p>
-            <p className="text-[11px] text-blue-600/80">Current: {currentSeller.name}</p>
+            {previousName && <p className="text-[11px] text-blue-600/80">Current: {previousName}</p>}
           </div>
           <Button
             size="sm" variant="ghost"
@@ -256,7 +288,7 @@ export function SellerMatch({
         <div className="border-t border-blue-200/40 px-4 py-2.5 dark:border-blue-900/30">
           <CustomerCombobox
             onSelect={handleSelectCustomer}
-            initialQuery={currentSeller.name}
+            initialQuery={previousName}
             placeholder="Type new company name..."
           />
           {linking && <LinkingIndicator />}
