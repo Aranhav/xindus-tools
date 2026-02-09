@@ -23,6 +23,8 @@ import {
   TAX_OPTIONS,
   CURRENCY_OPTIONS,
   MARKETPLACE_OPTIONS,
+  EXPORTER_CATEGORY_OPTIONS,
+  COUNTRY_OPTIONS,
 } from "./editable-fields";
 import type { ShipmentData, DraftDetail } from "@/types/agent";
 
@@ -75,12 +77,10 @@ export function OverviewTab({
           onChanged={addFieldCorrection}
           sellerDefault={sellerDefaults?.destination_clearance_type as string | undefined}
         />
-        <EditableField
-          label="Shipping Method"
-          value={data.shipping_method}
-          fieldPath="shipping_method"
-          {...fieldProps}
-        />
+        <div className="space-y-1">
+          <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Shipping Method</Label>
+          <p className="text-sm font-medium">Xindus Express B2B</p>
+        </div>
         <SelectField
           label="Purpose"
           value={data.purpose_of_booking}
@@ -105,11 +105,13 @@ export function OverviewTab({
           onChanged={addFieldCorrection}
           sellerDefault={sellerDefaults?.tax_type as string | undefined}
         />
-        <EditableField
+        <SelectField
           label="Destination Country"
           value={data.country}
           fieldPath="country"
-          {...fieldProps}
+          options={COUNTRY_OPTIONS}
+          onChanged={addFieldCorrection}
+          sellerDefault={sellerDefaults?.country as string | undefined}
         />
         <SelectField
           label="Marketplace"
@@ -119,11 +121,13 @@ export function OverviewTab({
           onChanged={addFieldCorrection}
           sellerDefault={sellerDefaults?.marketplace as string | undefined}
         />
-        <EditableField
+        <SelectField
           label="Exporter Category"
           value={data.exporter_category}
           fieldPath="exporter_category"
-          {...fieldProps}
+          options={EXPORTER_CATEGORY_OPTIONS}
+          onChanged={addFieldCorrection}
+          sellerDefault={sellerDefaults?.exporter_category as string | undefined}
         />
       </div>
 
@@ -133,12 +137,6 @@ export function OverviewTab({
           label="Amazon FBA"
           value={data.amazon_fba}
           fieldPath="amazon_fba"
-          onChanged={addFieldCorrection}
-        />
-        <ToggleField
-          label="Multi-Address"
-          value={data.multi_address_destination_delivery}
-          fieldPath="multi_address_destination_delivery"
           onChanged={addFieldCorrection}
         />
       </div>

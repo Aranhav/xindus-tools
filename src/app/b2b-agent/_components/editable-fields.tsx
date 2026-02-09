@@ -17,10 +17,12 @@ import {
 
 export const PURPOSE_OPTIONS = ["Sold", "Sample", "Gift", "Not Sold", "Personal Effects", "Return and Repair"];
 export const TERMS_OPTIONS = ["DDP", "DDU", "DAP", "CIF"];
-export const DEST_CLEARANCE_OPTIONS = ["Formal", "Informal", "T86"];
+export const DEST_CLEARANCE_OPTIONS = ["Formal", "Informal"];
 export const TAX_OPTIONS = ["GST", "LUT"];
 export const CURRENCY_OPTIONS = ["USD", "EUR", "GBP", "INR", "AUD", "CAD", "AED", "SGD", "JPY", "CNY"];
-export const MARKETPLACE_OPTIONS = ["AMAZON_FBA", "WALMART_WFS", "FAIRE", "OTHER", "NONE"];
+export const MARKETPLACE_OPTIONS = ["AMAZON", "AMAZON_FBA", "ETSY", "ETSY_USA", "EBAY", "WALMART", "WALMART_WFS", "FAIRE", "SHOPIFY", "OTHER", "NONE"];
+export const EXPORTER_CATEGORY_OPTIONS = ["Manufacturer Exporter", "Merchant Exporter", "Merchant Cum Manufacturer Exporter", "Service Provider", "Others"];
+export const COUNTRY_OPTIONS = ["US", "GB", "AU", "AE", "JP", "DE", "FR", "CA"];
 
 /* ── Section header ───────────────────────────────────────── */
 
