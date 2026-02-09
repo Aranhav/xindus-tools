@@ -112,25 +112,25 @@ export function SellerMatch({
       setAutoMatch(null);
       setLinking(true);
       try {
+        // Always apply shipper address from Xindus customer
+        const shipperCorrections: CorrectionItem[] = [];
+        if (customer.company)
+          shipperCorrections.push({ field_path: "shipper_address.name", old_value: null, new_value: customer.company });
+        if (customer.email)
+          shipperCorrections.push({ field_path: "shipper_address.email", old_value: null, new_value: customer.email });
+        if (customer.phone)
+          shipperCorrections.push({ field_path: "shipper_address.phone", old_value: null, new_value: customer.phone });
+
         // Search Python backend by company name to get the correct seller UUID
         const match = await onSearch(customer.company);
         if (match) {
-          setLinkedCustomer(customer);
-          setChangingSeller(false);
           await onLink(match.seller.id);
-        } else {
-          // No Python seller profile — apply shipper info from Xindus customer
-          const corrections: CorrectionItem[] = [];
-          if (customer.company)
-            corrections.push({ field_path: "shipper_address.name", old_value: null, new_value: customer.company });
-          if (customer.email)
-            corrections.push({ field_path: "shipper_address.email", old_value: null, new_value: customer.email });
-          if (customer.phone)
-            corrections.push({ field_path: "shipper_address.phone", old_value: null, new_value: customer.phone });
-          if (corrections.length > 0) onApplyDefaults(corrections);
-          setLinkedCustomer(customer);
-          setChangingSeller(false);
         }
+
+        // Apply shipper corrections regardless of match
+        if (shipperCorrections.length > 0) onApplyDefaults(shipperCorrections);
+        setLinkedCustomer(customer);
+        setChangingSeller(false);
       } finally {
         setLinking(false);
       }
@@ -151,6 +151,8 @@ export function SellerMatch({
       corrections.push({ field_path: "destination_clearance_type", old_value: null, new_value: d.destination_clearance_type });
     if (d.terms_of_trade)
       corrections.push({ field_path: "terms_of_trade", old_value: null, new_value: d.terms_of_trade });
+    if (seller.shipper_address && typeof seller.shipper_address === "object" && (seller.shipper_address as Record<string, unknown>).name)
+      corrections.push({ field_path: "shipper_address", old_value: null, new_value: seller.shipper_address });
     if (d.billing_address && typeof d.billing_address === "object" && (d.billing_address as ShipmentAddress).name)
       corrections.push({ field_path: "billing_address", old_value: null, new_value: d.billing_address });
     if (d.ior_address && typeof d.ior_address === "object" && (d.ior_address as ShipmentAddress).name)
