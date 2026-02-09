@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ConfidenceBadge } from "@/components/confidence-badge";
 import type { ShipmentAddress, CorrectionItem } from "@/types/agent";
 
-const ADDRESS_FIELDS = [
+export const ADDRESS_FIELDS = [
   { key: "name", label: "Name" },
   { key: "address", label: "Address" },
   { key: "city", label: "City" },

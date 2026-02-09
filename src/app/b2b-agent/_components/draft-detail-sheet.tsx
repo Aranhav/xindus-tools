@@ -153,6 +153,52 @@ export function DraftDetailSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localBoxes]);
 
+  /* ── Receiver sync: box[0] receiver → top-level receiver_address ── */
+
+  useEffect(() => {
+    if (!localBoxes || data?.multi_address_destination_delivery) return;
+    const firstReceiver = localBoxes[0]?.receiver_address;
+    if (!firstReceiver) return;
+    const timer = setTimeout(() => {
+      const d = draftRef.current;
+      const dd = dataRef.current;
+      if (!d || !dd) return;
+      const current = dd.receiver_address as unknown as Record<string, string>;
+      const corrections: CorrectionItem[] = [];
+      for (const key of ["name", "address", "city", "state", "zip", "country", "phone", "email"] as const) {
+        const newVal = (firstReceiver as unknown as Record<string, string>)[key] || "";
+        const oldVal = String(current?.[key] ?? "");
+        if (newVal !== oldVal) {
+          corrections.push({ field_path: `receiver_address.${key}`, old_value: oldVal, new_value: newVal });
+        }
+      }
+      if (corrections.length > 0) {
+        onCorrect(d.id, corrections);
+      }
+    }, 900);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localBoxes]);
+
+  /* ── Initialize: populate empty box receivers from top-level ── */
+
+  useEffect(() => {
+    if (!data || !draft) return;
+    if (data.multi_address_destination_delivery) return;
+    const topReceiver = data.receiver_address;
+    if (!topReceiver?.name) return;
+    const currentBoxes = data.shipment_boxes;
+    if (!currentBoxes?.length) return;
+    // Check if any box has an empty receiver
+    const needsInit = currentBoxes.some((b: ShipmentBox) => !b.receiver_address?.name);
+    if (!needsInit) return;
+    const updated = currentBoxes.map((b: ShipmentBox) =>
+      b.receiver_address?.name ? b : { ...b, receiver_address: { ...topReceiver } }
+    );
+    setLocalBoxes(updated);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft?.id]);
+
   /* ── Auto-save: products (debounced 800ms) ─────────────── */
 
   useEffect(() => {
@@ -309,24 +355,9 @@ export function DraftDetailSheet({
               loading={loading}
             />
 
-            {/* ── Addresses tab ─────────────────────────────── */}
+            {/* ── Addresses tab (Billing + IOR only) ────────── */}
             <TabsContent value="addresses" className="mt-0 px-6 py-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <AddressForm
-                  label="Shipper"
-                  address={data.shipper_address}
-                  basePath="shipper_address"
-                  confidence={draft.confidence_scores?.shipper_address as Record<string, number> | undefined}
-                  sellerDefault={sellerProfile?.shipper_address as ShipmentAddress | undefined}
-                  onCorrections={addCorrections}
-                />
-                <AddressForm
-                  label="Receiver"
-                  address={data.receiver_address}
-                  basePath="receiver_address"
-                  confidence={draft.confidence_scores?.receiver_address as Record<string, number> | undefined}
-                  onCorrections={addCorrections}
-                />
+              <div className="space-y-4">
                 <AddressForm
                   label="Billing (Consignee)"
                   address={data.billing_address}
@@ -356,7 +387,7 @@ export function DraftDetailSheet({
                   Saving...
                 </Badge>
               )}
-              <BoxEditor boxes={boxes} onChange={setLocalBoxes} />
+              <BoxEditor boxes={boxes} onChange={setLocalBoxes} multiAddress={!!data.multi_address_destination_delivery} />
             </TabsContent>
 
             {/* ── Customs Products tab ──────────────────────── */}

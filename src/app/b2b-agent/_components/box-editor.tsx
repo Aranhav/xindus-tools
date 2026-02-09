@@ -15,170 +15,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { emptyBox, emptyItem, ItemRow } from "./box-item-row";
+import { BoxReceiverSection } from "./box-receiver-section";
 import type { ShipmentBox, ShipmentBoxItem, ShipmentAddress } from "@/types/agent";
-
-/* ── Empty factories ──────────────────────────────────────── */
-
-function emptyAddress(): ShipmentAddress {
-  return {
-    name: "", email: "", phone: "", address: "", city: "", zip: "",
-    district: "", state: "", country: "", extension_number: "",
-    eori_number: "", contact_name: "", contact_phone: "",
-    warehouse_id: null, type: null,
-  };
-}
-
-function emptyItem(): ShipmentBoxItem {
-  return {
-    description: "", quantity: 1, weight: null, unit_price: null,
-    total_price: null, ehsn: "", ihsn: "", country_of_origin: "IN",
-    category: "", market_place: "", igst_amount: null, duty_rate: null,
-    vat_rate: null, unit_fob_value: null, fob_value: null,
-    listing_price: null, cogs_value: null, insurance: null, remarks: "",
-  };
-}
-
-function emptyBox(index: number): ShipmentBox {
-  return {
-    box_id: String(index + 1),
-    weight: 0, width: 0, length: 0, height: 0,
-    uom: "cm", has_battery: false, remarks: "",
-    receiver_address: emptyAddress(),
-    shipment_box_items: [emptyItem()],
-  };
-}
-
-/* ── Item row editor ──────────────────────────────────────── */
-
-function ItemRow({
-  item,
-  index,
-  onChange,
-  onRemove,
-}: {
-  item: ShipmentBoxItem;
-  index: number;
-  onChange: (index: number, item: ShipmentBoxItem) => void;
-  onRemove: (index: number) => void;
-}) {
-  const set = (field: keyof ShipmentBoxItem, value: unknown) => {
-    onChange(index, { ...item, [field]: value });
-  };
-
-  return (
-    <div className="group relative rounded-md border border-border/60 bg-muted/20 p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">Item {index + 1}</span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-destructive opacity-0 transition-opacity group-hover:opacity-100"
-          onClick={() => onRemove(index)}
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
-      </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <div className="col-span-2">
-          <Label className="text-[10px] text-muted-foreground">Description</Label>
-          <Input
-            value={item.description}
-            onChange={(e) => set("description", e.target.value)}
-            className="h-7 text-xs"
-            placeholder="Product description"
-          />
-        </div>
-        <div>
-          <Label className="text-[10px] text-muted-foreground">Qty</Label>
-          <Input
-            type="number"
-            value={item.quantity}
-            onChange={(e) => set("quantity", Number(e.target.value) || 0)}
-            className="h-7 text-xs"
-          />
-        </div>
-        <div>
-          <Label className="text-[10px] text-muted-foreground">Weight (kg)</Label>
-          <Input
-            type="number"
-            value={item.weight ?? ""}
-            onChange={(e) => set("weight", e.target.value ? Number(e.target.value) : null)}
-            className="h-7 text-xs"
-          />
-        </div>
-        <div>
-          <Label className="text-[10px] text-muted-foreground">Unit Price</Label>
-          <Input
-            type="number"
-            value={item.unit_price ?? ""}
-            onChange={(e) => set("unit_price", e.target.value ? Number(e.target.value) : null)}
-            className="h-7 text-xs"
-          />
-        </div>
-        <div>
-          <Label className="text-[10px] text-muted-foreground">Total Price</Label>
-          <Input
-            type="number"
-            value={item.total_price ?? ""}
-            onChange={(e) => set("total_price", e.target.value ? Number(e.target.value) : null)}
-            className="h-7 text-xs"
-          />
-        </div>
-        <div>
-          <Label className="text-[10px] text-muted-foreground">Export HSN</Label>
-          <Input
-            value={item.ehsn}
-            onChange={(e) => set("ehsn", e.target.value)}
-            className="h-7 font-mono text-xs"
-            placeholder="8-digit"
-          />
-        </div>
-        <div>
-          <Label className="text-[10px] text-muted-foreground">Import HSN</Label>
-          <Input
-            value={item.ihsn}
-            onChange={(e) => set("ihsn", e.target.value)}
-            className="h-7 font-mono text-xs"
-          />
-        </div>
-        <div>
-          <Label className="text-[10px] text-muted-foreground">Country of Origin</Label>
-          <Input
-            value={item.country_of_origin}
-            onChange={(e) => set("country_of_origin", e.target.value)}
-            className="h-7 text-xs"
-          />
-        </div>
-        <div>
-          <Label className="text-[10px] text-muted-foreground">FOB Value</Label>
-          <Input
-            type="number"
-            value={item.unit_fob_value ?? ""}
-            onChange={(e) => set("unit_fob_value", e.target.value ? Number(e.target.value) : null)}
-            className="h-7 text-xs"
-          />
-        </div>
-        <div>
-          <Label className="text-[10px] text-muted-foreground">IGST %</Label>
-          <Input
-            type="number"
-            value={item.igst_amount ?? ""}
-            onChange={(e) => set("igst_amount", e.target.value ? Number(e.target.value) : null)}
-            className="h-7 text-xs"
-          />
-        </div>
-        <div>
-          <Label className="text-[10px] text-muted-foreground">Category</Label>
-          <Input
-            value={item.category}
-            onChange={(e) => set("category", e.target.value)}
-            className="h-7 text-xs"
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ── Single box editor ────────────────────────────────────── */
 
@@ -187,11 +26,17 @@ function BoxCard({
   index,
   onChange,
   onRemove,
+  isShared,
+  canCopyFromFirst,
+  onCopyFromFirst,
 }: {
   box: ShipmentBox;
   index: number;
   onChange: (index: number, box: ShipmentBox) => void;
   onRemove: (index: number) => void;
+  isShared: boolean;
+  canCopyFromFirst: boolean;
+  onCopyFromFirst?: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -215,6 +60,10 @@ function BoxCard({
   const removeItem = (itemIdx: number) => {
     const items = box.shipment_box_items.filter((_, i) => i !== itemIdx);
     onChange(index, { ...box, shipment_box_items: items });
+  };
+
+  const handleReceiverChange = (addr: ShipmentAddress) => {
+    onChange(index, { ...box, receiver_address: addr });
   };
 
   const volWeight = ((box.length * box.width * box.height) / 5000).toFixed(2);
@@ -256,8 +105,17 @@ function BoxCard({
       {/* Box body (expanded) */}
       {expanded && (
         <div className="border-t px-3 py-3">
+          {/* Receiver address (editable) */}
+          <BoxReceiverSection
+            address={box.receiver_address}
+            onChange={handleReceiverChange}
+            isShared={isShared}
+            canCopyFromFirst={canCopyFromFirst}
+            onCopyFromFirst={onCopyFromFirst}
+          />
+
           {/* Dimensions row */}
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+          <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
             <div>
               <Label className="text-[10px] text-muted-foreground">Length</Label>
               <Input
@@ -325,13 +183,6 @@ function BoxCard({
             />
           </div>
 
-          {/* Receiver address (compact) */}
-          {box.receiver_address?.name && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              To: {[box.receiver_address.name, box.receiver_address.city, box.receiver_address.country].filter(Boolean).join(", ")}
-            </p>
-          )}
-
           <Separator className="my-3" />
 
           {/* Items */}
@@ -366,16 +217,28 @@ function BoxCard({
 interface BoxEditorProps {
   boxes: ShipmentBox[];
   onChange: (boxes: ShipmentBox[]) => void;
+  multiAddress: boolean;
 }
 
-export function BoxEditor({ boxes, onChange }: BoxEditorProps) {
+export function BoxEditor({ boxes, onChange, multiAddress }: BoxEditorProps) {
   const updateBox = useCallback(
     (index: number, box: ShipmentBox) => {
       const next = [...boxes];
       next[index] = box;
+
+      // Single-address mode: propagate receiver to all boxes
+      if (!multiAddress) {
+        const receiver = box.receiver_address;
+        for (let i = 0; i < next.length; i++) {
+          if (i !== index) {
+            next[i] = { ...next[i], receiver_address: { ...receiver } };
+          }
+        }
+      }
+
       onChange(next);
     },
-    [boxes, onChange],
+    [boxes, onChange, multiAddress],
   );
 
   const removeBox = useCallback(
@@ -386,8 +249,25 @@ export function BoxEditor({ boxes, onChange }: BoxEditorProps) {
   );
 
   const addBox = useCallback(() => {
-    onChange([...boxes, emptyBox(boxes.length)]);
-  }, [boxes, onChange]);
+    // In single-address mode, inherit receiver from box 0
+    const inheritReceiver = !multiAddress && boxes.length > 0
+      ? boxes[0].receiver_address
+      : undefined;
+    onChange([...boxes, emptyBox(boxes.length, inheritReceiver)]);
+  }, [boxes, onChange, multiAddress]);
+
+  const copyFromFirst = useCallback(
+    (targetIndex: number) => {
+      if (boxes.length === 0) return;
+      const next = [...boxes];
+      next[targetIndex] = {
+        ...next[targetIndex],
+        receiver_address: { ...boxes[0].receiver_address },
+      };
+      onChange(next);
+    },
+    [boxes, onChange],
+  );
 
   return (
     <div className="space-y-2">
@@ -398,6 +278,9 @@ export function BoxEditor({ boxes, onChange }: BoxEditorProps) {
           index={i}
           onChange={updateBox}
           onRemove={removeBox}
+          isShared={!multiAddress}
+          canCopyFromFirst={multiAddress && i > 0}
+          onCopyFromFirst={() => copyFromFirst(i)}
         />
       ))}
       <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={addBox}>
