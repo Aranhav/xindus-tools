@@ -23,7 +23,6 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Stat } from "./editable-fields";
 import { OverviewTab } from "./overview-tab";
 import { ProductsTab } from "./products-tab";
 import { AddressForm } from "./address-form";
@@ -211,9 +210,6 @@ export function DraftDetailSheet({
     onEditValueChange: setEditValue,
   };
 
-  const totalValue = data.total_amount ?? products.reduce((s, p) => s + (p.value || 0), 0);
-  const grossWeight = data.total_gross_weight_kg ?? boxes.reduce((s, b) => s + (b.weight || 0), 0);
-
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent side="right" className="flex flex-col p-0 sm:max-w-3xl" showCloseButton>
@@ -255,14 +251,6 @@ export function DraftDetailSheet({
                 Excel
               </Button>
             </div>
-          </div>
-
-          {/* Summary stats row */}
-          <div className="mt-3 grid grid-cols-4 gap-4 rounded-lg border bg-muted/30 px-4 py-3">
-            <Stat label="Total Value" value={totalValue ? `$${Number(totalValue).toLocaleString()}` : "---"} />
-            <Stat label="Boxes" value={boxes.length} />
-            <Stat label="Gross Weight" value={grossWeight ? `${grossWeight} kg` : "---"} />
-            <Stat label="Invoice Date" value={data.invoice_date || "---"} />
           </div>
 
           {/* Seller match */}
