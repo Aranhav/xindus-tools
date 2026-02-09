@@ -453,6 +453,31 @@ export function useB2BAgent() {
     [fetchDrafts],
   );
 
+  // ── Re-extract draft ──────────────────────────────────────
+
+  const reExtractDraft = useCallback(
+    async (draftId: string) => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/b2b-agent/drafts/${draftId}/re-extract`, {
+          method: "POST",
+        });
+        if (!res.ok) throw new Error("Failed to re-extract draft");
+        const data: DraftDetail = await res.json();
+        setActiveDraft(data);
+        setSellerProfile(data.seller ?? null);
+        fetchDrafts();
+        return data;
+      } catch (err) {
+        setError((err as Error).message);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchDrafts],
+  );
+
   // ── Search / match seller by name ─────────────────────────
 
   const searchSellers = useCallback(
@@ -543,6 +568,7 @@ export function useB2BAgent() {
     approveDraft,
     rejectDraft,
     archiveDraft,
+    reExtractDraft,
     deleteDraft,
     bulkApprove,
     bulkReject,

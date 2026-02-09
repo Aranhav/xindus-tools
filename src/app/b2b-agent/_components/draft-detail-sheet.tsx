@@ -10,6 +10,7 @@ import {
   Receipt,
   MapPin,
   Settings2,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +50,7 @@ interface DraftDetailSheetProps {
   onCorrect: (draftId: string, corrections: CorrectionItem[]) => void;
   onApprove: (draftId: string) => void;
   onReject: (draftId: string) => void;
+  onReExtract: (draftId: string) => Promise<void> | void;
   loading: boolean;
   sellerProfile?: SellerProfile | null;
   onSearchSeller: (name: string) => Promise<SellerMatchResult | null>;
@@ -62,6 +64,7 @@ export function DraftDetailSheet({
   onCorrect,
   onApprove,
   onReject,
+  onReExtract,
   loading,
   sellerProfile,
   onSearchSeller,
@@ -71,6 +74,7 @@ export function DraftDetailSheet({
   const [editValue, setEditValue] = useState("");
   const [localBoxes, setLocalBoxes] = useState<ShipmentBox[] | null>(null);
   const [localProducts, setLocalProducts] = useState<ProductDetail[] | null>(null);
+  const [reExtracting, setReExtracting] = useState(false);
 
   // Refs for stable access inside debounced effects
   const draftRef = useRef(draft);
@@ -390,6 +394,24 @@ export function DraftDetailSheet({
               </>
             )}
             <div className="flex-1" />
+            {isActionable && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={reExtracting || loading}
+                onClick={async () => {
+                  setReExtracting(true);
+                  try {
+                    await onReExtract(draft.id);
+                  } finally {
+                    setReExtracting(false);
+                  }
+                }}
+              >
+                <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${reExtracting ? "animate-spin" : ""}`} />
+                Re-extract
+              </Button>
+            )}
           </div>
         </div>
       </SheetContent>

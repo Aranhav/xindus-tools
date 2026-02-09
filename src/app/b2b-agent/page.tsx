@@ -190,6 +190,17 @@ export default function B2BAgentPage() {
     [agent],
   );
 
+  const handleReExtract = useCallback(
+    async (draftId: string) => {
+      const confirmed = window.confirm(
+        "Re-extract will re-run AI on source documents and discard manual corrections. Continue?"
+      );
+      if (!confirmed) return;
+      await agent.reExtractDraft(draftId);
+    },
+    [agent],
+  );
+
   const handleArchive = useCallback(
     async (draftId: string) => {
       await agent.archiveDraft(draftId);
@@ -326,6 +337,7 @@ export default function B2BAgentPage() {
         onCorrect={handleCorrect}
         onApprove={handleApprove}
         onReject={handleReject}
+        onReExtract={handleReExtract}
         loading={agent.loading}
         sellerProfile={agent.sellerProfile}
         onSearchSeller={agent.searchSellers}
