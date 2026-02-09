@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Xindus Tools
+
+Internal tools portal for Xindus — AI-powered shipment document processing, tracking, address validation, and product classification.
+
+## Tools
+
+| Tool | Route | Description |
+|------|-------|-------------|
+| **B2B Booking Agent** | `/b2b-agent` | Upload shipment documents, AI extracts and groups into draft B2B shipments for review and approval |
+| **IndiaPost Tracker** | `/tracking` | Single and bulk tracking for India Post shipments with timeline visualization |
+| **Address Validation** | `/address-validation` | US address validation and normalization via Claude AI + Smarty API |
+| **HSN Classifier** | `/hsn-classifier` | AI product classification by image or description for HSN/HTS codes with duty calculation |
+| **B2B Sheet Generator** | `/b2b-sheets` | Extract invoice and packing data from PDFs into formatted Excel sheets |
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router), React 19, TypeScript (strict)
+- **UI**: shadcn/ui (new-york), Tailwind CSS v4, Framer Motion
+- **Backend**: Next.js API routes proxy to Railway-hosted Python microservices
+- **Deployment**: Docker (node:20-alpine, standalone output), Railway
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# Install dependencies
+npm install
+
+# Copy environment variables
+cp .env.example .env.local
+# Edit .env.local with your backend service URLs
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── page.tsx                    # Dashboard
+│   ├── layout.tsx                  # Root layout (sidebar + topbar)
+│   ├── b2b-agent/                  # B2B Booking Agent
+│   │   ├── page.tsx
+│   │   └── _components/            # Agent-specific components
+│   ├── tracking/                   # IndiaPost Tracker
+│   ├── address-validation/         # Address Validation
+│   ├── hsn-classifier/             # HSN Classifier
+│   ├── b2b-sheets/                 # B2B Sheet Generator
+│   └── api/                        # API route handlers (proxies)
+├── components/
+│   ├── ui/                         # shadcn/ui primitives
+│   └── *.tsx                       # Shared custom components
+├── hooks/                          # Custom React hooks
+├── types/                          # TypeScript type definitions
+└── lib/                            # Utilities (API proxy, S3, helpers)
+```
 
-## Learn More
+## Architecture
 
-To learn more about Next.js, take a look at the following resources:
+All backend calls flow through Next.js API routes using a proxy pattern:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+Browser → Next.js API Route → Railway Backend Service
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The proxy is configured in `src/lib/api.ts` with service routing based on environment variables.
 
-## Deploy on Vercel
+## Build & Deploy
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+# Verify build passes (always do this before deploying)
+npx next build
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Build Docker image
+docker build -t xindus-tools .
+
+# Deploy via Railway
+# Uses Dockerfile builder with healthcheck at /api/health
+```
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `INDIAPOST_TRACKER_URL` | IndiaPost tracker service URL |
+| `ADDRESS_VALIDATION_URL` | Address validation service URL |
+| `B2B_SHEET_GENERATOR_URL` | B2B sheet generator / booking agent service URL |
+| `HSN_CLASSIFIER_URL` | HSN/HTS classifier service URL |

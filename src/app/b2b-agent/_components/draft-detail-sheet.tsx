@@ -1,32 +1,18 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import {
   CheckCircle2,
   XCircle,
-  FileText,
-  Pencil,
-  Check,
-  X,
-  Sparkles,
   Download,
-  Plus,
-  Trash2,
   ArrowRight,
   Package,
   Receipt,
   MapPin,
   Settings2,
-  Truck,
-  Scale,
-  Paperclip,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
@@ -35,14 +21,10 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Stat } from "./editable-fields";
+import { OverviewTab } from "./overview-tab";
+import { ProductsTab } from "./products-tab";
 import { AddressForm } from "./address-form";
 import { BoxEditor } from "./box-editor";
 import { SellerMatch } from "./seller-match";
@@ -57,254 +39,6 @@ import type {
   SellerProfile,
   SellerMatchResult,
 } from "@/types/agent";
-
-/* ── Option constants ─────────────────────────────────────── */
-
-const PURPOSE_OPTIONS = ["Sold", "Sample", "Gift", "Not Sold", "Personal Effects", "Return and Repair"];
-const TERMS_OPTIONS = ["DDP", "DDU", "DAP", "CIF"];
-const DEST_CLEARANCE_OPTIONS = ["Formal", "Informal", "T86"];
-const TAX_OPTIONS = ["GST", "LUT"];
-const CURRENCY_OPTIONS = ["USD", "EUR", "GBP", "INR", "AUD", "CAD", "AED", "SGD", "JPY", "CNY"];
-const MARKETPLACE_OPTIONS = ["AMAZON_FBA", "WALMART_WFS", "FAIRE", "OTHER", "NONE"];
-
-/* ── Section header ───────────────────────────────────────── */
-
-function SectionHeader({
-  icon: Icon,
-  title,
-  badge,
-  children,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  badge?: React.ReactNode;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center justify-between py-3">
-      <div className="flex items-center gap-2">
-        <Icon className="h-4 w-4 text-muted-foreground" />
-        <h3 className="text-sm font-semibold">{title}</h3>
-        {badge}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-/* ── Inline editable field ────────────────────────────────── */
-
-function EditableField({
-  label,
-  value,
-  fieldPath,
-  editingField,
-  editValue,
-  onStartEdit,
-  onConfirm,
-  onCancel,
-  onEditValueChange,
-  sellerDefault,
-  type = "text",
-}: {
-  label: string;
-  value: string;
-  fieldPath: string;
-  editingField: string | null;
-  editValue: string;
-  onStartEdit: (path: string, val: string) => void;
-  onConfirm: () => void;
-  onCancel: () => void;
-  onEditValueChange: (val: string) => void;
-  sellerDefault?: string;
-  type?: string;
-}) {
-  const isEditing = editingField === fieldPath;
-  const showDefault = sellerDefault && sellerDefault !== value && !isEditing;
-
-  return (
-    <div className="space-y-1">
-      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</Label>
-      {isEditing ? (
-        <div className="flex items-center gap-1">
-          <Input
-            type={type}
-            value={editValue}
-            onChange={(e) => onEditValueChange(e.target.value)}
-            className="h-7 text-xs"
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === "Enter") onConfirm();
-              if (e.key === "Escape") onCancel();
-            }}
-          />
-          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={onConfirm}>
-            <Check className="h-3 w-3" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={onCancel}>
-            <X className="h-3 w-3" />
-          </Button>
-        </div>
-      ) : (
-        <>
-          <p
-            className="group flex cursor-pointer items-center gap-1 text-sm hover:text-primary"
-            onClick={() => onStartEdit(fieldPath, value || "")}
-          >
-            {value ? (
-              <span className="font-medium">{value}</span>
-            ) : (
-              <span className="italic text-muted-foreground/60">Not set</span>
-            )}
-            <Pencil className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 text-muted-foreground" />
-          </p>
-          {showDefault && (
-            <button
-              type="button"
-              className="flex items-center gap-1 text-[11px] text-primary/70 hover:text-primary"
-              onClick={() => onStartEdit(fieldPath, sellerDefault)}
-            >
-              <Sparkles className="h-2.5 w-2.5" />
-              Default: {sellerDefault}
-            </button>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
-/* ── Select field ─────────────────────────────────────────── */
-
-function SelectField({
-  label,
-  value,
-  fieldPath,
-  options,
-  onChanged,
-}: {
-  label: string;
-  value: string;
-  fieldPath: string;
-  options: string[];
-  onChanged: (path: string, oldVal: unknown, newVal: string) => void;
-}) {
-  const safeOptions = options.filter(Boolean);
-  return (
-    <div className="space-y-1">
-      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</Label>
-      <Select
-        value={value || undefined}
-        onValueChange={(v) => {
-          if (v !== value) onChanged(fieldPath, value, v);
-        }}
-      >
-        <SelectTrigger className="h-7 text-xs">
-          <SelectValue placeholder="Select..." />
-        </SelectTrigger>
-        <SelectContent>
-          {safeOptions.map((opt) => (
-            <SelectItem key={opt} value={opt}>
-              {opt}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
-
-/* ── Toggle field ─────────────────────────────────────────── */
-
-function ToggleField({
-  label,
-  value,
-  fieldPath,
-  onChanged,
-}: {
-  label: string;
-  value: boolean;
-  fieldPath: string;
-  onChanged: (path: string, oldVal: unknown, newVal: boolean) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between rounded-md border px-3 py-2">
-      <span className="text-xs">{label}</span>
-      <Switch
-        checked={value}
-        onCheckedChange={(v) => {
-          if (v !== value) onChanged(fieldPath, value, v);
-        }}
-        className="scale-90"
-      />
-    </div>
-  );
-}
-
-/* ── Product row ──────────────────────────────────────────── */
-
-function ProductRow({
-  product,
-  index,
-  onChange,
-  onRemove,
-}: {
-  product: ProductDetail;
-  index: number;
-  onChange: (i: number, p: ProductDetail) => void;
-  onRemove: (i: number) => void;
-}) {
-  return (
-    <tr className="group border-b border-border/40 last:border-0">
-      <td className="py-1.5 pr-2">
-        <Input
-          value={product.product_description}
-          onChange={(e) => onChange(index, { ...product, product_description: e.target.value })}
-          className="h-7 text-xs"
-          placeholder="Product description"
-        />
-      </td>
-      <td className="py-1.5 pr-2">
-        <Input
-          value={product.hsn_code}
-          onChange={(e) => onChange(index, { ...product, hsn_code: e.target.value })}
-          className="h-7 font-mono text-xs"
-          placeholder="HSN code"
-        />
-      </td>
-      <td className="py-1.5 pr-2">
-        <Input
-          type="number"
-          value={product.value ?? ""}
-          onChange={(e) => onChange(index, { ...product, value: Number(e.target.value) || 0 })}
-          className="h-7 text-right text-xs"
-          placeholder="0"
-        />
-      </td>
-      <td className="py-1.5 text-right">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-destructive opacity-0 transition-opacity group-hover:opacity-100"
-          onClick={() => onRemove(index)}
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
-      </td>
-    </tr>
-  );
-}
-
-/* ── Summary stat ─────────────────────────────────────────── */
-
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div>
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="text-sm font-semibold">{value || "---"}</p>
-    </div>
-  );
-}
 
 /* ── Main Component ───────────────────────────────────────── */
 
@@ -427,12 +161,11 @@ export function DraftDetailSheet({
   );
 
   // Reset when draft changes
-  const prevDraftId = useMemo(() => draft?.id, [draft?.id]);
-  useMemo(() => {
+  useEffect(() => {
     setLocalBoxes(null);
     setLocalProducts(null);
     setPendingCorrections([]);
-  }, [prevDraftId]);
+  }, [draft?.id]);
 
   if (!draft || !data) {
     return (
@@ -548,223 +281,13 @@ export function DraftDetailSheet({
 
           <ScrollArea className="flex-1 min-h-0">
             {/* ── Overview tab ──────────────────────────────── */}
-            <TabsContent value="overview" className="mt-0 px-6 py-4">
-              {/* Shipment Configuration */}
-              <SectionHeader icon={Settings2} title="Shipment Configuration" />
-              <div className="grid grid-cols-3 gap-x-4 gap-y-3">
-                <div className="space-y-1">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Origin Clearance</Label>
-                  <p className="text-sm font-medium">Commercial</p>
-                </div>
-                <SelectField
-                  label="Dest. Clearance"
-                  value={data.destination_clearance_type}
-                  fieldPath="destination_clearance_type"
-                  options={DEST_CLEARANCE_OPTIONS}
-                  onChanged={addFieldCorrection}
-                />
-                <EditableField
-                  label="Shipping Method"
-                  value={data.shipping_method}
-                  fieldPath="shipping_method"
-                  {...fieldProps}
-                />
-                <SelectField
-                  label="Purpose"
-                  value={data.purpose_of_booking}
-                  fieldPath="purpose_of_booking"
-                  options={PURPOSE_OPTIONS}
-                  onChanged={addFieldCorrection}
-                />
-                <SelectField
-                  label="Terms of Trade"
-                  value={data.terms_of_trade}
-                  fieldPath="terms_of_trade"
-                  options={TERMS_OPTIONS}
-                  onChanged={addFieldCorrection}
-                />
-                <SelectField
-                  label="Tax Type"
-                  value={data.tax_type}
-                  fieldPath="tax_type"
-                  options={TAX_OPTIONS}
-                  onChanged={addFieldCorrection}
-                />
-                <EditableField
-                  label="Destination Country"
-                  value={data.country}
-                  fieldPath="country"
-                  {...fieldProps}
-                />
-                <SelectField
-                  label="Marketplace"
-                  value={data.marketplace}
-                  fieldPath="marketplace"
-                  options={MARKETPLACE_OPTIONS}
-                  onChanged={addFieldCorrection}
-                />
-                <EditableField
-                  label="Exporter Category"
-                  value={data.exporter_category}
-                  fieldPath="exporter_category"
-                  {...fieldProps}
-                />
-              </div>
-
-              {/* Toggles */}
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                <ToggleField
-                  label="Amazon FBA"
-                  value={data.amazon_fba}
-                  fieldPath="amazon_fba"
-                  onChanged={addFieldCorrection}
-                />
-                <ToggleField
-                  label="Multi-Address"
-                  value={data.multi_address_destination_delivery}
-                  fieldPath="multi_address_destination_delivery"
-                  onChanged={addFieldCorrection}
-                />
-              </div>
-
-              <Separator className="my-5" />
-
-              {/* Invoice & References */}
-              <SectionHeader icon={Receipt} title="Invoice & References" />
-              <div className="grid grid-cols-3 gap-x-4 gap-y-3">
-                <EditableField
-                  label="Invoice Number"
-                  value={data.invoice_number}
-                  fieldPath="invoice_number"
-                  {...fieldProps}
-                />
-                <EditableField
-                  label="Invoice Date"
-                  value={data.invoice_date}
-                  fieldPath="invoice_date"
-                  {...fieldProps}
-                />
-                <EditableField
-                  label="Total Amount"
-                  value={data.total_amount != null ? String(data.total_amount) : ""}
-                  fieldPath="total_amount"
-                  type="number"
-                  {...fieldProps}
-                />
-                <SelectField
-                  label="Shipping Currency"
-                  value={data.shipping_currency}
-                  fieldPath="shipping_currency"
-                  options={CURRENCY_OPTIONS}
-                  onChanged={addFieldCorrection}
-                />
-                <SelectField
-                  label="Billing Currency"
-                  value={data.billing_currency}
-                  fieldPath="billing_currency"
-                  options={CURRENCY_OPTIONS}
-                  onChanged={addFieldCorrection}
-                />
-                <EditableField
-                  label="Export Reference"
-                  value={data.export_reference}
-                  fieldPath="export_reference"
-                  {...fieldProps}
-                />
-                <EditableField
-                  label="Shipment References"
-                  value={data.shipment_references}
-                  fieldPath="shipment_references"
-                  {...fieldProps}
-                />
-              </div>
-
-              <Separator className="my-5" />
-
-              {/* Logistics */}
-              <SectionHeader icon={Truck} title="Logistics & Handling" />
-              <div className="grid grid-cols-3 gap-2">
-                <ToggleField
-                  label="Self Drop"
-                  value={data.self_drop}
-                  fieldPath="self_drop"
-                  onChanged={addFieldCorrection}
-                />
-                <ToggleField
-                  label="Self Origin Clearance"
-                  value={data.self_origin_clearance}
-                  fieldPath="self_origin_clearance"
-                  onChanged={addFieldCorrection}
-                />
-                <ToggleField
-                  label="Self Dest. Clearance"
-                  value={data.self_destination_clearance}
-                  fieldPath="self_destination_clearance"
-                  onChanged={addFieldCorrection}
-                />
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
-                <EditableField
-                  label="Port of Entry"
-                  value={data.port_of_entry}
-                  fieldPath="port_of_entry"
-                  {...fieldProps}
-                />
-                <EditableField
-                  label="Destination CHA"
-                  value={data.destination_cha}
-                  fieldPath="destination_cha"
-                  {...fieldProps}
-                />
-              </div>
-
-              <Separator className="my-5" />
-
-              {/* Weight Summary */}
-              <SectionHeader icon={Scale} title="Weight Summary" />
-              <div className="grid grid-cols-3 gap-x-4 gap-y-3">
-                <EditableField
-                  label="Total Boxes"
-                  value={data.total_boxes != null ? String(data.total_boxes) : ""}
-                  fieldPath="total_boxes"
-                  type="number"
-                  {...fieldProps}
-                />
-                <EditableField
-                  label="Gross Weight (kg)"
-                  value={data.total_gross_weight_kg != null ? String(data.total_gross_weight_kg) : ""}
-                  fieldPath="total_gross_weight_kg"
-                  type="number"
-                  {...fieldProps}
-                />
-                <EditableField
-                  label="Net Weight (kg)"
-                  value={data.total_net_weight_kg != null ? String(data.total_net_weight_kg) : ""}
-                  fieldPath="total_net_weight_kg"
-                  type="number"
-                  {...fieldProps}
-                />
-              </div>
-
-              {/* Files */}
-              {draft.files.length > 0 && (
-                <>
-                  <Separator className="my-5" />
-                  <SectionHeader icon={Paperclip} title={`Source Documents (${draft.files.length})`} />
-                  <div className="flex flex-wrap gap-2">
-                    {draft.files.map((f) => (
-                      <Badge key={f.id} variant="outline" className="gap-1.5 font-normal">
-                        <FileText className="h-3 w-3" />
-                        {f.filename}
-                        {f.file_type && (
-                          <span className="text-muted-foreground">({f.file_type})</span>
-                        )}
-                      </Badge>
-                    ))}
-                  </div>
-                </>
-              )}
-            </TabsContent>
+            <OverviewTab
+              data={data}
+              fieldProps={fieldProps}
+              addFieldCorrection={addFieldCorrection}
+              isActionable={isActionable}
+              draft={draft}
+            />
 
             {/* ── Addresses tab ─────────────────────────────── */}
             <TabsContent value="addresses" className="mt-0 px-6 py-4">
@@ -816,66 +339,11 @@ export function DraftDetailSheet({
             </TabsContent>
 
             {/* ── Customs Products tab ──────────────────────── */}
-            <TabsContent value="products" className="mt-0 px-6 py-4">
-              <div className="mb-3 rounded-md border border-amber-200/50 bg-amber-50/50 px-3 py-2 text-xs text-amber-700 dark:border-amber-900/30 dark:bg-amber-950/30 dark:text-amber-300">
-                Customs declaration summary. These are <code className="font-semibold">product_details</code> for the shipment, separate from box items.
-              </div>
-              {productsModified && (
-                <Badge variant="outline" className="mb-2 text-[10px] text-primary">
-                  Modified (unsaved)
-                </Badge>
-              )}
-              <div className="overflow-x-auto rounded-md border">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/30 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
-                      <th className="px-3 py-2">Description</th>
-                      <th className="px-3 py-2 w-28">HSN Code</th>
-                      <th className="px-3 py-2 w-24 text-right">Value</th>
-                      <th className="px-3 py-2 w-8" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {products.map((p, i) => (
-                      <ProductRow
-                        key={i}
-                        product={p}
-                        index={i}
-                        onChange={(idx, updated) => {
-                          const next = [...products];
-                          next[idx] = updated;
-                          setLocalProducts(next);
-                        }}
-                        onRemove={(idx) => {
-                          setLocalProducts(products.filter((_, j) => j !== idx));
-                        }}
-                      />
-                    ))}
-                    {products.length === 0 && (
-                      <tr>
-                        <td colSpan={4} className="px-3 py-6 text-center text-xs text-muted-foreground">
-                          No customs products added yet.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2 w-full gap-1.5"
-                onClick={() => {
-                  setLocalProducts([
-                    ...products,
-                    { product_description: "", hsn_code: "", value: 0 },
-                  ]);
-                }}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Add Product
-              </Button>
-            </TabsContent>
+            <ProductsTab
+              products={products}
+              productsModified={productsModified}
+              setLocalProducts={setLocalProducts}
+            />
           </ScrollArea>
         </Tabs>
 
