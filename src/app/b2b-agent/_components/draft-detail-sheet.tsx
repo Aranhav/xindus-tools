@@ -261,7 +261,7 @@ export function DraftDetailSheet({
               isActionable={isActionable}
               onSearch={onSearchSeller}
               onLink={(sellerId) => onLinkSeller(draft.id, sellerId)}
-              onApplyDefaults={(corrections) => {
+              onApplyCorrections={(corrections) => {
                 if (corrections.length > 0 && draft) {
                   onCorrect(draft.id, corrections);
                 }
@@ -302,6 +302,7 @@ export function DraftDetailSheet({
               addFieldCorrection={addFieldCorrection}
               isActionable={isActionable}
               draft={draft}
+              sellerDefaults={sellerDefaults}
             />
 
             {/* ── Addresses tab ─────────────────────────────── */}
@@ -312,6 +313,7 @@ export function DraftDetailSheet({
                   address={data.shipper_address}
                   basePath="shipper_address"
                   confidence={draft.confidence_scores?.shipper_address as Record<string, number> | undefined}
+                  sellerDefault={sellerProfile?.shipper_address as ShipmentAddress | undefined}
                   onCorrections={addCorrections}
                 />
                 <AddressForm

@@ -137,14 +137,17 @@ export function SelectField({
   fieldPath,
   options,
   onChanged,
+  sellerDefault,
 }: {
   label: string;
   value: string;
   fieldPath: string;
   options: string[];
   onChanged: (path: string, oldVal: unknown, newVal: string) => void;
+  sellerDefault?: string;
 }) {
   const safeOptions = options.filter(Boolean);
+  const showDefault = sellerDefault && sellerDefault !== value;
   return (
     <div className="space-y-1">
       <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</Label>
@@ -165,6 +168,16 @@ export function SelectField({
           ))}
         </SelectContent>
       </Select>
+      {showDefault && (
+        <button
+          type="button"
+          className="flex items-center gap-1 text-[11px] text-primary/70 hover:text-primary"
+          onClick={() => onChanged(fieldPath, value, sellerDefault)}
+        >
+          <Sparkles className="h-2.5 w-2.5" />
+          Default: {sellerDefault}
+        </button>
+      )}
     </div>
   );
 }

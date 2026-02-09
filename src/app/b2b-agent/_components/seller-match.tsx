@@ -24,11 +24,10 @@ import type {
   SellerProfile,
   SellerMatchResult,
   CorrectionItem,
-  ShipmentAddress,
   XindusCustomer,
 } from "@/types/agent";
 
-/* ── Props (unchanged — no changes needed in parent) ───── */
+/* ── Props ───────────────────────────────────────────────── */
 
 interface SellerMatchProps {
   shipperName?: string;
@@ -36,7 +35,7 @@ interface SellerMatchProps {
   isActionable: boolean;
   onSearch: (name: string) => Promise<SellerMatchResult | null>;
   onLink: (sellerId: string) => Promise<unknown>;
-  onApplyDefaults: (corrections: CorrectionItem[]) => void;
+  onApplyCorrections: (corrections: CorrectionItem[]) => void;
   loading: boolean;
 }
 
@@ -63,7 +62,7 @@ export function SellerMatch({
   isActionable,
   onSearch,
   onLink,
-  onApplyDefaults,
+  onApplyCorrections,
   loading,
 }: SellerMatchProps) {
   const [autoMatch, setAutoMatch] = useState<SellerMatchResult | null>(null);
@@ -128,14 +127,14 @@ export function SellerMatch({
         }
 
         // Apply shipper corrections regardless of match
-        if (shipperCorrections.length > 0) onApplyDefaults(shipperCorrections);
+        if (shipperCorrections.length > 0) onApplyCorrections(shipperCorrections);
         setLinkedCustomer(customer);
         setChangingSeller(false);
       } finally {
         setLinking(false);
       }
     },
-    [onSearch, onLink, onApplyDefaults],
+    [onSearch, onLink, onApplyCorrections],
   );
 
   const handleLinkAutoMatch = useCallback(async () => {
@@ -144,22 +143,6 @@ export function SellerMatch({
     setAutoMatch(null);
   }, [autoMatch, onLink]);
 
-  const buildDefaultCorrections = useCallback((seller: SellerProfile): CorrectionItem[] => {
-    const corrections: CorrectionItem[] = [];
-    const d = seller.defaults || {};
-    if (d.destination_clearance_type)
-      corrections.push({ field_path: "destination_clearance_type", old_value: null, new_value: d.destination_clearance_type });
-    if (d.terms_of_trade)
-      corrections.push({ field_path: "terms_of_trade", old_value: null, new_value: d.terms_of_trade });
-    if (seller.shipper_address && typeof seller.shipper_address === "object" && (seller.shipper_address as Record<string, unknown>).name)
-      corrections.push({ field_path: "shipper_address", old_value: null, new_value: seller.shipper_address });
-    if (d.billing_address && typeof d.billing_address === "object" && (d.billing_address as ShipmentAddress).name)
-      corrections.push({ field_path: "billing_address", old_value: null, new_value: d.billing_address });
-    if (d.ior_address && typeof d.ior_address === "object" && (d.ior_address as ShipmentAddress).name)
-      corrections.push({ field_path: "ior_address", old_value: null, new_value: d.ior_address });
-    return corrections;
-  }, []);
-
   const isBusy = loading || linking;
 
   /* ── LINKED STATE ───────────────────────────────────────── */
@@ -167,8 +150,6 @@ export function SellerMatch({
   if ((currentSeller || linkedCustomer) && !changingSeller) {
     const isFullyLinked = !!currentSeller;
     const displayName = currentSeller?.name ?? linkedCustomer?.company ?? "";
-    const defaults = currentSeller?.defaults || {};
-    const defaultCount = Object.keys(defaults).length;
     return (
       <div className={`rounded-lg border ${
         isFullyLinked
@@ -222,38 +203,6 @@ export function SellerMatch({
             isFullyLinked ? "border-emerald-200/60 dark:border-emerald-900/40" : "border-blue-200/40 dark:border-blue-900/30"
           }`}>
             {linkedCustomer && <CustomerProfile customer={linkedCustomer} />}
-
-            {isFullyLinked && defaultCount > 0 && isActionable && (
-              <div>
-                <p className="mb-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-                  Learned Defaults
-                </p>
-                <div className="space-y-1">
-                  {defaults.destination_clearance_type ? (
-                    <DefaultRow label="Dest. Clearance" value={String(defaults.destination_clearance_type)} />
-                  ) : null}
-                  {defaults.terms_of_trade ? (
-                    <DefaultRow label="Terms of Trade" value={String(defaults.terms_of_trade)} />
-                  ) : null}
-                  {defaults.billing_address ? (
-                    <DefaultRow label="Billing Addr" value={formatAddrShort(defaults.billing_address as ShipmentAddress)} />
-                  ) : null}
-                  {defaults.ior_address ? (
-                    <DefaultRow label="IOR Addr" value={formatAddrShort(defaults.ior_address as ShipmentAddress)} />
-                  ) : null}
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="mt-2 w-full gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950"
-                  onClick={() => onApplyDefaults(buildDefaultCorrections(currentSeller))}
-                  disabled={isBusy}
-                >
-                  <Sparkles className="h-3 w-3" />
-                  Apply All Defaults
-                </Button>
-              </div>
-            )}
 
             {!isFullyLinked && (
               <p className="text-[10px] text-muted-foreground">
@@ -411,15 +360,6 @@ function ProfileRow({ icon: Icon, label, value }: {
   );
 }
 
-function DefaultRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center gap-2 text-xs">
-      <span className="w-24 shrink-0 text-muted-foreground">{label}</span>
-      <span className="min-w-0 flex-1 truncate font-medium">{value}</span>
-    </div>
-  );
-}
-
 function LinkingIndicator() {
   return (
     <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
@@ -437,6 +377,3 @@ function NoMatchMessage({ name }: { name: string }) {
   );
 }
 
-function formatAddrShort(addr: ShipmentAddress): string {
-  return [addr.name, addr.city, addr.country].filter(Boolean).join(", ") || "Address set";
-}

@@ -45,6 +45,7 @@ interface OverviewTabProps {
   addFieldCorrection: (path: string, oldVal: unknown, newVal: unknown) => void;
   isActionable: boolean;
   draft: DraftDetail;
+  sellerDefaults?: Record<string, unknown>;
 }
 
 /* ── Component ────────────────────────────────────────────── */
@@ -55,6 +56,7 @@ export function OverviewTab({
   addFieldCorrection,
   isActionable,
   draft,
+  sellerDefaults,
 }: OverviewTabProps) {
   return (
     <TabsContent value="overview" className="mt-0 px-6 py-4">
@@ -71,6 +73,7 @@ export function OverviewTab({
           fieldPath="destination_clearance_type"
           options={DEST_CLEARANCE_OPTIONS}
           onChanged={addFieldCorrection}
+          sellerDefault={sellerDefaults?.destination_clearance_type as string | undefined}
         />
         <EditableField
           label="Shipping Method"
@@ -84,6 +87,7 @@ export function OverviewTab({
           fieldPath="purpose_of_booking"
           options={PURPOSE_OPTIONS}
           onChanged={addFieldCorrection}
+          sellerDefault={sellerDefaults?.purpose_of_booking as string | undefined}
         />
         <SelectField
           label="Terms of Trade"
@@ -91,6 +95,7 @@ export function OverviewTab({
           fieldPath="terms_of_trade"
           options={TERMS_OPTIONS}
           onChanged={addFieldCorrection}
+          sellerDefault={sellerDefaults?.terms_of_trade as string | undefined}
         />
         <SelectField
           label="Tax Type"
@@ -98,6 +103,7 @@ export function OverviewTab({
           fieldPath="tax_type"
           options={TAX_OPTIONS}
           onChanged={addFieldCorrection}
+          sellerDefault={sellerDefaults?.tax_type as string | undefined}
         />
         <EditableField
           label="Destination Country"
@@ -111,6 +117,7 @@ export function OverviewTab({
           fieldPath="marketplace"
           options={MARKETPLACE_OPTIONS}
           onChanged={addFieldCorrection}
+          sellerDefault={sellerDefaults?.marketplace as string | undefined}
         />
         <EditableField
           label="Exporter Category"
@@ -166,6 +173,7 @@ export function OverviewTab({
           fieldPath="shipping_currency"
           options={CURRENCY_OPTIONS}
           onChanged={addFieldCorrection}
+          sellerDefault={sellerDefaults?.shipping_currency as string | undefined}
         />
         <SelectField
           label="Billing Currency"
@@ -173,6 +181,7 @@ export function OverviewTab({
           fieldPath="billing_currency"
           options={CURRENCY_OPTIONS}
           onChanged={addFieldCorrection}
+          sellerDefault={sellerDefaults?.billing_currency as string | undefined}
         />
         <EditableField
           label="Export Reference"
