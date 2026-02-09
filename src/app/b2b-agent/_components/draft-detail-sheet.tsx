@@ -247,8 +247,8 @@ export function DraftDetailSheet({
               onSearch={onSearchSeller}
               onLink={(sellerId) => onLinkSeller(draft.id, sellerId)}
               onApplyDefaults={(corrections) => {
-                if (corrections.length > 0) {
-                  setPendingCorrections((prev) => [...prev, ...corrections]);
+                if (corrections.length > 0 && draft) {
+                  onCorrect(draft.id, corrections);
                 }
               }}
               loading={loading}
