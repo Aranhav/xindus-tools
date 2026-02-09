@@ -49,6 +49,7 @@ import {
   MARKETPLACE_OPTIONS,
   COUNTRY_OPTIONS,
   PORT_OF_ENTRY_OPTIONS,
+  DESTINATION_CHA_OPTIONS,
 } from "./editable-fields";
 import type { ShipmentData, DraftDetail } from "@/types/agent";
 
@@ -548,11 +549,13 @@ export function OverviewTab({
             onChanged={addFieldCorrection}
             sellerDefault={sellerDefaults?.port_of_entry as string | undefined}
           />
-          <EditableField
+          <SelectField
             label="Destination CHA"
             value={data.destination_cha}
             fieldPath="destination_cha"
-            {...fieldProps}
+            options={DESTINATION_CHA_OPTIONS}
+            onChanged={addFieldCorrection}
+            sellerDefault={sellerDefaults?.destination_cha as string | undefined}
           />
         </div>
       </SectionCard>

@@ -23,6 +23,7 @@ export const CURRENCY_OPTIONS = ["USD", "EUR", "GBP", "INR", "AUD", "CAD", "AED"
 export const MARKETPLACE_OPTIONS = ["AMAZON", "AMAZON_FBA", "ETSY", "ETSY_USA", "EBAY", "WALMART", "WALMART_WFS", "FAIRE", "SHOPIFY", "OTHER", "NONE"];
 export const COUNTRY_OPTIONS = ["US", "GB", "AU", "AE", "JP", "DE", "FR", "CA"];
 export const PORT_OF_ENTRY_OPTIONS = ["JFK", "SFO", "ORD", "EWR"];
+export const DESTINATION_CHA_OPTIONS = ["Pace Global", "GrandCHB", "Lisa Ragan", "Importal"];
 
 /* ── Section header ───────────────────────────────────────── */
 
