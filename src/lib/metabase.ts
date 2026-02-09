@@ -72,25 +72,42 @@ async function getSession(): Promise<string> {
   return sessionToken;
 }
 
+/* ── SQL escaping ────────────────────────────────────────── */
+
+/** Escape a string for safe use in MySQL single-quoted literals. */
+export function escapeSql(value: string): string {
+  return value.replace(/[\0\x08\x09\x1a\n\r"'\\%_]/g, (ch) => {
+    switch (ch) {
+      case "\0": return "\\0";
+      case "\x08": return "\\b";
+      case "\x09": return "\\t";
+      case "\x1a": return "\\z";
+      case "\n": return "\\n";
+      case "\r": return "\\r";
+      case "\"": return '\\"';
+      case "'": return "\\'";
+      case "\\": return "\\\\";
+      case "%": return "\\%";
+      case "_": return "\\_";
+      default: return ch;
+    }
+  });
+}
+
 /* ── Query execution ─────────────────────────────────────── */
 
 /**
  * Execute a native SQL query against Metabase.
- * Uses template tags for parameterized queries to prevent SQL injection.
+ * Uses direct SQL (same pattern as the xindus-db MCP server).
+ * Use `escapeSql()` to sanitize any user-provided values before embedding.
  */
-export async function queryMetabase(
-  sql: string,
-  templateTags?: Record<string, { type: string; value: unknown }>,
-): Promise<MetabaseResult> {
+export async function queryMetabase(sql: string): Promise<MetabaseResult> {
   const session = await getSession();
 
-  const body: Record<string, unknown> = {
+  const body = {
     database: METABASE_DB_ID,
     type: "native",
-    native: {
-      query: sql,
-      "template-tags": templateTags ?? {},
-    },
+    native: { query: sql },
   };
 
   const res = await fetch(`${METABASE_URL}/api/dataset`, {
@@ -105,7 +122,6 @@ export async function queryMetabase(
 
   if (!res.ok) {
     if (res.status === 401) {
-      // Session expired — clear and let caller retry
       sessionToken = null;
       sessionExpiry = null;
       throw new MetabaseError(401, "Metabase session expired. Please retry.");

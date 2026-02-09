@@ -15,6 +15,7 @@ import {
   Phone,
   Hash,
   User,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,22 @@ interface SellerMatchProps {
   loading: boolean;
 }
 
+/* ── Fetch enriched customer profile ─────────────────────── */
+
+async function fetchCustomerByName(name: string): Promise<XindusCustomer | null> {
+  try {
+    const res = await fetch(
+      `/api/b2b-agent/customers/search?q=${encodeURIComponent(name)}`,
+    );
+    if (!res.ok) return null;
+    const data: { customers: XindusCustomer[] } = await res.json();
+    // Best match = first result (prefix-matched, highest shipment count)
+    return data.customers[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /* ── Component ────────────────────────────────────────────── */
 
 export function SellerMatch({
@@ -57,6 +74,7 @@ export function SellerMatch({
   const [expanded, setExpanded] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [linkedCustomer, setLinkedCustomer] = useState<XindusCustomer | null>(null);
+  const [changingSeller, setChangingSeller] = useState(false);
 
   // Type-ahead search
   const search = useCustomerSearch(300);
@@ -77,6 +95,15 @@ export function SellerMatch({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shipperName, currentSeller]);
 
+  // Auto-fetch enriched Xindus customer profile when seller is linked
+  useEffect(() => {
+    if (currentSeller && !linkedCustomer) {
+      fetchCustomerByName(currentSeller.name).then((customer) => {
+        if (customer) setLinkedCustomer(customer);
+      });
+    }
+  }, [currentSeller, linkedCustomer]);
+
   // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -93,6 +120,7 @@ export function SellerMatch({
       search.setIsOpen(false);
       search.setQuery(customer.company);
       setLinkedCustomer(customer);
+      setChangingSeller(false);
       await onLink(String(customer.id));
     },
     [onLink, search],
@@ -104,6 +132,12 @@ export function SellerMatch({
     setShowSearch(false);
     setMatchResult(null);
   }, [matchResult, onLink]);
+
+  const handleChangeSeller = useCallback(() => {
+    setChangingSeller(true);
+    search.clear();
+    search.setQuery(currentSeller?.name || shipperName || "");
+  }, [currentSeller?.name, shipperName, search]);
 
   const buildDefaultCorrections = (seller: SellerProfile): CorrectionItem[] => {
     const corrections: CorrectionItem[] = [];
@@ -138,9 +172,67 @@ export function SellerMatch({
     return corrections;
   };
 
+  /* ── Type-ahead search section (shared) ─────────────────── */
+
+  const searchSection = (
+    <div
+      ref={dropdownRef}
+      className="relative border-t border-border/40 px-4 py-2.5"
+    >
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={search.query}
+          onChange={(e) => search.setQuery(e.target.value)}
+          placeholder="Type company name..."
+          className="h-7 pl-7 pr-8 text-xs"
+          autoFocus
+          onFocus={() => {
+            if (search.results.length > 0) search.setIsOpen(true);
+          }}
+        />
+        {search.loading && (
+          <Loader2 className="absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 animate-spin text-muted-foreground" />
+        )}
+      </div>
+
+      {/* Dropdown suggestions */}
+      {search.isOpen && search.results.length > 0 && (
+        <div className="absolute left-4 right-4 z-50 mt-1 max-h-48 overflow-y-auto rounded-md border bg-popover shadow-md">
+          {search.results.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs hover:bg-accent"
+              onClick={() => handleSelectCustomer(c)}
+            >
+              <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{c.company}</p>
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                  {c.crn_number && <span className="font-mono">{c.crn_number}</span>}
+                  {c.city && <span>{c.city}</span>}
+                  {c.shipment_count != null && c.shipment_count > 0 && (
+                    <span>{c.shipment_count} shipments</span>
+                  )}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {search.query.length >= 2 && !search.loading && search.results.length === 0 && (
+        <p className="mt-1.5 text-[11px] text-muted-foreground">
+          No matching customers found.
+        </p>
+      )}
+    </div>
+  );
+
   /* ── Linked seller view ─────────────────────────────────── */
 
-  if (currentSeller) {
+  if (currentSeller && !changingSeller) {
     const defaults = currentSeller.defaults || {};
     const defaultCount = Object.keys(defaults).length;
     return (
@@ -163,6 +255,20 @@ export function SellerMatch({
               </Badge>
             </div>
           </div>
+          {isActionable && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleChangeSeller();
+              }}
+            >
+              <RefreshCw className="h-3 w-3" />
+              Change
+            </Button>
+          )}
           {expanded ? (
             <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
           ) : (
@@ -230,6 +336,33 @@ export function SellerMatch({
             )}
           </div>
         )}
+      </div>
+    );
+  }
+
+  /* ── Changing seller (has currentSeller but user wants to switch) */
+
+  if (changingSeller) {
+    return (
+      <div className="rounded-lg border border-blue-200/60 bg-blue-50/30 dark:border-blue-900/40 dark:bg-blue-950/20">
+        <div className="flex items-center gap-2.5 px-4 py-2.5">
+          <Search className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Change seller</p>
+            <p className="text-[11px] text-blue-600/80 dark:text-blue-400/70">
+              Currently: {currentSeller?.name}
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 text-[10px] text-muted-foreground"
+            onClick={() => setChangingSeller(false)}
+          >
+            Cancel
+          </Button>
+        </div>
+        {searchSection}
       </div>
     );
   }
@@ -308,61 +441,7 @@ export function SellerMatch({
       </div>
 
       {/* Type-ahead search input */}
-      {showSearch && (
-        <div
-          ref={dropdownRef}
-          className="relative border-t border-amber-200/60 px-4 py-2.5 dark:border-amber-900/40"
-        >
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search.query}
-              onChange={(e) => search.setQuery(e.target.value)}
-              placeholder="Type company name..."
-              className="h-7 pl-7 pr-8 text-xs"
-              autoFocus
-              onFocus={() => {
-                if (search.results.length > 0) search.setIsOpen(true);
-              }}
-            />
-            {search.loading && (
-              <Loader2 className="absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 animate-spin text-muted-foreground" />
-            )}
-          </div>
-
-          {/* Dropdown suggestions */}
-          {search.isOpen && search.results.length > 0 && (
-            <div className="absolute left-4 right-4 z-50 mt-1 max-h-48 overflow-y-auto rounded-md border bg-popover shadow-md">
-              {search.results.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs hover:bg-accent"
-                  onClick={() => handleSelectCustomer(c)}
-                >
-                  <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{c.company}</p>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                      {c.crn_number && <span className="font-mono">{c.crn_number}</span>}
-                      {c.city && <span>{c.city}</span>}
-                      {c.shipment_count != null && c.shipment_count > 0 && (
-                        <span>{c.shipment_count} shipments</span>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {search.query.length >= 2 && !search.loading && search.results.length === 0 && (
-            <p className="mt-1.5 text-[11px] text-muted-foreground">
-              No matching customers found.
-            </p>
-          )}
-        </div>
-      )}
+      {showSearch && searchSection}
     </div>
   );
 }

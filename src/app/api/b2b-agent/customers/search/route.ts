@@ -1,21 +1,7 @@
 import { NextRequest } from "next/server";
-import { queryMetabase, rowsToObjects, MetabaseError } from "@/lib/metabase";
+import { queryMetabase, rowsToObjects, escapeSql, MetabaseError } from "@/lib/metabase";
 import { jsonResponse } from "@/lib/api";
 import type { XindusCustomer } from "@/types/agent";
-
-const SEARCH_SQL = `
-SELECT
-  id, crn_number, company, contact_name, email, phone,
-  iec, gstn, status, shipment_count, city, state
-FROM customers
-WHERE status = 'APPROVED'
-  AND company IS NOT NULL
-  AND company LIKE CONCAT('%', {{search_term}}, '%')
-ORDER BY
-  CASE WHEN company LIKE CONCAT({{search_term}}, '%') THEN 0 ELSE 1 END,
-  COALESCE(shipment_count, 0) DESC
-LIMIT 10
-`;
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim();
@@ -24,10 +10,23 @@ export async function GET(req: NextRequest) {
     return jsonResponse({ customers: [] });
   }
 
+  const escaped = escapeSql(q);
+
+  const sql = `
+SELECT
+  id, crn_number, company, contact_name, email, phone,
+  iec, gstn, status, shipment_count, city, state
+FROM customers
+WHERE status = 'APPROVED'
+  AND company IS NOT NULL
+  AND company LIKE '%${escaped}%'
+ORDER BY
+  CASE WHEN company LIKE '${escaped}%' THEN 0 ELSE 1 END,
+  COALESCE(shipment_count, 0) DESC
+LIMIT 10`;
+
   try {
-    const result = await queryMetabase(SEARCH_SQL, {
-      search_term: { type: "text", value: q },
-    });
+    const result = await queryMetabase(sql);
     const customers = rowsToObjects<XindusCustomer>(result);
     return jsonResponse({ customers });
   } catch (err) {
