@@ -342,6 +342,9 @@ export default function B2BAgentPage() {
         sellerProfile={agent.sellerProfile}
         onSearchSeller={agent.searchSellers}
         onLinkSeller={agent.linkSellerToDraft}
+        onAddFiles={agent.addFilesToDraft}
+        onRemoveFile={agent.removeFileFromDraft}
+        onDownloadFile={agent.downloadDraftFile}
       />
     </PageContainer>
   );

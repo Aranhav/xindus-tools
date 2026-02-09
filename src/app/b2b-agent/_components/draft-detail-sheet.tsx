@@ -55,6 +55,9 @@ interface DraftDetailSheetProps {
   sellerProfile?: SellerProfile | null;
   onSearchSeller: (name: string) => Promise<SellerMatchResult | null>;
   onLinkSeller: (draftId: string, sellerId: string) => Promise<unknown>;
+  onAddFiles: (draftId: string, files: File[]) => Promise<DraftDetail | null>;
+  onRemoveFile: (draftId: string, fileId: string) => Promise<DraftDetail | null>;
+  onDownloadFile: (draftId: string, fileId: string) => void;
 }
 
 export function DraftDetailSheet({
@@ -69,6 +72,9 @@ export function DraftDetailSheet({
   sellerProfile,
   onSearchSeller,
   onLinkSeller,
+  onAddFiles,
+  onRemoveFile,
+  onDownloadFile,
 }: DraftDetailSheetProps) {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -307,6 +313,10 @@ export function DraftDetailSheet({
               isActionable={isActionable}
               draft={draft}
               sellerDefaults={sellerDefaults}
+              onAddFiles={onAddFiles}
+              onRemoveFile={onRemoveFile}
+              onDownloadFile={onDownloadFile}
+              loading={loading}
             />
 
             {/* ── Addresses tab ─────────────────────────────── */}

@@ -478,6 +478,68 @@ export function useB2BAgent() {
     [fetchDrafts],
   );
 
+  // ── Add files to draft ─────────────────────────────────────
+
+  const addFilesToDraft = useCallback(
+    async (draftId: string, files: File[]): Promise<DraftDetail | null> => {
+      setLoading(true);
+      try {
+        const formData = new FormData();
+        files.forEach((f) => formData.append("files", f));
+        const res = await fetch(`/api/b2b-agent/drafts/${draftId}/files`, {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) throw new Error("Failed to add files");
+        const data: DraftDetail = await res.json();
+        setActiveDraft(data);
+        setSellerProfile(data.seller ?? null);
+        fetchDrafts();
+        return data;
+      } catch (err) {
+        setError((err as Error).message);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchDrafts],
+  );
+
+  // ── Remove file from draft ────────────────────────────────
+
+  const removeFileFromDraft = useCallback(
+    async (draftId: string, fileId: string): Promise<DraftDetail | null> => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/b2b-agent/drafts/${draftId}/files/${fileId}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) throw new Error("Failed to remove file");
+        const data: DraftDetail = await res.json();
+        setActiveDraft(data);
+        setSellerProfile(data.seller ?? null);
+        fetchDrafts();
+        return data;
+      } catch (err) {
+        setError((err as Error).message);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchDrafts],
+  );
+
+  // ── Download file from draft ──────────────────────────────
+
+  const downloadDraftFile = useCallback(
+    (draftId: string, fileId: string) => {
+      window.open(`/api/b2b-agent/drafts/${draftId}/files/${fileId}/download`, "_blank");
+    },
+    [],
+  );
+
   // ── Search / match seller by name ─────────────────────────
 
   const searchSellers = useCallback(
@@ -569,6 +631,9 @@ export function useB2BAgent() {
     rejectDraft,
     archiveDraft,
     reExtractDraft,
+    addFilesToDraft,
+    removeFileFromDraft,
+    downloadDraftFile,
     deleteDraft,
     bulkApprove,
     bulkReject,

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   FileText,
   Settings2,
@@ -7,11 +8,32 @@ import {
   Scale,
   Paperclip,
   Receipt,
+  Sparkles,
+  Download,
+  X,
+  Plus,
+  Loader2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { TabsContent } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { FileUploadZone } from "@/components/file-upload-zone";
 import {
   EditableField,
   SelectField,
@@ -23,7 +45,6 @@ import {
   TAX_OPTIONS,
   CURRENCY_OPTIONS,
   MARKETPLACE_OPTIONS,
-  EXPORTER_CATEGORY_OPTIONS,
   COUNTRY_OPTIONS,
 } from "./editable-fields";
 import type { ShipmentData, DraftDetail } from "@/types/agent";
@@ -48,6 +69,99 @@ interface OverviewTabProps {
   isActionable: boolean;
   draft: DraftDetail;
   sellerDefaults?: Record<string, unknown>;
+  onAddFiles: (draftId: string, files: File[]) => Promise<DraftDetail | null>;
+  onRemoveFile: (draftId: string, fileId: string) => Promise<DraftDetail | null>;
+  onDownloadFile: (draftId: string, fileId: string) => void;
+  loading: boolean;
+}
+
+/* ── Component ────────────────────────────────────────────── */
+
+/* ── Add Files Dialog ─────────────────────────────────────── */
+
+function AddFilesDialog({
+  open,
+  onOpenChange,
+  draftId,
+  onAddFiles,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  draftId: string;
+  onAddFiles: (draftId: string, files: File[]) => Promise<DraftDetail | null>;
+}) {
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  const handleConfirm = async () => {
+    if (pendingFiles.length === 0) return;
+    setUploading(true);
+    try {
+      await onAddFiles(draftId, pendingFiles);
+      onOpenChange(false);
+      setPendingFiles([]);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add Files to Draft</DialogTitle>
+        </DialogHeader>
+        <FileUploadZone
+          accept=".pdf,.png,.jpg,.jpeg,.xlsx,.xls,.csv"
+          multiple
+          maxFiles={10}
+          onFiles={setPendingFiles}
+          label="Drop files here or click to browse"
+          description="PDF, images, or spreadsheets"
+        />
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={uploading}>
+            Cancel
+          </Button>
+          <Button size="sm" onClick={handleConfirm} disabled={pendingFiles.length === 0 || uploading}>
+            {uploading && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+            Upload {pendingFiles.length > 0 ? `(${pendingFiles.length})` : ""}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ── Add Files Button (wraps dialog state) ───────────────── */
+
+function AddFilesButton({
+  draftId,
+  onAddFiles,
+}: {
+  draftId: string;
+  onAddFiles: (draftId: string, files: File[]) => Promise<DraftDetail | null>;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        className="mt-2 h-7 text-xs"
+        onClick={() => setOpen(true)}
+      >
+        <Plus className="mr-1 h-3 w-3" />
+        Add Files
+      </Button>
+      <AddFilesDialog
+        open={open}
+        onOpenChange={setOpen}
+        draftId={draftId}
+        onAddFiles={onAddFiles}
+      />
+    </>
+  );
 }
 
 /* ── Component ────────────────────────────────────────────── */
@@ -59,7 +173,20 @@ export function OverviewTab({
   isActionable,
   draft,
   sellerDefaults,
+  onAddFiles,
+  onRemoveFile,
+  onDownloadFile,
+  loading,
 }: OverviewTabProps) {
+  const [shippingMethods, setShippingMethods] = useState<{code: string; name: string}[]>([]);
+
+  useEffect(() => {
+    fetch("/api/b2b-agent/shipping-methods")
+      .then((r) => r.json())
+      .then(setShippingMethods)
+      .catch(() => {});
+  }, []);
+
   return (
     <TabsContent value="overview" className="mt-0 px-6 py-4">
       {/* Shipment Configuration */}
@@ -79,7 +206,33 @@ export function OverviewTab({
         />
         <div className="space-y-1">
           <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Shipping Method</Label>
-          <p className="text-sm font-medium">Xindus Express B2B</p>
+          <Select
+            value={data.shipping_method || undefined}
+            onValueChange={(v) => {
+              if (v !== data.shipping_method) addFieldCorrection("shipping_method", data.shipping_method, v);
+            }}
+          >
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder="Select..." />
+            </SelectTrigger>
+            <SelectContent>
+              {shippingMethods.map((m) => (
+                <SelectItem key={m.code} value={m.code}>
+                  {m.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {sellerDefaults?.shipping_method != null && sellerDefaults.shipping_method !== data.shipping_method ? (
+            <button
+              type="button"
+              className="flex items-center gap-1 text-[11px] text-primary/70 hover:text-primary"
+              onClick={() => addFieldCorrection("shipping_method", data.shipping_method, sellerDefaults.shipping_method as string)}
+            >
+              <Sparkles className="h-2.5 w-2.5" />
+              Default: {shippingMethods.find(m => m.code === sellerDefaults.shipping_method)?.name || String(sellerDefaults.shipping_method)}
+            </button>
+          ) : null}
         </div>
         <SelectField
           label="Purpose"
@@ -120,24 +273,6 @@ export function OverviewTab({
           options={MARKETPLACE_OPTIONS}
           onChanged={addFieldCorrection}
           sellerDefault={sellerDefaults?.marketplace as string | undefined}
-        />
-        <SelectField
-          label="Exporter Category"
-          value={data.exporter_category}
-          fieldPath="exporter_category"
-          options={EXPORTER_CATEGORY_OPTIONS}
-          onChanged={addFieldCorrection}
-          sellerDefault={sellerDefaults?.exporter_category as string | undefined}
-        />
-      </div>
-
-      {/* Toggles */}
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        <ToggleField
-          label="Amazon FBA"
-          value={data.amazon_fba}
-          fieldPath="amazon_fba"
-          onChanged={addFieldCorrection}
         />
       </div>
 
@@ -263,21 +398,43 @@ export function OverviewTab({
       </div>
 
       {/* Files */}
-      {draft.files.length > 0 && (
+      {(draft.files.length > 0 || isActionable) && (
         <>
           <Separator className="my-5" />
           <SectionHeader icon={Paperclip} title={`Source Documents (${draft.files.length})`} />
           <div className="flex flex-wrap gap-2">
             {draft.files.map((f) => (
-              <Badge key={f.id} variant="outline" className="gap-1.5 font-normal">
+              <Badge key={f.id} variant="outline" className="gap-1.5 pr-1 font-normal">
                 <FileText className="h-3 w-3" />
                 {f.filename}
                 {f.file_type && (
                   <span className="text-muted-foreground">({f.file_type})</span>
                 )}
+                <button
+                  type="button"
+                  className="ml-0.5 rounded p-0.5 hover:bg-muted"
+                  onClick={() => onDownloadFile(draft.id, f.id)}
+                  title="Download"
+                >
+                  <Download className="h-3 w-3 text-muted-foreground" />
+                </button>
+                {isActionable && draft.files.length > 1 && (
+                  <button
+                    type="button"
+                    className="rounded p-0.5 hover:bg-destructive/10"
+                    onClick={() => onRemoveFile(draft.id, f.id)}
+                    title="Remove file"
+                    disabled={loading}
+                  >
+                    <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                  </button>
+                )}
               </Badge>
             ))}
           </div>
+          {isActionable && (
+            <AddFilesButton draftId={draft.id} onAddFiles={onAddFiles} />
+          )}
         </>
       )}
     </TabsContent>
