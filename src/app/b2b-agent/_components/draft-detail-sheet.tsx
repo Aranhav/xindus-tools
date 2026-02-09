@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   CheckCircle2,
   XCircle,
@@ -69,18 +69,23 @@ export function DraftDetailSheet({
 }: DraftDetailSheetProps) {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
-  const [pendingCorrections, setPendingCorrections] = useState<CorrectionItem[]>([]);
   const [localBoxes, setLocalBoxes] = useState<ShipmentBox[] | null>(null);
   const [localProducts, setLocalProducts] = useState<ProductDetail[] | null>(null);
 
+  // Refs for stable access inside debounced effects
+  const draftRef = useRef(draft);
+  const dataRef = useRef<ReturnType<() => typeof data>>(null);
+  draftRef.current = draft;
+
   const data = draft ? draft.corrected_data || draft.shipment_data : null;
+  dataRef.current = data;
   const sellerDefaults = (sellerProfile?.defaults ?? {}) as Record<string, unknown>;
   const isActionable = draft?.status === "pending_review";
 
   const boxes = localBoxes ?? data?.shipment_boxes ?? [];
   const products = localProducts ?? data?.product_details ?? [];
-  const boxesModified = localBoxes !== null;
-  const productsModified = localProducts !== null;
+
+  /* ── Auto-save: inline field edits ─────────────────────── */
 
   const startEdit = useCallback((fieldPath: string, currentValue: string) => {
     setEditingField(fieldPath);
@@ -88,69 +93,80 @@ export function DraftDetailSheet({
   }, []);
 
   const confirmEdit = useCallback(() => {
-    if (!editingField || !data) return;
+    if (!editingField || !data || !draft) return;
     const oldValue = getNestedValue(data, editingField);
     if (String(oldValue ?? "") !== editValue) {
-      setPendingCorrections((prev) => [
-        ...prev,
+      onCorrect(draft.id, [
         { field_path: editingField, old_value: oldValue, new_value: editValue },
       ]);
     }
     setEditingField(null);
-  }, [editingField, editValue, data]);
+  }, [editingField, editValue, data, draft, onCorrect]);
 
   const cancelEdit = useCallback(() => setEditingField(null), []);
 
+  /* ── Auto-save: dropdown / select field changes ────────── */
+
   const addFieldCorrection = useCallback(
     (fieldPath: string, oldVal: unknown, newVal: unknown) => {
-      setPendingCorrections((prev) => [
-        ...prev,
+      if (!draft) return;
+      onCorrect(draft.id, [
         { field_path: fieldPath, old_value: oldVal, new_value: newVal },
       ]);
     },
-    [],
+    [draft, onCorrect],
   );
 
+  /* ── Auto-save: address form changes ───────────────────── */
+
   const addCorrections = useCallback((corrections: CorrectionItem[]) => {
-    setPendingCorrections((prev) => [...prev, ...corrections]);
-  }, []);
+    if (!draft || corrections.length === 0) return;
+    onCorrect(draft.id, corrections);
+  }, [draft, onCorrect]);
 
-  const totalPending = useMemo(() => {
-    let count = pendingCorrections.length;
-    if (boxesModified) count++;
-    if (productsModified) count++;
-    return count;
-  }, [pendingCorrections.length, boxesModified, productsModified]);
+  /* ── Auto-save: boxes (debounced 800ms) ────────────────── */
 
-  const saveAll = useCallback(() => {
-    if (!draft || !data) return;
-    const allCorrections = [...pendingCorrections];
-    if (localBoxes !== null) {
-      allCorrections.push({
-        field_path: "shipment_boxes",
-        old_value: data.shipment_boxes,
-        new_value: localBoxes,
-      });
-    }
-    if (localProducts !== null) {
-      allCorrections.push({
-        field_path: "product_details",
-        old_value: data.product_details,
-        new_value: localProducts,
-      });
-    }
-    if (allCorrections.length > 0) {
-      onCorrect(draft.id, allCorrections);
-    }
-    setPendingCorrections([]);
-    setLocalBoxes(null);
-    setLocalProducts(null);
-  }, [draft, data, pendingCorrections, localBoxes, localProducts, onCorrect]);
+  useEffect(() => {
+    if (!localBoxes) return;
+    const timer = setTimeout(() => {
+      const d = draftRef.current;
+      const dd = dataRef.current;
+      if (d && dd) {
+        onCorrect(d.id, [{
+          field_path: "shipment_boxes",
+          old_value: dd.shipment_boxes,
+          new_value: localBoxes,
+        }]);
+      }
+      setLocalBoxes(null);
+    }, 800);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localBoxes]);
+
+  /* ── Auto-save: products (debounced 800ms) ─────────────── */
+
+  useEffect(() => {
+    if (!localProducts) return;
+    const timer = setTimeout(() => {
+      const d = draftRef.current;
+      const dd = dataRef.current;
+      if (d && dd) {
+        onCorrect(d.id, [{
+          field_path: "product_details",
+          old_value: dd.product_details,
+          new_value: localProducts,
+        }]);
+      }
+      setLocalProducts(null);
+    }, 800);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localProducts]);
 
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
       if (!isOpen) {
-        setPendingCorrections([]);
         setEditingField(null);
         setLocalBoxes(null);
         setLocalProducts(null);
@@ -164,7 +180,6 @@ export function DraftDetailSheet({
   useEffect(() => {
     setLocalBoxes(null);
     setLocalProducts(null);
-    setPendingCorrections([]);
   }, [draft?.id]);
 
   if (!draft || !data) {
@@ -330,9 +345,9 @@ export function DraftDetailSheet({
               <div className="mb-3 rounded-md border border-blue-200/50 bg-blue-50/50 px-3 py-2 text-xs text-blue-700 dark:border-blue-900/30 dark:bg-blue-950/30 dark:text-blue-300">
                 Each box contains physical items with dimensions. Items here map to <code className="font-semibold">shipment_box_items</code> in the Xindus API.
               </div>
-              {boxesModified && (
+              {localBoxes !== null && (
                 <Badge variant="outline" className="mb-2 text-[10px] text-primary">
-                  Modified (unsaved)
+                  Saving...
                 </Badge>
               )}
               <BoxEditor boxes={boxes} onChange={setLocalBoxes} />
@@ -341,7 +356,7 @@ export function DraftDetailSheet({
             {/* ── Customs Products tab ──────────────────────── */}
             <ProductsTab
               products={products}
-              productsModified={productsModified}
+              productsModified={localProducts !== null}
               setLocalProducts={setLocalProducts}
             />
           </ScrollArea>
@@ -373,11 +388,6 @@ export function DraftDetailSheet({
               </>
             )}
             <div className="flex-1" />
-            {totalPending > 0 && (
-              <Button onClick={saveAll} disabled={loading} size="sm">
-                Save {totalPending} change{totalPending !== 1 ? "s" : ""}
-              </Button>
-            )}
           </div>
         </div>
       </SheetContent>
