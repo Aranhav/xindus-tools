@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
-  Search,
   UserCheck,
   UserX,
   Sparkles,
@@ -16,11 +15,11 @@ import {
   Hash,
   User,
   RefreshCw,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { useCustomerSearch } from "@/hooks/use-customer-search";
+import { CustomerCombobox } from "./customer-combobox";
 import type {
   SellerProfile,
   SellerMatchResult,
@@ -29,7 +28,7 @@ import type {
   XindusCustomer,
 } from "@/types/agent";
 
-/* ── Props ────────────────────────────────────────────────── */
+/* ── Props (unchanged — no changes needed in parent) ───── */
 
 interface SellerMatchProps {
   shipperName?: string;
@@ -41,7 +40,7 @@ interface SellerMatchProps {
   loading: boolean;
 }
 
-/* ── Fetch enriched customer profile ─────────────────────── */
+/* ── Fetch customer profile by name ──────────────────────── */
 
 async function fetchCustomerByName(name: string): Promise<XindusCustomer | null> {
   try {
@@ -50,7 +49,6 @@ async function fetchCustomerByName(name: string): Promise<XindusCustomer | null>
     );
     if (!res.ok) return null;
     const data: { customers: XindusCustomer[] } = await res.json();
-    // Best match = first result (prefix-matched, highest shipment count)
     return data.customers[0] ?? null;
   } catch {
     return null;
@@ -68,182 +66,104 @@ export function SellerMatch({
   onApplyDefaults,
   loading,
 }: SellerMatchProps) {
-  const [matchResult, setMatchResult] = useState<SellerMatchResult | null>(null);
+  const [autoMatch, setAutoMatch] = useState<SellerMatchResult | null>(null);
   const [autoSearched, setAutoSearched] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [linking, setLinking] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
-  const [linkedCustomer, setLinkedCustomer] = useState<XindusCustomer | null>(null);
   const [changingSeller, setChangingSeller] = useState(false);
+  const [linkedCustomer, setLinkedCustomer] = useState<XindusCustomer | null>(null);
+  const [noMatchName, setNoMatchName] = useState<string | null>(null);
 
-  // Type-ahead search
-  const search = useCustomerSearch(300);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Auto-search Python backend when mounted with shipper name
+  // Auto-search Python backend on mount
   useEffect(() => {
     if (shipperName && !currentSeller && !autoSearched) {
       setAutoSearched(true);
       setSearching(true);
       onSearch(shipperName.trim())
-        .then((result) => {
-          setMatchResult(result);
-          if (result) setExpanded(true);
-        })
+        .then((r) => { if (r) setAutoMatch(r); })
         .finally(() => setSearching(false));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shipperName, currentSeller]);
 
-  // Auto-fetch enriched Xindus customer profile when seller is linked
+  // Auto-fetch enriched Xindus profile when seller is linked
   useEffect(() => {
     if (currentSeller && !linkedCustomer) {
-      fetchCustomerByName(currentSeller.name).then((customer) => {
-        if (customer) setLinkedCustomer(customer);
+      fetchCustomerByName(currentSeller.name).then((c) => {
+        if (c) setLinkedCustomer(c);
       });
     }
   }, [currentSeller, linkedCustomer]);
 
-  // Close dropdown on click outside
+  // Reset when seller changes (e.g. different draft opened)
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        search.setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [search]);
+    setLinkedCustomer(null);
+    setChangingSeller(false);
+    setNoMatchName(null);
+  }, [currentSeller?.id]);
 
+  /* ── Handlers ───────────────────────────────────────────── */
+
+  /** User selects from type-ahead: find Python seller, then link with correct ID */
   const handleSelectCustomer = useCallback(
     async (customer: XindusCustomer) => {
-      search.setIsOpen(false);
-      search.setQuery(customer.company);
-      setLinkedCustomer(customer);
-      setChangingSeller(false);
-      await onLink(String(customer.id));
+      setNoMatchName(null);
+      setLinking(true);
+      try {
+        // Search Python backend by company name to get the correct seller UUID
+        const match = await onSearch(customer.company);
+        if (match) {
+          setLinkedCustomer(customer);
+          setChangingSeller(false);
+          await onLink(match.seller.id); // Correct Python backend seller ID
+        } else {
+          setNoMatchName(customer.company);
+        }
+      } finally {
+        setLinking(false);
+      }
     },
-    [onLink, search],
+    [onSearch, onLink],
   );
 
-  const handleLinkFromAutoMatch = useCallback(async () => {
-    if (!matchResult) return;
-    await onLink(matchResult.seller.id);
-    setShowSearch(false);
-    setMatchResult(null);
-  }, [matchResult, onLink]);
+  const handleLinkAutoMatch = useCallback(async () => {
+    if (!autoMatch) return;
+    await onLink(autoMatch.seller.id);
+    setAutoMatch(null);
+  }, [autoMatch, onLink]);
 
-  const handleChangeSeller = useCallback(() => {
-    setChangingSeller(true);
-    search.clear();
-    search.setQuery(currentSeller?.name || shipperName || "");
-  }, [currentSeller?.name, shipperName, search]);
-
-  const buildDefaultCorrections = (seller: SellerProfile): CorrectionItem[] => {
+  const buildDefaultCorrections = useCallback((seller: SellerProfile): CorrectionItem[] => {
     const corrections: CorrectionItem[] = [];
-    const defaults = seller.defaults || {};
-
-    if (defaults.destination_clearance_type) {
-      corrections.push({
-        field_path: "destination_clearance_type",
-        old_value: null,
-        new_value: defaults.destination_clearance_type,
-      });
-    }
-    if (defaults.terms_of_trade) {
-      corrections.push({
-        field_path: "terms_of_trade",
-        old_value: null,
-        new_value: defaults.terms_of_trade,
-      });
-    }
-    if (defaults.billing_address && typeof defaults.billing_address === "object") {
-      const addr = defaults.billing_address as ShipmentAddress;
-      if (addr.name) {
-        corrections.push({ field_path: "billing_address", old_value: null, new_value: addr });
-      }
-    }
-    if (defaults.ior_address && typeof defaults.ior_address === "object") {
-      const addr = defaults.ior_address as ShipmentAddress;
-      if (addr.name) {
-        corrections.push({ field_path: "ior_address", old_value: null, new_value: addr });
-      }
-    }
+    const d = seller.defaults || {};
+    if (d.destination_clearance_type)
+      corrections.push({ field_path: "destination_clearance_type", old_value: null, new_value: d.destination_clearance_type });
+    if (d.terms_of_trade)
+      corrections.push({ field_path: "terms_of_trade", old_value: null, new_value: d.terms_of_trade });
+    if (d.billing_address && typeof d.billing_address === "object" && (d.billing_address as ShipmentAddress).name)
+      corrections.push({ field_path: "billing_address", old_value: null, new_value: d.billing_address });
+    if (d.ior_address && typeof d.ior_address === "object" && (d.ior_address as ShipmentAddress).name)
+      corrections.push({ field_path: "ior_address", old_value: null, new_value: d.ior_address });
     return corrections;
-  };
+  }, []);
 
-  /* ── Type-ahead search section (shared) ─────────────────── */
+  const isBusy = loading || linking;
 
-  const searchSection = (
-    <div
-      ref={dropdownRef}
-      className="relative border-t border-border/40 px-4 py-2.5"
-    >
-      <div className="relative">
-        <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={search.query}
-          onChange={(e) => search.setQuery(e.target.value)}
-          placeholder="Type company name..."
-          className="h-7 pl-7 pr-8 text-xs"
-          autoFocus
-          onFocus={() => {
-            if (search.results.length > 0) search.setIsOpen(true);
-          }}
-        />
-        {search.loading && (
-          <Loader2 className="absolute right-2.5 top-1/2 h-3 w-3 -translate-y-1/2 animate-spin text-muted-foreground" />
-        )}
-      </div>
-
-      {/* Dropdown suggestions */}
-      {search.isOpen && search.results.length > 0 && (
-        <div className="absolute left-4 right-4 z-50 mt-1 max-h-48 overflow-y-auto rounded-md border bg-popover shadow-md">
-          {search.results.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs hover:bg-accent"
-              onClick={() => handleSelectCustomer(c)}
-            >
-              <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{c.company}</p>
-                <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                  {c.crn_number && <span className="font-mono">{c.crn_number}</span>}
-                  {c.city && <span>{c.city}</span>}
-                  {c.shipment_count != null && c.shipment_count > 0 && (
-                    <span>{c.shipment_count} shipments</span>
-                  )}
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {search.query.length >= 2 && !search.loading && search.results.length === 0 && (
-        <p className="mt-1.5 text-[11px] text-muted-foreground">
-          No matching customers found.
-        </p>
-      )}
-    </div>
-  );
-
-  /* ── Linked seller view ─────────────────────────────────── */
+  /* ── LINKED STATE ───────────────────────────────────────── */
 
   if (currentSeller && !changingSeller) {
     const defaults = currentSeller.defaults || {};
     const defaultCount = Object.keys(defaults).length;
     return (
       <div className="rounded-lg border border-emerald-200/60 bg-emerald-50/40 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+        {/* Header */}
         <div
           className="flex cursor-pointer items-center gap-2.5 px-4 py-2.5"
           onClick={() => setExpanded(!expanded)}
         >
           <UserCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-sm font-medium">{currentSeller.name}</span>
               {linkedCustomer?.crn_number && (
                 <Badge variant="outline" className="text-[10px] font-mono font-normal">
@@ -260,55 +180,28 @@ export function SellerMatch({
               size="sm"
               variant="ghost"
               className="h-6 gap-1 text-[10px] text-muted-foreground hover:text-foreground"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleChangeSeller();
-              }}
+              onClick={(e) => { e.stopPropagation(); setChangingSeller(true); }}
             >
               <RefreshCw className="h-3 w-3" />
               Change
             </Button>
           )}
-          {expanded ? (
-            <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-          )}
+          {expanded
+            ? <ChevronUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
         </div>
 
+        {/* Expanded details */}
         {expanded && (
-          <div className="border-t border-emerald-200/60 px-4 py-2.5 dark:border-emerald-900/40">
-            {/* Enriched profile from Xindus */}
-            {linkedCustomer && (
-              <div className="mb-2.5 space-y-1">
-                {linkedCustomer.contact_name && (
-                  <ProfileRow icon={User} label="Contact" value={linkedCustomer.contact_name} />
-                )}
-                <ProfileRow icon={Mail} label="Email" value={linkedCustomer.email} />
-                <ProfileRow icon={Phone} label="Phone" value={linkedCustomer.phone} />
-                {linkedCustomer.iec && (
-                  <ProfileRow icon={Hash} label="IEC" value={linkedCustomer.iec} />
-                )}
-                {linkedCustomer.gstn && (
-                  <ProfileRow icon={Hash} label="GSTN" value={linkedCustomer.gstn} />
-                )}
-                {(linkedCustomer.city || linkedCustomer.state) && (
-                  <ProfileRow
-                    icon={Building2}
-                    label="Location"
-                    value={[linkedCustomer.city, linkedCustomer.state].filter(Boolean).join(", ")}
-                  />
-                )}
-              </div>
-            )}
+          <div className="space-y-3 border-t border-emerald-200/60 px-4 py-3 dark:border-emerald-900/40">
+            {linkedCustomer && <CustomerProfile customer={linkedCustomer} />}
 
-            {/* Learned defaults section */}
             {defaultCount > 0 && isActionable && (
-              <>
-                <p className="mb-2 text-[11px] text-muted-foreground">
-                  Apply learned defaults from past shipments:
+              <div>
+                <p className="mb-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                  Learned Defaults
                 </p>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   {defaults.destination_clearance_type ? (
                     <DefaultRow label="Dest. Clearance" value={String(defaults.destination_clearance_type)} />
                   ) : null}
@@ -316,23 +209,23 @@ export function SellerMatch({
                     <DefaultRow label="Terms of Trade" value={String(defaults.terms_of_trade)} />
                   ) : null}
                   {defaults.billing_address ? (
-                    <DefaultRow label="Billing Address" value={formatAddrShort(defaults.billing_address as ShipmentAddress)} />
+                    <DefaultRow label="Billing Addr" value={formatAddrShort(defaults.billing_address as ShipmentAddress)} />
                   ) : null}
                   {defaults.ior_address ? (
-                    <DefaultRow label="IOR Address" value={formatAddrShort(defaults.ior_address as ShipmentAddress)} />
+                    <DefaultRow label="IOR Addr" value={formatAddrShort(defaults.ior_address as ShipmentAddress)} />
                   ) : null}
                 </div>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="mt-2.5 w-full gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950"
+                  className="mt-2 w-full gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950"
                   onClick={() => onApplyDefaults(buildDefaultCorrections(currentSeller))}
-                  disabled={loading}
+                  disabled={isBusy}
                 >
                   <Sparkles className="h-3 w-3" />
                   Apply All Defaults
                 </Button>
-              </>
+              </div>
             )}
           </div>
         )}
@@ -340,66 +233,73 @@ export function SellerMatch({
     );
   }
 
-  /* ── Changing seller (has currentSeller but user wants to switch) */
+  /* ── CHANGING STATE ─────────────────────────────────────── */
 
-  if (changingSeller) {
+  if (changingSeller && currentSeller) {
     return (
       <div className="rounded-lg border border-blue-200/60 bg-blue-50/30 dark:border-blue-900/40 dark:bg-blue-950/20">
         <div className="flex items-center gap-2.5 px-4 py-2.5">
-          <Search className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <RefreshCw className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Change seller</p>
-            <p className="text-[11px] text-blue-600/80 dark:text-blue-400/70">
-              Currently: {currentSeller?.name}
-            </p>
+            <p className="text-[11px] text-blue-600/80">Current: {currentSeller.name}</p>
           </div>
           <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 text-[10px] text-muted-foreground"
+            size="sm" variant="ghost"
+            className="h-6 gap-1 text-[10px] text-muted-foreground"
             onClick={() => setChangingSeller(false)}
           >
+            <X className="h-3 w-3" />
             Cancel
           </Button>
         </div>
-        {searchSection}
+        <div className="border-t border-blue-200/40 px-4 py-2.5 dark:border-blue-900/30">
+          <CustomerCombobox
+            onSelect={handleSelectCustomer}
+            initialQuery={currentSeller.name}
+            placeholder="Type new company name..."
+          />
+          {linking && <LinkingIndicator />}
+          {noMatchName && <NoMatchMessage name={noMatchName} />}
+        </div>
       </div>
     );
   }
 
-  /* ── No seller matched — search UI ──────────────────────── */
+  /* ── NO SELLER — SEARCH STATE ───────────────────────────── */
 
   return (
     <div className="rounded-lg border border-amber-200/60 bg-amber-50/30 dark:border-amber-900/40 dark:bg-amber-950/20">
-      {/* Auto-match result from Python backend */}
-      {matchResult && !searching && (
-        <div className="flex items-center gap-2 border-b border-amber-200/60 px-4 py-2.5 dark:border-amber-900/40">
+      {/* Auto-match suggestion from Python backend */}
+      {autoMatch && !searching && (
+        <div className="flex items-center gap-2.5 border-b border-amber-200/40 px-4 py-2 dark:border-amber-900/30">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium">{matchResult.seller.name}</p>
-            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <span>{matchResult.seller.shipment_count} shipments</span>
-              {matchResult.confidence > 0 && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-medium">{autoMatch.seller.name}</span>
+              {autoMatch.confidence > 0 && (
                 <Badge
                   variant="outline"
                   className={`text-[9px] ${
-                    matchResult.confidence >= 0.8
+                    autoMatch.confidence >= 0.8
                       ? "border-emerald-300 text-emerald-700"
-                      : matchResult.confidence >= 0.5
+                      : autoMatch.confidence >= 0.5
                         ? "border-amber-300 text-amber-700"
                         : "border-red-300 text-red-700"
                   }`}
                 >
-                  {Math.round(matchResult.confidence * 100)}%
+                  {Math.round(autoMatch.confidence * 100)}% match
                 </Badge>
               )}
             </div>
+            <p className="text-[10px] text-muted-foreground">
+              {autoMatch.seller.shipment_count} past shipment{autoMatch.seller.shipment_count !== 1 ? "s" : ""}
+              {autoMatch.match_reason && ` · ${autoMatch.match_reason}`}
+            </p>
           </div>
           <Button
-            size="sm"
-            className="h-6 gap-1 text-[11px]"
-            onClick={handleLinkFromAutoMatch}
-            disabled={loading}
+            size="sm" className="h-6 gap-1 text-[11px]"
+            onClick={handleLinkAutoMatch} disabled={isBusy}
           >
             <ArrowRight className="h-3 w-3" />
             Link
@@ -407,60 +307,71 @@ export function SellerMatch({
         </div>
       )}
 
-      {/* Header row */}
-      <div className="flex items-center gap-2.5 px-4 py-2.5">
-        {searching ? (
-          <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
-        ) : (
-          <UserX className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-            {searching ? "Searching sellers..." : "No seller linked"}
-          </p>
-          {shipperName && !matchResult && !searching && (
-            <p className="text-[11px] text-amber-600/80 dark:text-amber-400/70">
-              Shipper: {shipperName}
-            </p>
+      {/* Header + always-visible search */}
+      <div className="px-4 py-2.5">
+        <div className="mb-2 flex items-center gap-2">
+          {searching ? (
+            <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
+          ) : (
+            <UserX className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          )}
+          <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+            {searching ? "Finding seller..." : "No seller linked"}
+          </span>
+          {shipperName && !autoMatch && !searching && (
+            <span className="ml-auto text-[10px] text-muted-foreground truncate max-w-[140px]">
+              {shipperName}
+            </span>
           )}
         </div>
-        {!showSearch && isActionable && (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 gap-1 text-xs text-amber-700 hover:text-amber-900 dark:text-amber-300"
-            onClick={() => {
-              setShowSearch(true);
-              search.setQuery(shipperName || "");
-            }}
-          >
-            <Search className="h-3 w-3" />
-            Search
-          </Button>
-        )}
-      </div>
 
-      {/* Type-ahead search input */}
-      {showSearch && searchSection}
+        {isActionable && (
+          <CustomerCombobox
+            onSelect={handleSelectCustomer}
+            initialQuery={shipperName || ""}
+            placeholder="Search by company name..."
+          />
+        )}
+
+        {linking && <LinkingIndicator />}
+        {noMatchName && <NoMatchMessage name={noMatchName} />}
+      </div>
     </div>
   );
 }
 
-/* ── Helper sub-components ────────────────────────────────── */
+/* ── Sub-components ───────────────────────────────────────── */
 
-function ProfileRow({
-  icon: Icon,
-  label,
-  value,
-}: {
+function CustomerProfile({ customer }: { customer: XindusCustomer }) {
+  return (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+      {customer.contact_name && (
+        <ProfileRow icon={User} label="Contact" value={customer.contact_name} />
+      )}
+      <ProfileRow icon={Mail} label="Email" value={customer.email} />
+      <ProfileRow icon={Phone} label="Phone" value={customer.phone} />
+      {customer.iec && <ProfileRow icon={Hash} label="IEC" value={customer.iec} />}
+      {customer.gstn && <ProfileRow icon={Hash} label="GSTN" value={customer.gstn} />}
+      {(customer.city || customer.state) && (
+        <ProfileRow
+          icon={Building2}
+          label="Location"
+          value={[customer.city, customer.state].filter(Boolean).join(", ")}
+        />
+      )}
+    </div>
+  );
+}
+
+function ProfileRow({ icon: Icon, label, value }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-2 text-xs">
+    <div className="flex items-center gap-1.5">
       <Icon className="h-3 w-3 shrink-0 text-muted-foreground" />
-      <span className="w-16 shrink-0 text-muted-foreground">{label}</span>
+      <span className="w-14 shrink-0 text-[10px] text-muted-foreground">{label}</span>
       <span className="min-w-0 flex-1 truncate">{value}</span>
     </div>
   );
@@ -475,7 +386,23 @@ function DefaultRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function LinkingIndicator() {
+  return (
+    <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+      <Loader2 className="h-3 w-3 animate-spin" />
+      Linking seller...
+    </div>
+  );
+}
+
+function NoMatchMessage({ name }: { name: string }) {
+  return (
+    <p className="mt-2 text-[11px] text-amber-600 dark:text-amber-400">
+      No seller profile found for &ldquo;{name}&rdquo;. The customer exists in Xindus but has no shipment history in the agent yet.
+    </p>
+  );
+}
+
 function formatAddrShort(addr: ShipmentAddress): string {
-  const parts = [addr.name, addr.city, addr.country].filter(Boolean);
-  return parts.join(", ") || "Address set";
+  return [addr.name, addr.city, addr.country].filter(Boolean).join(", ") || "Address set";
 }
