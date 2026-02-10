@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Pencil, Sparkles, Phone, Mail, Check, X, AlertTriangle, CheckCircle2, History, Shield, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ADDRESS_FIELDS, ADDRESS_TYPE_CONFIG, type AddressType } from "./address-field-config";
+import { AddressAutocomplete, type AutocompleteSelection } from "./address-autocomplete";
 import type { ShipmentAddress, CorrectionItem } from "@/types/agent";
 
 // Re-export for backwards compat (box-receiver-section imports ADDRESS_FIELDS from here)
@@ -66,6 +67,25 @@ export function AddressForm({
   const avgConf = confValues.length > 0
     ? confValues.reduce((a, b) => a + b, 0) / confValues.length
     : null;
+
+  const isUSCountry = useMemo(() => {
+    const raw = (formValues.country || addrRecord.country || "").toLowerCase().trim();
+    return !raw || raw === "us" || raw === "usa" || raw === "united states" || raw === "united states of america";
+  }, [formValues.country, addrRecord.country]);
+
+  const handleAutocompleteSelect = useCallback(
+    (fields: AutocompleteSelection) => {
+      setFormValues((prev) => ({
+        ...prev,
+        address: fields.address,
+        city: fields.city,
+        state: fields.state,
+        zip: fields.zip,
+        country: fields.country,
+      }));
+    },
+    [],
+  );
 
   const startEdit = () => {
     if (readOnly) return;
@@ -228,13 +248,24 @@ export function AddressForm({
           {ADDRESS_FIELDS.map((f) => (
             <div key={f.key} className={f.span === "full" ? "col-span-3" : ""}>
               <Label className="mb-0.5 text-[10px] text-muted-foreground">{f.label}</Label>
-              <Input
-                value={formValues[f.key] || ""}
-                onChange={(e) =>
-                  setFormValues((prev) => ({ ...prev, [f.key]: e.target.value }))
-                }
-                className="h-7 text-xs"
-              />
+              {f.key === "address" && isUSCountry ? (
+                <AddressAutocomplete
+                  value={formValues[f.key] || ""}
+                  onChange={(val) =>
+                    setFormValues((prev) => ({ ...prev, [f.key]: val }))
+                  }
+                  onSelect={handleAutocompleteSelect}
+                  className="h-7 text-xs"
+                />
+              ) : (
+                <Input
+                  value={formValues[f.key] || ""}
+                  onChange={(e) =>
+                    setFormValues((prev) => ({ ...prev, [f.key]: e.target.value }))
+                  }
+                  className="h-7 text-xs"
+                />
+              )}
             </div>
           ))}
         </div>
