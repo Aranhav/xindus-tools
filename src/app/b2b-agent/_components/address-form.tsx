@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Sparkles, Phone, Mail, Check, X, AlertTriangle, CheckCircle2, History, Shield } from "lucide-react";
+import { Pencil, Sparkles, Phone, Mail, Check, X, AlertTriangle, CheckCircle2, History, Shield, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,7 @@ interface AddressFormProps {
   readOnly?: boolean;
   boxLabel?: string;
   boxTooltip?: string;
+  onDelete?: () => void;
 }
 
 export function AddressForm({
@@ -39,6 +40,7 @@ export function AddressForm({
   readOnly,
   boxLabel,
   boxTooltip,
+  onDelete,
 }: AddressFormProps) {
   const [editing, setEditing] = useState(false);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
@@ -195,15 +197,27 @@ export function AddressForm({
               </Button>
             </div>
           ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-5 gap-0.5 px-1.5 text-[10px] text-muted-foreground hover:text-foreground shrink-0"
-              onClick={startEdit}
-            >
-              <Pencil className="h-2.5 w-2.5" />
-              Edit
-            </Button>
+            <div className="flex items-center gap-1 shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 gap-0.5 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
+                onClick={startEdit}
+              >
+                <Pencil className="h-2.5 w-2.5" />
+                Edit
+              </Button>
+              {onDelete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 w-5 p-0 text-muted-foreground hover:text-destructive"
+                  onClick={onDelete}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
           )
         )}
       </div>

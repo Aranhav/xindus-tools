@@ -85,6 +85,18 @@ export function ReceiverAddressesSection({
     [groups, boxes, onBoxesChange, multiAddress],
   );
 
+  const handleDelete = useCallback(
+    (groupIdx: number) => {
+      const group = groups[groupIdx];
+      if (!group) return;
+      // Remove all boxes belonging to this receiver group
+      const removeSet = new Set(group.boxIndices);
+      const next = boxes.filter((_, idx) => !removeSet.has(idx));
+      onBoxesChange(next.length > 0 ? next : []);
+    },
+    [groups, boxes, onBoxesChange],
+  );
+
   const addReceiver = useCallback(() => {
     // Add a new box with empty receiver to trigger multi-address
     const emptyAddr: ShipmentAddress = {
@@ -121,20 +133,11 @@ export function ReceiverAddressesSection({
 
   return (
     <div>
-      {multiAddress && (
-        <div className="mb-2 flex items-center justify-between">
+      {multiAddress && groups.length > 0 && (
+        <div className="mb-2">
           <span className="text-[10px] font-medium text-muted-foreground">
             {groups.length} receiver{groups.length !== 1 ? "s" : ""}
           </span>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-5 gap-0.5 px-1.5 text-[10px]"
-            onClick={addReceiver}
-          >
-            <Plus className="h-2.5 w-2.5" />
-            Add
-          </Button>
         </div>
       )}
 
@@ -166,6 +169,7 @@ export function ReceiverAddressesSection({
               previousAddresses={sellerHistory?.receiver_addresses}
               boxLabel={boxLabel}
               boxTooltip={boxTooltip}
+              onDelete={multiAddress ? () => handleDelete(i) : undefined}
             />
           );
         })}
@@ -174,6 +178,18 @@ export function ReceiverAddressesSection({
           <div className="rounded-xl border border-dashed p-6 text-center">
             <p className="text-xs text-muted-foreground">No receiver addresses. Add a box to get started.</p>
           </div>
+        )}
+
+        {multiAddress && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 w-full gap-1 text-xs text-muted-foreground"
+            onClick={addReceiver}
+          >
+            <Plus className="h-3 w-3" />
+            Add Address
+          </Button>
         )}
       </div>
     </div>
