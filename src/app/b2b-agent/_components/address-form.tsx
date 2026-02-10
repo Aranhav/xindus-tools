@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ADDRESS_FIELDS, ADDRESS_TYPE_CONFIG, type AddressType } from "./address-field-config";
 import type { ShipmentAddress, CorrectionItem } from "@/types/agent";
 
@@ -23,6 +24,7 @@ interface AddressFormProps {
   previousAddresses?: ShipmentAddress[];
   readOnly?: boolean;
   boxLabel?: string;
+  boxTooltip?: string;
 }
 
 export function AddressForm({
@@ -36,6 +38,7 @@ export function AddressForm({
   previousAddresses,
   readOnly,
   boxLabel,
+  boxTooltip,
 }: AddressFormProps) {
   const [editing, setEditing] = useState(false);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
@@ -149,7 +152,20 @@ export function AddressForm({
             {label}
           </span>
           {boxLabel && (
-            <Badge variant="secondary" className="text-[10px] shrink-0">{boxLabel}</Badge>
+            boxTooltip ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="secondary" className="text-[10px] shrink-0 cursor-default">{boxLabel}</Badge>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>{boxTooltip}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <Badge variant="secondary" className="text-[10px] shrink-0">{boxLabel}</Badge>
+            )
           )}
           {avgConf != null && (
             <div className={`flex items-center gap-0.5 text-[10px] font-medium shrink-0 ${

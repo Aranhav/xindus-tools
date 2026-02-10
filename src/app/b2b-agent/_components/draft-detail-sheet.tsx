@@ -19,6 +19,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -547,22 +558,42 @@ export function DraftDetailSheet({
             )}
             <div className="flex-1" />
             {isActionable && (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={reExtracting || loading}
-                onClick={async () => {
-                  setReExtracting(true);
-                  try {
-                    await onReExtract(draft.id);
-                  } finally {
-                    setReExtracting(false);
-                  }
-                }}
-              >
-                <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${reExtracting ? "animate-spin" : ""}`} />
-                Re-extract
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={reExtracting || loading}
+                  >
+                    <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${reExtracting ? "animate-spin" : ""}`} />
+                    Re-extract
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent size="sm">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Re-extract draft?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will re-run AI extraction on the source documents and discard all manual corrections.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      variant="destructive"
+                      onClick={async () => {
+                        setReExtracting(true);
+                        try {
+                          await onReExtract(draft.id);
+                        } finally {
+                          setReExtracting(false);
+                        }
+                      }}
+                    >
+                      Re-extract
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
         </div>

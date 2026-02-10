@@ -142,13 +142,17 @@ export function ReceiverAddressesSection({
         {groups.map((group, i) => {
           const MAX_BOX_DISPLAY = 3;
           const boxNums = group.boxIndices.map((idx) => idx + 1);
+          const isTruncated = multiAddress && boxNums.length > MAX_BOX_DISPLAY;
           const boxLabel = multiAddress
-            ? boxNums.length <= MAX_BOX_DISPLAY
-              ? `Box ${boxNums.join(", ")}`
-              : `Box ${boxNums.slice(0, MAX_BOX_DISPLAY).join(", ")} +${boxNums.length - MAX_BOX_DISPLAY}`
+            ? isTruncated
+              ? `Box ${boxNums.slice(0, MAX_BOX_DISPLAY).join(", ")} +${boxNums.length - MAX_BOX_DISPLAY}`
+              : `Box ${boxNums.join(", ")}`
             : boxes.length > 1
               ? "All Boxes"
               : undefined;
+          const boxTooltip = isTruncated
+            ? `Box ${boxNums.join(", ")}`
+            : undefined;
 
           return (
             <AddressForm
@@ -161,6 +165,7 @@ export function ReceiverAddressesSection({
               onCorrections={(corrections) => handleSave(i, corrections)}
               previousAddresses={sellerHistory?.receiver_addresses}
               boxLabel={boxLabel}
+              boxTooltip={boxTooltip}
             />
           );
         })}

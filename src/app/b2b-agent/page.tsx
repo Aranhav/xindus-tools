@@ -192,10 +192,6 @@ export default function B2BAgentPage() {
 
   const handleReExtract = useCallback(
     async (draftId: string) => {
-      const confirmed = window.confirm(
-        "Re-extract will re-run AI on source documents and discard manual corrections. Continue?"
-      );
-      if (!confirmed) return;
       await agent.reExtractDraft(draftId);
     },
     [agent],
