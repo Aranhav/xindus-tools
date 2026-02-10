@@ -43,6 +43,23 @@ export function emptyBox(index: number, inheritReceiver?: ShipmentAddress): Ship
   };
 }
 
+/* ── Gaia confidence badge (color-coded: HIGH/MEDIUM/LOW) ── */
+
+function GaiaConfidence({ confidence }: { confidence?: string }) {
+  const colors = confidence === "HIGH"
+    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+    : confidence === "MEDIUM"
+      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+      : confidence === "LOW"
+        ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
+        : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400";
+  return (
+    <span className={`rounded px-1 py-px text-[9px] font-semibold leading-none ${colors}`}>
+      Gaia{confidence ? ` · ${confidence[0]}${confidence.slice(1).toLowerCase()}` : ""}
+    </span>
+  );
+}
+
 /* ── Product combobox (searchable, scrollable) ────────────── */
 
 function ProductCombobox({ options, onSelect }: {
@@ -138,6 +155,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
         igst_amount: product.igst_percent ?? null,
         gaia_classified: product.gaia_classified || false,
         gaia_description: product.gaia_description || "",
+        hsn_confidence: product.hsn_confidence || "",
       };
       onChange(next);
     },
@@ -234,15 +252,13 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                     <span className="mb-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
                       Import HSN
                       {item.gaia_classified && item.ihsn && (
-                        <span className="rounded bg-emerald-100 px-1 py-px text-[9px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
-                          Gaia
-                        </span>
+                        <GaiaConfidence confidence={item.hsn_confidence} />
                       )}
                     </span>
                     <Input
                       value={item.ihsn ?? ""}
                       className={`h-7 font-mono text-xs ${item.gaia_classified && item.ihsn ? "border-emerald-300 dark:border-emerald-800" : ""}`}
-                      placeholder="8-digit"
+                      placeholder="10-digit"
                       onChange={(e) => updateItem(i, "ihsn", e.target.value)}
                     />
                   </div>
@@ -283,9 +299,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                     <span className="mb-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
                       Duty %
                       {item.gaia_classified && item.duty_rate != null && (
-                        <span className="rounded bg-emerald-100 px-1 py-px text-[9px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
-                          Gaia
-                        </span>
+                        <GaiaConfidence confidence={item.hsn_confidence} />
                       )}
                     </span>
                     <Input

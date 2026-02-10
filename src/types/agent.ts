@@ -82,6 +82,7 @@ export interface ShipmentBoxItem {
   remarks: string;
   gaia_classified?: boolean;
   gaia_description?: string;
+  hsn_confidence?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -116,6 +117,7 @@ export interface ProductDetail {
   igst_percent?: number | null;
   gaia_classified?: boolean;
   gaia_description?: string;
+  hsn_confidence?: string;
 }
 
 /* ------------------------------------------------------------------ */

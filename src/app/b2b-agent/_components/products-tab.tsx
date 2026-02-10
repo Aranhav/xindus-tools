@@ -10,10 +10,17 @@ import type { ProductDetail } from "@/types/agent";
 
 /* ── Gaia badge (reusable) ───────────────────────────────── */
 
-function GaiaBadge() {
+function GaiaBadge({ confidence }: { confidence?: string }) {
+  const colors = confidence === "HIGH"
+    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+    : confidence === "MEDIUM"
+      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+      : confidence === "LOW"
+        ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
+        : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400";
   return (
-    <span className="rounded bg-emerald-100 px-1 py-px text-[9px] font-semibold leading-none text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
-      Gaia
+    <span className={`rounded px-1 py-px text-[9px] font-semibold leading-none ${colors}`}>
+      Gaia{confidence ? ` · ${confidence[0]}${confidence.slice(1).toLowerCase()}` : ""}
     </span>
   );
 }
@@ -61,10 +68,10 @@ function ProductRow({
             value={product.ihsn ?? ""}
             onChange={(e) => set("ihsn", e.target.value)}
             className={`h-7 font-mono text-xs ${isGaia && product.ihsn ? "border-emerald-300 dark:border-emerald-800" : ""}`}
-            placeholder="8-digit"
+            placeholder="10-digit"
           />
           {isGaia && product.ihsn && (
-            <div className="flex justify-end"><GaiaBadge /></div>
+            <div className="flex justify-end"><GaiaBadge confidence={product.hsn_confidence} /></div>
           )}
         </div>
       </td>
@@ -104,7 +111,7 @@ function ProductRow({
             placeholder="%"
           />
           {isGaia && product.duty_rate != null && (
-            <div className="flex justify-end"><GaiaBadge /></div>
+            <div className="flex justify-end"><GaiaBadge confidence={product.hsn_confidence} /></div>
           )}
         </div>
       </td>
