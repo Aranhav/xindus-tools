@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ShipperPicker } from "./shipper-picker";
 import { ReceiverAddressesSection } from "./receiver-addresses-section";
 import { AddressForm } from "./address-form";
+import { IorPicker } from "./ior-picker";
 import type {
   ShipmentData,
   DraftDetail,
@@ -165,15 +166,13 @@ export function AddressesTab({
                 addressType="billing"
                 previousAddresses={sellerHistory?.billing_addresses}
               />
-              <AddressForm
-                label="Importer of Record"
-                address={data.ior_address}
-                basePath="ior_address"
+              <IorPicker
+                iorAddress={data.ior_address}
+                xindusCustomerId={sellerProfile?.xindus_customer_id}
+                onCorrections={addCorrections}
                 confidence={draft.confidence_scores?.ior_address as Record<string, number> | undefined}
                 sellerDefault={sellerDefaults.ior_address as ShipmentAddress | undefined}
-                onCorrections={addCorrections}
-                addressType="ior"
-                previousAddresses={sellerHistory?.ior_addresses}
+                sellerHistory={sellerHistory}
               />
             </div>
           )}

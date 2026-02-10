@@ -132,6 +132,24 @@ export function DraftDetailSheet({
     return false;
   }, [boxes]);
 
+  // Derive destination country from receiver addresses
+  const derivedCountry = useMemo(() => {
+    const countries = boxes
+      .map((b) => (b.receiver_address as unknown as Record<string, string>)?.country)
+      .filter(Boolean);
+    return countries.length > 0 ? countries[0] : null;
+  }, [boxes]);
+
+  const mixedCountries = useMemo(() => {
+    if (boxes.length <= 1) return false;
+    const countries = new Set(
+      boxes
+        .map((b) => (b.receiver_address as unknown as Record<string, string>)?.country)
+        .filter(Boolean),
+    );
+    return countries.size > 1;
+  }, [boxes]);
+
   /* ── Auto-save: inline field edits ─────────────────────── */
 
   const startEdit = useCallback((fieldPath: string, currentValue: string) => {
@@ -299,6 +317,27 @@ export function DraftDetailSheet({
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data?.marketplace]);
+
+  /* ── Auto-derive destination country from receiver ─────── */
+
+  useEffect(() => {
+    if (!data || !draft || !derivedCountry) return;
+    if (derivedCountry === data.country) return;
+
+    const timer = setTimeout(() => {
+      const d = draftRef.current;
+      const dd = dataRef.current;
+      if (d && dd) {
+        onCorrect(d.id, [{
+          field_path: "country",
+          old_value: dd.country,
+          new_value: derivedCountry,
+        }]);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [derivedCountry]);
 
   /* ── Auto-save: products (debounced 800ms) ─────────────── */
 
@@ -481,6 +520,7 @@ export function DraftDetailSheet({
               onRemoveFile={onRemoveFile}
               onDownloadFile={onDownloadFile}
               loading={loading}
+              mixedCountries={mixedCountries}
             />
 
             {/* ── Addresses tab ────────────────────────────── */}

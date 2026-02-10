@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   FileText,
   Settings2,
@@ -16,6 +16,7 @@ import {
   Package,
   Weight,
   DollarSign,
+  AlertTriangle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,6 +78,7 @@ interface OverviewTabProps {
   onRemoveFile: (draftId: string, fileId: string) => Promise<DraftDetail | null>;
   onDownloadFile: (draftId: string, fileId: string) => void;
   loading: boolean;
+  mixedCountries?: boolean;
 }
 
 /* ── Section Card ─────────────────────────────────────────── */
@@ -240,7 +242,16 @@ export function OverviewTab({
   onRemoveFile,
   onDownloadFile,
   loading,
+  mixedCountries,
 }: OverviewTabProps) {
+  // Dynamically expand country options if current value not in list
+  const countryOptions = useMemo(() => {
+    const base = [...COUNTRY_OPTIONS];
+    if (data.country && !base.includes(data.country)) {
+      base.push(data.country);
+    }
+    return base;
+  }, [data.country]);
   const [shippingMethods, setShippingMethods] = useState<{code: string; name: string}[]>([]);
 
   useEffect(() => {
@@ -430,7 +441,7 @@ export function OverviewTab({
             label="Country"
             value={data.country}
             fieldPath="country"
-            options={COUNTRY_OPTIONS}
+            options={countryOptions}
             onChanged={addFieldCorrection}
             sellerDefault={sellerDefaults?.country as string | undefined}
           />
@@ -442,6 +453,12 @@ export function OverviewTab({
             onChanged={addFieldCorrection}
             sellerDefault={sellerDefaults?.marketplace as string | undefined}
           />
+          {mixedCountries && (
+            <div className="col-span-2 flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50/50 px-2 py-1 text-[11px] text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400">
+              <AlertTriangle className="h-3 w-3 shrink-0" />
+              Receivers have different countries. Using first receiver&apos;s country.
+            </div>
+          )}
         </div>
       </SectionCard>
 
