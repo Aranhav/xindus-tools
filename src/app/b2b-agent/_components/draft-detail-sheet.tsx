@@ -80,6 +80,7 @@ interface DraftDetailSheetProps {
   onDownloadFile: (draftId: string, fileId: string) => void;
   sellerHistory?: SellerHistory | null;
   onFetchSellerHistory?: (sellerId: string) => Promise<SellerHistory | null>;
+  onClassify?: (draftId: string) => Promise<unknown>;
 }
 
 export function DraftDetailSheet({
@@ -99,12 +100,14 @@ export function DraftDetailSheet({
   onDownloadFile,
   sellerHistory,
   onFetchSellerHistory,
+  onClassify,
 }: DraftDetailSheetProps) {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [localBoxes, setLocalBoxes] = useState<ShipmentBox[] | null>(null);
   const [localProducts, setLocalProducts] = useState<ProductDetail[] | null>(null);
   const [reExtracting, setReExtracting] = useState(false);
+  const [classifying, setClassifying] = useState(false);
   const [manualMultiAddress, setManualMultiAddress] = useState(false);
 
   // Refs for stable access inside debounced effects
@@ -547,11 +550,33 @@ export function DraftDetailSheet({
 
             {/* ── Boxes tab ─────────────────────────────────── */}
             <TabsContent value="boxes" className="mt-0 px-6 py-4">
-              {localBoxes !== null && (
-                <Badge variant="outline" className="mb-2 text-[11px] text-primary">
-                  Saving...
-                </Badge>
-              )}
+              <div className="mb-2 flex items-center gap-2">
+                {localBoxes !== null && (
+                  <Badge variant="outline" className="text-[11px] text-primary">
+                    Saving...
+                  </Badge>
+                )}
+                <div className="flex-1" />
+                {onClassify && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1.5 text-xs"
+                    disabled={classifying || loading}
+                    onClick={async () => {
+                      setClassifying(true);
+                      try {
+                        await onClassify(draft.id);
+                      } finally {
+                        setClassifying(false);
+                      }
+                    }}
+                  >
+                    <RefreshCw className={`h-3 w-3 ${classifying ? "animate-spin" : ""}`} />
+                    {classifying ? "Classifying..." : "Classify with Gaia"}
+                  </Button>
+                )}
+              </div>
               <BoxEditor boxes={boxes} onChange={setLocalBoxes} multiAddress={effectiveMultiAddress} previousReceiverAddresses={sellerHistory?.receiver_addresses} products={products} currency={data.billing_currency || data.shipping_currency || "USD"} />
             </TabsContent>
 

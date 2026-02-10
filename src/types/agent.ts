@@ -10,6 +10,7 @@ export interface SSEProgress {
     | "extracting"
     | "grouping"
     | "building_drafts"
+    | "enriching"
     | "complete"
     | "error";
   file?: string;
@@ -79,6 +80,8 @@ export interface ShipmentBoxItem {
   cogs_value?: number | null;
   insurance?: number | null;
   remarks: string;
+  gaia_classified?: boolean;
+  gaia_description?: string;
 }
 
 /* ------------------------------------------------------------------ */

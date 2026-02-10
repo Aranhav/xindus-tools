@@ -343,6 +343,7 @@ export default function B2BAgentPage() {
         onDownloadFile={agent.downloadDraftFile}
         sellerHistory={agent.sellerHistory}
         onFetchSellerHistory={agent.fetchSellerHistory}
+        onClassify={agent.classifyItems}
       />
     </PageContainer>
   );

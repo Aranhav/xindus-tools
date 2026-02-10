@@ -22,6 +22,7 @@ const STEP_LABELS: Record<SSEProgress["step"], string> = {
   extracting: "Extracting data with AI",
   grouping: "Grouping into shipments",
   building_drafts: "Building draft shipments",
+  enriching: "Classifying items with Gaia",
   complete: "Processing complete",
   error: "Error",
 };
@@ -481,6 +482,31 @@ export function useB2BAgent() {
     [fetchDrafts],
   );
 
+  // ── Classify items with Gaia ──────────────────────────────
+
+  const classifyItems = useCallback(
+    async (draftId: string) => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/b2b-agent/drafts/${draftId}/classify`, {
+          method: "POST",
+        });
+        if (!res.ok) throw new Error("Failed to classify items");
+        const data: DraftDetail = await res.json();
+        setActiveDraft(data);
+        setSellerProfile(data.seller ?? null);
+        fetchDrafts();
+        return data;
+      } catch (err) {
+        setError((err as Error).message);
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchDrafts],
+  );
+
   // ── Add files to draft ─────────────────────────────────────
 
   const addFilesToDraft = useCallback(
@@ -656,6 +682,7 @@ export function useB2BAgent() {
     rejectDraft,
     archiveDraft,
     reExtractDraft,
+    classifyItems,
     addFilesToDraft,
     removeFileFromDraft,
     downloadDraftFile,

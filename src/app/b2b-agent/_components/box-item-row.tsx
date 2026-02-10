@@ -228,10 +228,17 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                     />
                   </div>
                   <div>
-                    <span className="mb-0.5 block text-[11px] text-muted-foreground">Import HSN</span>
+                    <span className="mb-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                      Import HSN
+                      {item.gaia_classified && item.ihsn && (
+                        <span className="rounded bg-emerald-100 px-1 py-px text-[9px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+                          Gaia
+                        </span>
+                      )}
+                    </span>
                     <Input
                       value={item.ihsn ?? ""}
-                      className="h-7 font-mono text-xs"
+                      className={`h-7 font-mono text-xs ${item.gaia_classified && item.ihsn ? "border-emerald-300 dark:border-emerald-800" : ""}`}
                       placeholder="8-digit"
                       onChange={(e) => updateItem(i, "ihsn", e.target.value)}
                     />
@@ -270,11 +277,18 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                     />
                   </div>
                   <div>
-                    <span className="mb-0.5 block text-[11px] text-muted-foreground">Duty %</span>
+                    <span className="mb-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                      Duty %
+                      {item.gaia_classified && item.duty_rate != null && (
+                        <span className="rounded bg-emerald-100 px-1 py-px text-[9px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+                          Gaia
+                        </span>
+                      )}
+                    </span>
                     <Input
                       type="number"
                       value={item.duty_rate ?? ""}
-                      className="h-7 text-xs tabular-nums"
+                      className={`h-7 text-xs tabular-nums ${item.gaia_classified && item.duty_rate != null ? "border-emerald-300 dark:border-emerald-800" : ""}`}
                       placeholder="0"
                       onChange={(e) => updateItem(i, "duty_rate", e.target.value ? Number(e.target.value) : null)}
                     />
