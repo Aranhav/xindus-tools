@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useState, useMemo, useCallback } from "react";
-import { Plus, Trash2, ChevronRight, ListFilter } from "lucide-react";
+import { Plus, Trash2, ChevronRight, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -47,7 +47,7 @@ const cell = "border-0 bg-transparent h-7 text-xs p-1 focus:ring-1 focus:ring-ri
 const numCell = `${cell} text-right tabular-nums`;
 const th = "text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-1 py-1.5 whitespace-nowrap";
 
-/* ── Product picker popover ───────────────────────────────── */
+/* ── Product picker (dropdown on description) ─────────────── */
 
 function ProductPicker({ options, onSelect }: {
   options: ProductDetail[];
@@ -59,14 +59,14 @@ function ProductPicker({ options, onSelect }: {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="shrink-0 rounded-sm p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="shrink-0 rounded-sm p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           title="Pick from product list"
         >
-          <ListFilter className="h-3 w-3" />
+          <ChevronDown className="h-3.5 w-3.5" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-72 p-1" onOpenAutoFocus={(e) => e.preventDefault()}>
-        <div className="max-h-48 overflow-y-auto">
+      <PopoverContent align="end" side="bottom" className="w-80 p-1" onOpenAutoFocus={(e) => e.preventDefault()}>
+        <div className="max-h-52 overflow-y-auto">
           {options.map((p, pi) => (
             <button
               key={pi}
@@ -186,14 +186,14 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                   <td className="w-6 text-center text-[10px] text-muted-foreground align-middle">{i + 1}</td>
                   <td>
                     <div className="flex items-center gap-0.5">
+                      <Input value={item.description} className={`${cell} min-w-0 flex-1`} placeholder="Item description"
+                        onChange={(e) => updateItem(i, "description", e.target.value)} />
                       {hasProducts && (
                         <ProductPicker
                           options={productOptions}
                           onSelect={(v) => handleProductSelect(i, v)}
                         />
                       )}
-                      <Input value={item.description} className={`${cell} min-w-0`} placeholder="Item description"
-                        onChange={(e) => updateItem(i, "description", e.target.value)} />
                     </div>
                   </td>
                   <td className="w-14">
@@ -217,37 +217,37 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                   </td>
                 </tr>
 
-                {/* Secondary row — extra fields */}
+                {/* Secondary row — extra fields with visible inputs */}
                 {showMore && (
                   <tr className="border-b">
                     <td />
-                    <td colSpan={5} className="pb-1.5 pt-0">
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                        <label className="flex items-center gap-1 text-[10px] text-muted-foreground whitespace-nowrap">
-                          iHSN
-                          <Input value={item.ihsn} className={`${cell} w-20 font-mono`}
+                    <td colSpan={5} className="pb-2 pt-0.5">
+                      <div className="grid grid-cols-5 gap-2">
+                        <div>
+                          <span className="mb-0.5 block text-[10px] text-muted-foreground">iHSN</span>
+                          <Input value={item.ihsn} className="h-6 text-xs font-mono"
                             onChange={(e) => updateItem(i, "ihsn", e.target.value)} />
-                        </label>
-                        <label className="flex items-center gap-1 text-[10px] text-muted-foreground whitespace-nowrap">
-                          Wt(kg)
-                          <Input type="number" value={item.weight ?? ""} className={`${numCell} w-14`}
+                        </div>
+                        <div>
+                          <span className="mb-0.5 block text-[10px] text-muted-foreground">Weight (kg)</span>
+                          <Input type="number" value={item.weight ?? ""} className="h-6 text-xs text-right tabular-nums"
                             onChange={(e) => updateItem(i, "weight", e.target.value ? Number(e.target.value) : null)} />
-                        </label>
-                        <label className="flex items-center gap-1 text-[10px] text-muted-foreground whitespace-nowrap">
-                          Origin
-                          <Input value={item.country_of_origin} className={`${cell} w-12`}
+                        </div>
+                        <div>
+                          <span className="mb-0.5 block text-[10px] text-muted-foreground">Origin</span>
+                          <Input value={item.country_of_origin} className="h-6 text-xs"
                             onChange={(e) => updateItem(i, "country_of_origin", e.target.value)} />
-                        </label>
-                        <label className="flex items-center gap-1 text-[10px] text-muted-foreground whitespace-nowrap">
-                          IGST%
-                          <Input type="number" value={item.igst_amount ?? ""} className={`${numCell} w-14`}
+                        </div>
+                        <div>
+                          <span className="mb-0.5 block text-[10px] text-muted-foreground">IGST %</span>
+                          <Input type="number" value={item.igst_amount ?? ""} className="h-6 text-xs text-right tabular-nums"
                             onChange={(e) => updateItem(i, "igst_amount", e.target.value ? Number(e.target.value) : null)} />
-                        </label>
-                        <label className="flex items-center gap-1 text-[10px] text-muted-foreground whitespace-nowrap">
-                          Duty%
-                          <Input type="number" value={item.duty_rate ?? ""} className={`${numCell} w-14`}
+                        </div>
+                        <div>
+                          <span className="mb-0.5 block text-[10px] text-muted-foreground">Duty %</span>
+                          <Input type="number" value={item.duty_rate ?? ""} className="h-6 text-xs text-right tabular-nums"
                             onChange={(e) => updateItem(i, "duty_rate", e.target.value ? Number(e.target.value) : null)} />
-                        </label>
+                        </div>
                       </div>
                     </td>
                     <td />

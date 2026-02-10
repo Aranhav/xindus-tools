@@ -98,20 +98,20 @@ function BoxCard({
 
           {/* Compact dimensions */}
           <div className="flex items-end gap-3">
-            <div className="flex-1 min-w-0">
+            <div>
               <Label className="text-[10px] text-muted-foreground">Dimensions (cm)</Label>
               <div className="flex items-center">
                 <Input type="number" value={box.length || ""} placeholder="L"
                   onChange={(e) => setField("length", Number(e.target.value) || 0)}
-                  className="h-7 rounded-r-none border-r-0 text-xs" />
+                  className="h-7 w-16 rounded-r-none border-r-0 text-xs text-center" />
                 <span className="flex h-7 items-center border-y border-border bg-muted/50 px-1 text-[10px] text-muted-foreground">&times;</span>
                 <Input type="number" value={box.width || ""} placeholder="W"
                   onChange={(e) => setField("width", Number(e.target.value) || 0)}
-                  className="h-7 rounded-none border-x-0 text-xs" />
+                  className="h-7 w-16 rounded-none border-x-0 text-xs text-center" />
                 <span className="flex h-7 items-center border-y border-border bg-muted/50 px-1 text-[10px] text-muted-foreground">&times;</span>
                 <Input type="number" value={box.height || ""} placeholder="H"
                   onChange={(e) => setField("height", Number(e.target.value) || 0)}
-                  className="h-7 rounded-l-none border-l-0 text-xs" />
+                  className="h-7 w-16 rounded-l-none border-l-0 text-xs text-center" />
               </div>
             </div>
             <div className="w-20">
