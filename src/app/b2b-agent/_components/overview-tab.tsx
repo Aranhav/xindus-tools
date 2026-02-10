@@ -464,6 +464,7 @@ export function OverviewTab({
             label="Invoice Date"
             value={data.invoice_date}
             fieldPath="invoice_date"
+            type="date"
             {...fieldProps}
           />
           <SelectField
@@ -473,14 +474,6 @@ export function OverviewTab({
             options={CURRENCY_OPTIONS}
             onChanged={addFieldCorrection}
             sellerDefault={sellerDefaults?.shipping_currency as string | undefined}
-          />
-          <SelectField
-            label="Billing Currency"
-            value={data.billing_currency}
-            fieldPath="billing_currency"
-            options={CURRENCY_OPTIONS}
-            onChanged={addFieldCorrection}
-            sellerDefault={sellerDefaults?.billing_currency as string | undefined}
           />
           <EditableField
             label="Order Number"
@@ -525,9 +518,9 @@ export function OverviewTab({
             onChanged={addFieldCorrection}
           />
           <ToggleField
-            label="Multi Address Delivery"
-            value={data.multi_address_destination_delivery}
-            fieldPath="multi_address_destination_delivery"
+            label="Amazon FBA"
+            value={data.amazon_fba}
+            fieldPath="amazon_fba"
             onChanged={addFieldCorrection}
           />
         </div>

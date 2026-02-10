@@ -237,6 +237,7 @@ export interface SellerHistoricalDefaults {
 
 export interface DraftSummary {
   id: string;
+  draft_number?: number;
   status: string;
   file_count: number;
   grouping_reason?: string;
@@ -253,6 +254,7 @@ export interface DraftSummary {
 
 export interface DraftDetail {
   id: string;
+  draft_number?: number;
   batch_id: string;
   status: string;
   shipment_data: ShipmentData;

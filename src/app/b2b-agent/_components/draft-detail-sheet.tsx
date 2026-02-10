@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import {
   CheckCircle2,
   XCircle,
@@ -37,6 +37,7 @@ import { ProductsTab } from "./products-tab";
 import { AddressForm } from "./address-form";
 import { BoxEditor } from "./box-editor";
 import { SellerMatch } from "./seller-match";
+import { SelectField, CURRENCY_OPTIONS } from "./editable-fields";
 import { DraftStatusBadge } from "./draft-table";
 import { getNestedValue } from "./helpers";
 import type {
@@ -108,6 +109,19 @@ export function DraftDetailSheet({
   const boxes = localBoxes ?? data?.shipment_boxes ?? [];
   const products = localProducts ?? data?.product_details ?? [];
 
+  // Live computation of multi_address — mirrors backend _check_multi_address
+  const computedMultiAddress = useMemo(() => {
+    if (boxes.length <= 1) return false;
+    const first = boxes[0]?.receiver_address as unknown as Record<string, string> | undefined;
+    const firstKey = `${first?.address ?? ""}|${first?.city ?? ""}|${first?.zip ?? ""}`;
+    for (let i = 1; i < boxes.length; i++) {
+      const addr = boxes[i]?.receiver_address as unknown as Record<string, string> | undefined;
+      const key = `${addr?.address ?? ""}|${addr?.city ?? ""}|${addr?.zip ?? ""}`;
+      if (key !== firstKey && (addr?.address || addr?.city || addr?.zip)) return true;
+    }
+    return false;
+  }, [boxes]);
+
   /* ── Auto-save: inline field edits ─────────────────────── */
 
   const startEdit = useCallback((fieldPath: string, currentValue: string) => {
@@ -170,7 +184,7 @@ export function DraftDetailSheet({
   /* ── Receiver sync: box[0] receiver → top-level receiver_address ── */
 
   useEffect(() => {
-    if (!localBoxes || data?.multi_address_destination_delivery) return;
+    if (!localBoxes || computedMultiAddress) return;
     const firstReceiver = localBoxes[0]?.receiver_address;
     if (!firstReceiver) return;
     const timer = setTimeout(() => {
@@ -198,7 +212,7 @@ export function DraftDetailSheet({
 
   useEffect(() => {
     if (!data || !draft) return;
-    if (data.multi_address_destination_delivery) return;
+    if (computedMultiAddress) return;
     const topReceiver = data.receiver_address;
     if (!topReceiver?.name) return;
     const currentBoxes = data.shipment_boxes;
@@ -212,6 +226,27 @@ export function DraftDetailSheet({
     setLocalBoxes(updated);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft?.id]);
+
+  /* ── Auto-calculate multi_address_destination_delivery ──── */
+
+  useEffect(() => {
+    if (!data || !draft) return;
+    if (computedMultiAddress === !!data.multi_address_destination_delivery) return;
+
+    const timer = setTimeout(() => {
+      const d = draftRef.current;
+      const dd = dataRef.current;
+      if (d && dd) {
+        onCorrect(d.id, [{
+          field_path: "multi_address_destination_delivery",
+          old_value: dd.multi_address_destination_delivery,
+          new_value: computedMultiAddress,
+        }]);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [computedMultiAddress]);
 
   /* ── Auto-save: products (debounced 800ms) ─────────────── */
 
@@ -283,7 +318,10 @@ export function DraftDetailSheet({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <SheetTitle className="truncate text-lg">
-                  {data.invoice_number ? `INV ${data.invoice_number}` : "Shipment Draft"}
+                  <span className="font-mono text-muted-foreground">
+                    {draft.draft_number ? `B2B-${String(draft.draft_number).padStart(3, "0")}` : `#${draft.id.substring(0, 8)}`}
+                  </span>
+                  {data.invoice_number && <span className="ml-2">INV {data.invoice_number}</span>}
                 </SheetTitle>
                 <DraftStatusBadge status={draft.status} />
               </div>
@@ -429,15 +467,27 @@ export function DraftDetailSheet({
 
             {/* ── Boxes tab ─────────────────────────────────── */}
             <TabsContent value="boxes" className="mt-0 px-6 py-4">
-              <div className="mb-3 rounded-md border border-blue-200/50 bg-blue-50/50 px-3 py-2 text-xs text-blue-700 dark:border-blue-900/30 dark:bg-blue-950/30 dark:text-blue-300">
-                Each box contains physical items with dimensions. Items here map to <code className="font-semibold">shipment_box_items</code> in the Xindus API.
+              <div className="mb-3 flex items-center justify-between gap-4">
+                <div className="rounded-md border border-blue-200/50 bg-blue-50/50 px-3 py-2 text-xs text-blue-700 dark:border-blue-900/30 dark:bg-blue-950/30 dark:text-blue-300">
+                  Physical items with dimensions &mdash; maps to <code className="font-semibold">shipment_box_items</code>
+                </div>
+                <div className="w-36 shrink-0">
+                  <SelectField
+                    label="Billing Currency"
+                    value={data.billing_currency}
+                    fieldPath="billing_currency"
+                    options={CURRENCY_OPTIONS}
+                    onChanged={addFieldCorrection}
+                    sellerDefault={sellerDefaults.billing_currency as string | undefined}
+                  />
+                </div>
               </div>
               {localBoxes !== null && (
                 <Badge variant="outline" className="mb-2 text-[10px] text-primary">
                   Saving...
                 </Badge>
               )}
-              <BoxEditor boxes={boxes} onChange={setLocalBoxes} multiAddress={!!data.multi_address_destination_delivery} previousReceiverAddresses={sellerHistory?.receiver_addresses} />
+              <BoxEditor boxes={boxes} onChange={setLocalBoxes} multiAddress={computedMultiAddress} previousReceiverAddresses={sellerHistory?.receiver_addresses} />
             </TabsContent>
 
             {/* ── Customs Products tab ──────────────────────── */}
