@@ -69,7 +69,7 @@ function BoxCard({
           <span>{box.weight} kg</span>
         </span>
 
-        <Badge variant="secondary" className="text-[10px] shrink-0">
+        <Badge variant="secondary" className="min-w-[72px] text-center text-[10px] shrink-0">
           {itemCount} item{itemCount !== 1 ? "s" : ""}
           {totalValue > 0 && <>&nbsp;&middot;&nbsp;{sym}{totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</>}
         </Badge>
@@ -103,15 +103,15 @@ function BoxCard({
               <div className="flex items-center">
                 <Input type="number" value={box.length || ""} placeholder="L"
                   onChange={(e) => setField("length", Number(e.target.value) || 0)}
-                  className="h-7 w-16 rounded-r-none border-r-0 text-xs text-center" />
+                  className="h-7 w-[72px] rounded-r-none border-r-0 text-xs text-center" />
                 <span className="flex h-7 items-center border-y border-border bg-muted/50 px-1 text-[10px] text-muted-foreground">&times;</span>
                 <Input type="number" value={box.width || ""} placeholder="W"
                   onChange={(e) => setField("width", Number(e.target.value) || 0)}
-                  className="h-7 w-16 rounded-none border-x-0 text-xs text-center" />
+                  className="h-7 w-[72px] rounded-none border-x-0 text-xs text-center" />
                 <span className="flex h-7 items-center border-y border-border bg-muted/50 px-1 text-[10px] text-muted-foreground">&times;</span>
                 <Input type="number" value={box.height || ""} placeholder="H"
                   onChange={(e) => setField("height", Number(e.target.value) || 0)}
-                  className="h-7 w-16 rounded-l-none border-l-0 text-xs text-center" />
+                  className="h-7 w-[72px] rounded-l-none border-l-0 text-xs text-center" />
               </div>
             </div>
             <div className="w-20">
@@ -169,7 +169,8 @@ export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddre
     (index: number, box: ShipmentBox) => {
       const next = [...boxes];
       next[index] = box;
-      if (!multiAddress) {
+      // Only sync receiver across boxes when the receiver actually changed
+      if (!multiAddress && box.receiver_address !== boxes[index]?.receiver_address) {
         const receiver = box.receiver_address;
         for (let i = 0; i < next.length; i++) {
           if (i !== index) next[i] = { ...next[i], receiver_address: { ...receiver } };

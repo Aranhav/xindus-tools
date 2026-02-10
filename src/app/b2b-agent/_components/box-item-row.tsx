@@ -181,7 +181,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
   );
 
   return (
-    <div className="rounded-lg bg-muted/30 p-2.5">
+    <div className="rounded-lg border border-blue-200/50 bg-blue-50/30 p-2.5 dark:border-blue-900/30 dark:bg-blue-950/20">
       {/* Header */}
       <div className="flex items-center justify-between pb-2">
         <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -238,7 +238,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                     <Input
                       type="number"
                       value={item.quantity}
-                      className="h-6 w-16 text-center text-xs tabular-nums"
+                      className="h-6 w-20 text-center text-xs tabular-nums"
                       onChange={(e) => updateItem(i, "quantity", Number(e.target.value) || 0)}
                     />
                   </div>
@@ -248,7 +248,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                     <Input
                       type="number"
                       value={item.unit_price ?? ""}
-                      className="h-6 w-[72px] text-right text-xs tabular-nums"
+                      className="h-6 w-24 text-right text-xs tabular-nums"
                       onChange={(e) => updateItem(i, "unit_price", e.target.value ? Number(e.target.value) : null)}
                     />
                   </div>
