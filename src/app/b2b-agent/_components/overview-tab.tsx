@@ -347,7 +347,7 @@ export function OverviewTab({
         bgColor="bg-blue-50/40 dark:bg-blue-950/20"
         borderColor="border-blue-200/60 dark:border-blue-900/40"
       >
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
             <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Origin Clearance</Label>
             <p className="text-sm font-medium">Commercial</p>
@@ -360,7 +360,7 @@ export function OverviewTab({
             onChanged={addFieldCorrection}
             sellerDefault={sellerDefaults?.destination_clearance_type as string | undefined}
           />
-          <div className="space-y-1">
+          <div className="col-span-2 space-y-1">
             <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Shipping Method</Label>
             <Select
               value={data.shipping_method || undefined}
@@ -401,7 +401,7 @@ export function OverviewTab({
         bgColor="bg-violet-50/30 dark:bg-violet-950/20"
         borderColor="border-violet-200/50 dark:border-violet-900/40"
       >
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <SelectField
             label="Purpose"
             value={data.purpose_of_booking}
@@ -437,7 +437,7 @@ export function OverviewTab({
         bgColor="bg-emerald-50/30 dark:bg-emerald-950/20"
         borderColor="border-emerald-200/50 dark:border-emerald-900/40"
       >
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <SelectField
             label="Country"
             value={data.country}
@@ -455,7 +455,7 @@ export function OverviewTab({
             sellerDefault={sellerDefaults?.marketplace as string | undefined}
           />
           {mixedCountries && (
-            <div className="col-span-3 flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50/50 px-2 py-1 text-[11px] text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400">
+            <div className="col-span-2 flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50/50 px-2 py-1 text-[11px] text-amber-700 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-400">
               <AlertTriangle className="h-3 w-3 shrink-0" />
               Receivers have different countries. Using first receiver&apos;s country.
             </div>
@@ -471,7 +471,7 @@ export function OverviewTab({
         bgColor="bg-amber-50/30 dark:bg-amber-950/20"
         borderColor="border-amber-200/50 dark:border-amber-900/40"
       >
-        <div className="grid grid-cols-3 gap-x-4 gap-y-3">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
           <EditableField
             label="Invoice Number"
             value={data.invoice_number}
@@ -524,7 +524,7 @@ export function OverviewTab({
         bgColor="bg-orange-50/30 dark:bg-orange-950/20"
         borderColor="border-orange-200/50 dark:border-orange-900/40"
       >
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <ToggleField
             label="Self Drop"
             value={data.self_drop}
@@ -544,7 +544,7 @@ export function OverviewTab({
             onChanged={addFieldCorrection}
           />
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-x-4 gap-y-3">
+        <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
           <SelectField
             label="Port of Entry"
             value={data.port_of_entry}
