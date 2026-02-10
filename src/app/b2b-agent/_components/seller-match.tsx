@@ -16,6 +16,7 @@ import {
   User,
   RefreshCw,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +40,18 @@ interface SellerMatchProps {
   loading: boolean;
 }
 
-/* ── Fetch customer profile by name ──────────────────────── */
+/* ── Fetch helpers ───────────────────────────────────────── */
+
+async function fetchCustomerById(id: number): Promise<XindusCustomer | null> {
+  try {
+    const res = await fetch(`/api/b2b-agent/customers/search?id=${id}`);
+    if (!res.ok) return null;
+    const data: { customers: XindusCustomer[] } = await res.json();
+    return data.customers[0] ?? null;
+  } catch {
+    return null;
+  }
+}
 
 async function fetchCustomerByName(name: string): Promise<XindusCustomer | null> {
   try {
@@ -73,6 +85,7 @@ export function SellerMatch({
   const [changingSeller, setChangingSeller] = useState(false);
   const [linkedCustomer, setLinkedCustomer] = useState<XindusCustomer | null>(null);
   const [noMatchName, setNoMatchName] = useState<string | null>(null);
+  const [customerLoading, setCustomerLoading] = useState(false);
 
   // Auto-search Python backend on mount
   useEffect(() => {
@@ -86,12 +99,19 @@ export function SellerMatch({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shipperName, currentSeller]);
 
-  // Auto-fetch enriched Xindus profile when seller is linked
+  // Auto-fetch Xindus customer: prefer stored ID, fallback to name search
   useEffect(() => {
-    if (currentSeller && !linkedCustomer) {
-      fetchCustomerByName(currentSeller.name).then((c) => {
-        if (c) setLinkedCustomer(c);
-      });
+    if (!currentSeller || linkedCustomer) return;
+    setCustomerLoading(true);
+
+    if (currentSeller.xindus_customer_id) {
+      fetchCustomerById(currentSeller.xindus_customer_id)
+        .then((c) => { if (c) setLinkedCustomer(c); })
+        .finally(() => setCustomerLoading(false));
+    } else {
+      fetchCustomerByName(currentSeller.name)
+        .then((c) => { if (c) setLinkedCustomer(c); })
+        .finally(() => setCustomerLoading(false));
     }
   }, [currentSeller, linkedCustomer]);
 
@@ -100,6 +120,7 @@ export function SellerMatch({
     setLinkedCustomer(null);
     setChangingSeller(false);
     setNoMatchName(null);
+    setCustomerLoading(false);
   }, [currentSeller?.id]);
 
   /* ── Handlers ───────────────────────────────────────────── */
@@ -120,13 +141,20 @@ export function SellerMatch({
         if (customer.phone)
           shipperCorrections.push({ field_path: "shipper_address.phone", old_value: null, new_value: customer.phone });
 
+        // Persist the Xindus customer ID on the seller record
+        shipperCorrections.push({
+          field_path: "xindus_customer_id",
+          old_value: null,
+          new_value: customer.id,
+        });
+
         // Search Python backend by company name to get the correct seller UUID
         const match = await onSearch(customer.company);
         if (match) {
           await onLink(match.seller.id);
         }
 
-        // Apply shipper corrections regardless of match
+        // Apply shipper corrections + xindus_customer_id
         if (shipperCorrections.length > 0) onApplyCorrections(shipperCorrections);
         setLinkedCustomer(customer);
         setChangingSeller(false);
@@ -145,23 +173,48 @@ export function SellerMatch({
 
   const isBusy = loading || linking;
 
-  /* ── LINKED STATE ───────────────────────────────────────── */
+  /* ── Determine link state ───────────────────────────────── */
+
+  const hasXindusLink = !!(
+    currentSeller?.xindus_customer_id || linkedCustomer
+  );
+  const isSellerOnly = !!currentSeller && !hasXindusLink && !customerLoading;
+
+  /* ── LINKED STATE (seller exists, not changing) ──────────── */
 
   if ((currentSeller || linkedCustomer) && !changingSeller) {
-    const isFullyLinked = !!currentSeller;
+    // Three-tier: green (fully linked), rose (seller only), blue (customer only)
+    const colorScheme = isSellerOnly ? "rose" : hasXindusLink ? "emerald" : "blue";
+
+    const borderClass = {
+      emerald: "border-emerald-200/60 bg-emerald-50/40 dark:border-emerald-900/40 dark:bg-emerald-950/20",
+      rose: "border-rose-200/60 bg-rose-50/40 dark:border-rose-900/40 dark:bg-rose-950/20",
+      blue: "border-blue-200/60 bg-blue-50/30 dark:border-blue-900/40 dark:bg-blue-950/20",
+    }[colorScheme];
+
+    const iconClass = {
+      emerald: "text-emerald-600 dark:text-emerald-400",
+      rose: "text-rose-600 dark:text-rose-400",
+      blue: "text-blue-600 dark:text-blue-400",
+    }[colorScheme];
+
+    const expandBorderClass = {
+      emerald: "border-emerald-200/60 dark:border-emerald-900/40",
+      rose: "border-rose-200/60 dark:border-rose-900/40",
+      blue: "border-blue-200/40 dark:border-blue-900/30",
+    }[colorScheme];
+
     const displayName = currentSeller?.name ?? linkedCustomer?.company ?? "";
+    const IconComponent = isSellerOnly ? AlertTriangle : UserCheck;
+
     return (
-      <div className={`rounded-lg border ${
-        isFullyLinked
-          ? "border-emerald-200/60 bg-emerald-50/40 dark:border-emerald-900/40 dark:bg-emerald-950/20"
-          : "border-blue-200/60 bg-blue-50/30 dark:border-blue-900/40 dark:bg-blue-950/20"
-      }`}>
+      <div className={`rounded-lg border ${borderClass}`}>
         {/* Header */}
         <div
           className="flex cursor-pointer items-center gap-2.5 px-4 py-2.5"
           onClick={() => setExpanded(!expanded)}
         >
-          <UserCheck className={`h-4 w-4 ${isFullyLinked ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400"}`} />
+          <IconComponent className={`h-4 w-4 ${iconClass}`} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-sm font-medium">{displayName}</span>
@@ -170,7 +223,11 @@ export function SellerMatch({
                   {linkedCustomer.crn_number}
                 </Badge>
               )}
-              {isFullyLinked ? (
+              {isSellerOnly ? (
+                <Badge variant="outline" className="text-[10px] font-normal text-rose-700 dark:text-rose-300">
+                  No Xindus customer
+                </Badge>
+              ) : currentSeller ? (
                 <Badge variant="outline" className="text-[10px] font-normal text-emerald-700 dark:text-emerald-300">
                   {currentSeller.shipment_count} shipment{currentSeller.shipment_count !== 1 ? "s" : ""}
                 </Badge>
@@ -189,7 +246,7 @@ export function SellerMatch({
               onClick={(e) => { e.stopPropagation(); setChangingSeller(true); }}
             >
               <RefreshCw className="h-3 w-3" />
-              Change
+              {isSellerOnly ? "Link" : "Change"}
             </Button>
           )}
           {expanded
@@ -199,12 +256,24 @@ export function SellerMatch({
 
         {/* Expanded details */}
         {expanded && (
-          <div className={`space-y-3 border-t px-4 py-3 ${
-            isFullyLinked ? "border-emerald-200/60 dark:border-emerald-900/40" : "border-blue-200/40 dark:border-blue-900/30"
-          }`}>
+          <div className={`space-y-3 border-t px-4 py-3 ${expandBorderClass}`}>
             {linkedCustomer && <CustomerProfile customer={linkedCustomer} />}
 
-            {!isFullyLinked && (
+            {isSellerOnly && isActionable && (
+              <div className="space-y-2">
+                <p className="text-[10px] text-rose-600 dark:text-rose-400">
+                  This seller has no linked Xindus customer. Search to link one:
+                </p>
+                <CustomerCombobox
+                  onSelect={handleSelectCustomer}
+                  initialQuery={currentSeller?.name || ""}
+                  placeholder="Search Xindus customers..."
+                />
+                {linking && <LinkingIndicator />}
+              </div>
+            )}
+
+            {!currentSeller && linkedCustomer && (
               <p className="text-[10px] text-muted-foreground">
                 Shipper info queued from Xindus. Click Save to apply.
               </p>
@@ -376,4 +445,3 @@ function NoMatchMessage({ name }: { name: string }) {
     </p>
   );
 }
-

@@ -172,6 +172,7 @@ export interface SellerProfile {
   defaults: Record<string, unknown>;
   shipper_address: Record<string, unknown>;
   shipment_count: number;
+  xindus_customer_id?: number | null;
   created_at?: string;
   updated_at?: string;
 }
