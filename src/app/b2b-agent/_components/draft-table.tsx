@@ -272,7 +272,6 @@ export function DraftTable({
                 aria-label="Select all on page"
               />
             </TableHead>
-            <TableHead className="w-20">#</TableHead>
             <SortableHead label="Shipper" sortKey="shipper_name" activeSortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
             <SortableHead label="Invoice" sortKey="invoice_number" activeSortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
             <SortableHead label="Receiver" sortKey="receiver_name" activeSortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
@@ -303,11 +302,6 @@ export function DraftTable({
                     onCheckedChange={() => toggleOne(draft.id)}
                     aria-label={`Select draft ${draft.invoice_number || draft.id}`}
                   />
-                </TableCell>
-
-                {/* Draft # */}
-                <TableCell className="font-mono text-xs text-muted-foreground">
-                  {draft.draft_number ? `B2B-${String(draft.draft_number).padStart(3, "0")}` : draft.id.substring(0, 8)}
                 </TableCell>
 
                 {/* Shipper */}

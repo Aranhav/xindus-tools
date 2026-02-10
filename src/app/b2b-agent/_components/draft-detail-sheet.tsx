@@ -212,18 +212,38 @@ export function DraftDetailSheet({
 
   useEffect(() => {
     if (!data || !draft) return;
-    if (computedMultiAddress) return;
-    const topReceiver = data.receiver_address;
-    if (!topReceiver?.name) return;
     const currentBoxes = data.shipment_boxes;
     if (!currentBoxes?.length) return;
-    // Check if any box has an empty receiver
-    const needsInit = currentBoxes.some((b: ShipmentBox) => !b.receiver_address?.name);
-    if (!needsInit) return;
-    const updated = currentBoxes.map((b: ShipmentBox) =>
-      b.receiver_address?.name ? b : { ...b, receiver_address: { ...topReceiver } }
-    );
-    setLocalBoxes(updated);
+    const topReceiver = data.receiver_address;
+    const box0Receiver = currentBoxes[0]?.receiver_address;
+
+    // Case 1: Boxes have data but top-level is empty or stale → sync top-level FROM box[0]
+    if (box0Receiver?.name && (!topReceiver?.name || topReceiver.name !== box0Receiver.name)) {
+      const corrections: CorrectionItem[] = [];
+      const box0Rec = box0Receiver as unknown as Record<string, string>;
+      const topRec = (topReceiver ?? {}) as unknown as Record<string, string>;
+      for (const key of ["name", "address", "city", "state", "zip", "country", "phone", "email"] as const) {
+        const newVal = box0Rec[key] || "";
+        const oldVal = topRec[key] ?? "";
+        if (newVal !== oldVal) {
+          corrections.push({ field_path: `receiver_address.${key}`, old_value: oldVal, new_value: newVal });
+        }
+      }
+      if (corrections.length > 0) {
+        onCorrect(draft.id, corrections);
+      }
+    }
+
+    // Case 2: Boxes have empty receivers but top-level has data → fill boxes from top-level
+    if (!computedMultiAddress && topReceiver?.name) {
+      const needsInit = currentBoxes.some((b: ShipmentBox) => !b.receiver_address?.name);
+      if (needsInit) {
+        const updated = currentBoxes.map((b: ShipmentBox) =>
+          b.receiver_address?.name ? b : { ...b, receiver_address: { ...topReceiver } }
+        );
+        setLocalBoxes(updated);
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft?.id]);
 
