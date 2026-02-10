@@ -12,15 +12,6 @@ import { BoxReceiverSection } from "./box-receiver-section";
 import { currencySymbol } from "./editable-fields";
 import type { ShipmentBox, ShipmentAddress, ProductDetail } from "@/types/agent";
 
-/* ── Validation helper ──────────────────────────────────────── */
-
-function isBoxValid(box: ShipmentBox): boolean {
-  if (box.shipment_box_items.length === 0) return false;
-  return box.shipment_box_items.every(
-    (it) => it.description && it.quantity && it.unit_price && it.ehsn,
-  );
-}
-
 /* ── Single box card ──────────────────────────────────────── */
 
 function BoxCard({
@@ -58,46 +49,40 @@ function BoxCard({
     [box.shipment_box_items],
   );
 
-  const valid = isBoxValid(box);
-  const rcv = box.receiver_address;
-  const receiverLine = !isShared && rcv?.name
-    ? [rcv.name, rcv.city, rcv.country].filter(Boolean).join(", ")
-    : null;
-
   return (
-    <div className={`rounded-lg border border-l-2 ${valid ? "border-l-emerald-500" : "border-l-amber-400"}`}>
-      {/* Header line 1 */}
+    <div className="rounded-lg border bg-background">
+      {/* Header */}
       <div
-        className="flex cursor-pointer items-center gap-2 px-3 py-2.5"
+        className="flex cursor-pointer items-center gap-2 px-3 py-2"
         onClick={() => setExpanded(!expanded)}
       >
         {expanded
-          ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-          : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
-        <Package className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-sm font-medium">Box #{box.box_id}</span>
-        <span className="ml-auto text-xs text-muted-foreground">
-          {box.length}&#x200a;&#xd7;&#x200a;{box.width}&#x200a;&#xd7;&#x200a;{box.height} cm | {box.weight} kg
+          ? <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          : <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+        <Package className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        <span className="text-sm font-medium whitespace-nowrap">Box {box.box_id}</span>
+
+        <span className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="hidden sm:inline">
+            {box.length}&times;{box.width}&times;{box.height} cm
+          </span>
+          <span>{box.weight} kg</span>
         </span>
-        <Badge variant="outline" className="text-[10px]">
-          {sym}{totalValue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} | {itemCount} item{itemCount !== 1 ? "s" : ""}
+
+        <Badge variant="secondary" className="text-[10px] shrink-0">
+          {itemCount} item{itemCount !== 1 ? "s" : ""}
+          {totalValue > 0 && <>&nbsp;&middot;&nbsp;{sym}{totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</>}
         </Badge>
-        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive"
+
+        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
           onClick={(e) => { e.stopPropagation(); onRemove(index); }}>
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
 
-      {/* Header line 2: receiver (multi-address only) */}
-      {receiverLine && (
-        <div className="-mt-1 px-3 pb-2">
-          <span className="text-[11px] text-muted-foreground">&rarr; {receiverLine}</span>
-        </div>
-      )}
-
       {/* Expanded body */}
       {expanded && (
-        <div className="border-t px-3 py-3">
+        <div className="border-t px-3 py-3 space-y-3">
           {/* Receiver section (multi-address only) */}
           {!isShared && (
             <BoxReceiverSection
@@ -112,8 +97,8 @@ function BoxCard({
           )}
 
           {/* Compact dimensions */}
-          <div className={`flex items-end gap-3 ${!isShared ? "mt-3" : ""}`}>
-            <div className="flex-1">
+          <div className="flex items-end gap-3">
+            <div className="flex-1 min-w-0">
               <Label className="text-[10px] text-muted-foreground">Dimensions (cm)</Label>
               <div className="flex items-center">
                 <Input type="number" value={box.length || ""} placeholder="L"
@@ -129,18 +114,18 @@ function BoxCard({
                   className="h-7 rounded-l-none border-l-0 text-xs" />
               </div>
             </div>
-            <div className="w-24">
+            <div className="w-20">
               <Label className="text-[10px] text-muted-foreground">Weight (kg)</Label>
               <Input type="number" value={box.weight || ""}
                 onChange={(e) => setField("weight", Number(e.target.value) || 0)}
                 className="h-7 text-xs" />
             </div>
-            <div className="whitespace-nowrap pb-1.5 text-[10px] text-muted-foreground">
+            <span className="whitespace-nowrap pb-1.5 text-[10px] text-muted-foreground">
               Vol: {volWeight} kg
-            </div>
+            </span>
           </div>
 
-          <Separator className="my-3" />
+          <Separator />
 
           {/* Items table */}
           <ItemsTable
@@ -216,7 +201,7 @@ export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddre
   );
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {boxes.map((box, i) => (
         <BoxCard
           key={`${box.box_id}-${i}`}

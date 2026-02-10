@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
-import { Plus, Trash2, ChevronRight } from "lucide-react";
+import { Fragment, useState, useMemo, useCallback } from "react";
+import { Plus, Trash2, ChevronRight, ListFilter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
 import { currencySymbol } from "./editable-fields";
 import type { ShipmentBox, ShipmentBoxItem, ShipmentAddress, ProductDetail } from "@/types/agent";
 
@@ -41,21 +41,50 @@ export function emptyBox(index: number, inheritReceiver?: ShipmentAddress): Ship
   };
 }
 
-/* ── Inline table styles ──────────────────────────────────── */
+/* ── Inline styles ────────────────────────────────────────── */
 
 const cell = "border-0 bg-transparent h-7 text-xs p-1 focus:ring-1 focus:ring-ring rounded-sm";
 const numCell = `${cell} text-right tabular-nums`;
 const th = "text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-1 py-1.5 whitespace-nowrap";
 
-/* ── Helper: nullable number input ────────────────────────── */
+/* ── Product picker popover ───────────────────────────────── */
 
-function NumCell({ value, field, row, update, mono }: {
-  value: number | null | undefined; field: keyof ShipmentBoxItem;
-  row: number; update: (i: number, f: keyof ShipmentBoxItem, v: unknown) => void; mono?: boolean;
+function ProductPicker({ options, onSelect }: {
+  options: ProductDetail[];
+  onSelect: (index: string) => void;
 }) {
+  const [open, setOpen] = useState(false);
   return (
-    <Input type="number" value={value ?? ""} className={mono ? `${cell} font-mono` : numCell}
-      onChange={(e) => update(row, field, e.target.value ? Number(e.target.value) : null)} />
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="shrink-0 rounded-sm p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          title="Pick from product list"
+        >
+          <ListFilter className="h-3 w-3" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 p-1" onOpenAutoFocus={(e) => e.preventDefault()}>
+        <div className="max-h-48 overflow-y-auto">
+          {options.map((p, pi) => (
+            <button
+              key={pi}
+              type="button"
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted"
+              onClick={() => { onSelect(String(pi)); setOpen(false); }}
+            >
+              <span className="min-w-0 flex-1 truncate">{p.product_description}</span>
+              {p.hsn_code && (
+                <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                  {p.hsn_code}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -118,126 +147,119 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
     [items, onChange],
   );
 
-  const totalCols = 6 + (hasProducts ? 1 : 0) + 1 + (showMore ? 5 : 0);
-
   return (
     <div>
       <div className="flex items-center justify-end pb-1">
         <Button variant="ghost" size="sm" className="h-6 gap-1 text-[10px] text-muted-foreground"
           onClick={() => setShowMore((v) => !v)}>
           <ChevronRight className={`h-3 w-3 transition-transform ${showMore ? "rotate-90" : ""}`} />
-          {showMore ? "Less" : "More"}
+          {showMore ? "Less" : "More fields"}
         </Button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b">
-              <th className={`${th} w-6`}>#</th>
-              {hasProducts && <th className={`${th} min-w-[140px] text-left`}>Product</th>}
-              <th className={`${th} min-w-[180px] text-left`}>Description</th>
-              <th className={`${th} w-16 text-right`}>Qty</th>
-              <th className={`${th} w-20 text-right`}>Price{sym ? ` (${sym})` : ""}</th>
-              <th className={`${th} w-24 text-left font-mono`}>eHSN</th>
-              <th className={`${th} w-20 text-right`}>Total{sym ? ` (${sym})` : ""}</th>
-              {showMore && <>
-                <th className={`${th} w-20 text-left font-mono`}>iHSN</th>
-                <th className={`${th} w-20 text-right`}>Wt (kg)</th>
-                <th className={`${th} w-20 text-left`}>Origin</th>
-                <th className={`${th} w-20 text-right`}>IGST%</th>
-                <th className={`${th} w-20 text-right`}>Duty%</th>
-              </>}
-              <th className={`${th} w-8`} />
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b">
+            <th className={`${th} w-6`}>#</th>
+            <th className={`${th} text-left`}>Description</th>
+            <th className={`${th} w-14 text-right`}>Qty</th>
+            <th className={`${th} w-[72px] text-right`}>Price{sym ? ` (${sym})` : ""}</th>
+            <th className={`${th} w-[88px] text-left font-mono`}>HSN</th>
+            <th className={`${th} w-16 text-right`}>Total</th>
+            <th className={`${th} w-7`} />
+          </tr>
+        </thead>
+        <tbody>
+          {items.length === 0 ? (
+            <tr>
+              <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground">
+                No items — click below to add one.
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {items.length === 0 ? (
-              <tr>
-                <td colSpan={totalCols} className="py-6 text-center text-xs text-muted-foreground">
-                  No items. Click below to add one.
-                </td>
-              </tr>
-            ) : items.map((item, i) => {
-              const total = item.quantity && item.unit_price
-                ? (item.quantity * item.unit_price).toFixed(2) : "";
-              const prodIdx = productOptions.findIndex(
-                (p) => p.product_description === item.description && p.hsn_code === item.ehsn,
-              );
-              return (
-                <tr key={i} className="group/row border-b last:border-b-0 hover:bg-muted/30">
-                  <td className="w-6 text-center text-[10px] text-muted-foreground">{i + 1}</td>
-                  {hasProducts && (
-                    <td className="min-w-[140px]">
-                      <Select value={prodIdx >= 0 ? String(prodIdx) : undefined}
-                        onValueChange={(v) => handleProductSelect(i, v)}>
-                        <SelectTrigger className="h-7 text-xs border-0 bg-transparent">
-                          <SelectValue placeholder="Pick..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {productOptions.map((p, pi) => (
-                            <SelectItem key={pi} value={String(pi)} className="text-xs">
-                              <span className="truncate">{p.product_description}</span>
-                              {p.hsn_code && (
-                                <span className="ml-1.5 font-mono text-[10px] text-muted-foreground">
-                                  {p.hsn_code}
-                                </span>
-                              )}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </td>
-                  )}
-                  <td className="min-w-[180px]">
-                    <Input value={item.description} className={cell} placeholder="Description"
-                      onChange={(e) => updateItem(i, "description", e.target.value)} />
+          ) : items.map((item, i) => {
+            const total = item.quantity && item.unit_price
+              ? (item.quantity * item.unit_price).toFixed(2) : "";
+            return (
+              <Fragment key={i}>
+                {/* Primary row */}
+                <tr className={`group/row hover:bg-muted/30 ${showMore ? "" : "border-b"}`}>
+                  <td className="w-6 text-center text-[10px] text-muted-foreground align-middle">{i + 1}</td>
+                  <td>
+                    <div className="flex items-center gap-0.5">
+                      {hasProducts && (
+                        <ProductPicker
+                          options={productOptions}
+                          onSelect={(v) => handleProductSelect(i, v)}
+                        />
+                      )}
+                      <Input value={item.description} className={`${cell} min-w-0`} placeholder="Item description"
+                        onChange={(e) => updateItem(i, "description", e.target.value)} />
+                    </div>
                   </td>
-                  <td className="w-16">
+                  <td className="w-14">
                     <Input type="number" value={item.quantity} className={numCell}
                       onChange={(e) => updateItem(i, "quantity", Number(e.target.value) || 0)} />
                   </td>
-                  <td className="w-20">
-                    <NumCell value={item.unit_price} field="unit_price" row={i} update={updateItem} />
+                  <td className="w-[72px]">
+                    <Input type="number" value={item.unit_price ?? ""} className={numCell}
+                      onChange={(e) => updateItem(i, "unit_price", e.target.value ? Number(e.target.value) : null)} />
                   </td>
-                  <td className="w-24">
+                  <td className="w-[88px]">
                     <Input value={item.ehsn} className={`${cell} font-mono`} placeholder="8-digit"
                       onChange={(e) => updateItem(i, "ehsn", e.target.value)} />
                   </td>
-                  <td className="w-20 text-right tabular-nums text-muted-foreground px-1">{total}</td>
-                  {showMore && <>
-                    <td className="w-20">
-                      <Input value={item.ihsn} className={`${cell} font-mono`}
-                        onChange={(e) => updateItem(i, "ihsn", e.target.value)} />
-                    </td>
-                    <td className="w-20">
-                      <NumCell value={item.weight} field="weight" row={i} update={updateItem} />
-                    </td>
-                    <td className="w-20">
-                      <Input value={item.country_of_origin} className={cell}
-                        onChange={(e) => updateItem(i, "country_of_origin", e.target.value)} />
-                    </td>
-                    <td className="w-20">
-                      <NumCell value={item.igst_amount} field="igst_amount" row={i} update={updateItem} />
-                    </td>
-                    <td className="w-20">
-                      <NumCell value={item.duty_rate} field="duty_rate" row={i} update={updateItem} />
-                    </td>
-                  </>}
-                  <td className="w-8">
-                    <button onClick={() => removeItem(i)}
-                      className="opacity-0 group-hover/row:opacity-100 transition-opacity p-1 text-destructive hover:text-destructive">
+                  <td className="w-16 text-right tabular-nums text-muted-foreground px-1 align-middle">{total}</td>
+                  <td className="w-7 align-middle">
+                    <button type="button" onClick={() => removeItem(i)}
+                      className="opacity-0 group-hover/row:opacity-100 transition-opacity p-0.5 text-muted-foreground hover:text-destructive">
                       <Trash2 className="h-3 w-3" />
                     </button>
                   </td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
 
-      <button onClick={onAdd}
+                {/* Secondary row — extra fields */}
+                {showMore && (
+                  <tr className="border-b">
+                    <td />
+                    <td colSpan={5} className="pb-1.5 pt-0">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <label className="flex items-center gap-1 text-[10px] text-muted-foreground whitespace-nowrap">
+                          iHSN
+                          <Input value={item.ihsn} className={`${cell} w-20 font-mono`}
+                            onChange={(e) => updateItem(i, "ihsn", e.target.value)} />
+                        </label>
+                        <label className="flex items-center gap-1 text-[10px] text-muted-foreground whitespace-nowrap">
+                          Wt(kg)
+                          <Input type="number" value={item.weight ?? ""} className={`${numCell} w-14`}
+                            onChange={(e) => updateItem(i, "weight", e.target.value ? Number(e.target.value) : null)} />
+                        </label>
+                        <label className="flex items-center gap-1 text-[10px] text-muted-foreground whitespace-nowrap">
+                          Origin
+                          <Input value={item.country_of_origin} className={`${cell} w-12`}
+                            onChange={(e) => updateItem(i, "country_of_origin", e.target.value)} />
+                        </label>
+                        <label className="flex items-center gap-1 text-[10px] text-muted-foreground whitespace-nowrap">
+                          IGST%
+                          <Input type="number" value={item.igst_amount ?? ""} className={`${numCell} w-14`}
+                            onChange={(e) => updateItem(i, "igst_amount", e.target.value ? Number(e.target.value) : null)} />
+                        </label>
+                        <label className="flex items-center gap-1 text-[10px] text-muted-foreground whitespace-nowrap">
+                          Duty%
+                          <Input type="number" value={item.duty_rate ?? ""} className={`${numCell} w-14`}
+                            onChange={(e) => updateItem(i, "duty_rate", e.target.value ? Number(e.target.value) : null)} />
+                        </label>
+                      </div>
+                    </td>
+                    <td />
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <button type="button" onClick={onAdd}
         className="w-full py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 border-t border-dashed transition-colors flex items-center justify-center gap-1">
         <Plus className="h-3 w-3" /> Add item
       </button>
