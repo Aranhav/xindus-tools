@@ -166,7 +166,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
             const total = (item.quantity || 0) * (item.unit_price || 0);
             return (
               <div key={i} className="group overflow-hidden rounded-lg border border-border/60 bg-background">
-                {/* Row 1: Description + Qty × Price = Total + actions */}
+                {/* Row 1: Description + Product picker + Qty × Price = Total + delete */}
                 <div className="flex items-center gap-2 px-3 py-2">
                   <span className="w-5 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
                     {i + 1}
@@ -177,6 +177,12 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                     placeholder="Item description"
                     onChange={(e) => updateItem(i, "description", e.target.value)}
                   />
+                  {hasProducts && (
+                    <ProductCombobox
+                      options={productOptions}
+                      onSelect={(pi) => handleProductSelect(i, pi)}
+                    />
+                  )}
                   <div className="flex shrink-0 items-center gap-1.5">
                     <span className="text-[11px] text-muted-foreground">Qty</span>
                     <Input
@@ -186,11 +192,12 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                       onChange={(e) => updateItem(i, "quantity", Number(e.target.value) || 0)}
                     />
                     <span className="text-xs text-muted-foreground">&times;</span>
+                    <span className="text-[11px] text-muted-foreground">Price</span>
                     <Input
                       type="number"
                       value={item.unit_price ?? ""}
                       className="h-7 w-20 text-right text-xs tabular-nums"
-                      placeholder="Price"
+                      placeholder="0.00"
                       onChange={(e) => updateItem(i, "unit_price", e.target.value ? Number(e.target.value) : null)}
                     />
                     <span className="text-xs text-muted-foreground">=</span>
@@ -200,21 +207,13 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                         : "—"}
                     </span>
                   </div>
-                  <div className="flex shrink-0 items-center gap-0.5">
-                    {hasProducts && (
-                      <ProductCombobox
-                        options={productOptions}
-                        onSelect={(pi) => handleProductSelect(i, pi)}
-                      />
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => removeItem(i)}
-                      className="shrink-0 p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeItem(i)}
+                    className="shrink-0 p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
 
                 {/* Row 2: Customs & classification grid (always visible) */}

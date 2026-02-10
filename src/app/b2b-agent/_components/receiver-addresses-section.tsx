@@ -160,7 +160,7 @@ export function ReceiverAddressesSection({
           return (
             <AddressForm
               key={group.key}
-              label={multiAddress ? `Receiver ${i + 1}` : "Receiver"}
+              label={groups.length > 1 ? `Receiver ${i + 1}` : "Receiver"}
               address={group.address}
               basePath={`receiver_${i}`}
               addressType="receiver"
@@ -169,7 +169,7 @@ export function ReceiverAddressesSection({
               previousAddresses={sellerHistory?.receiver_addresses}
               boxLabel={boxLabel}
               boxTooltip={boxTooltip}
-              onDelete={multiAddress ? () => handleDelete(i) : undefined}
+              onDelete={groups.length > 1 ? () => handleDelete(i) : undefined}
             />
           );
         })}
@@ -180,17 +180,15 @@ export function ReceiverAddressesSection({
           </div>
         )}
 
-        {multiAddress && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 w-full gap-1 text-xs text-muted-foreground"
-            onClick={addReceiver}
-          >
-            <Plus className="h-3 w-3" />
-            Add Address
-          </Button>
-        )}
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 w-full gap-1 text-xs text-muted-foreground"
+          onClick={addReceiver}
+        >
+          <Plus className="h-3 w-3" />
+          Add Delivery Address
+        </Button>
       </div>
     </div>
   );
