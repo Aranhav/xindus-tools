@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -67,6 +67,7 @@ interface ProductsTabProps {
   products: ProductDetail[];
   productsModified: boolean;
   setLocalProducts: (products: ProductDetail[] | null) => void;
+  previousProducts?: ProductDetail[];
 }
 
 /* ── Component ────────────────────────────────────────────── */
@@ -75,7 +76,20 @@ export function ProductsTab({
   products,
   productsModified,
   setLocalProducts,
+  previousProducts,
 }: ProductsTabProps) {
+  // Filter out products that are already in the current list
+  const currentKeys = new Set(
+    products.map((p) => `${p.product_description.toLowerCase()}|${p.hsn_code.toLowerCase()}`),
+  );
+  const available = (previousProducts ?? []).filter(
+    (p) => !currentKeys.has(`${p.product_description.toLowerCase()}|${p.hsn_code.toLowerCase()}`),
+  );
+
+  const addPrevious = (p: ProductDetail) => {
+    setLocalProducts([...products, { ...p }]);
+  };
+
   return (
     <TabsContent value="products" className="mt-0 px-6 py-4">
       <div className="mb-3 rounded-md border border-amber-200/50 bg-amber-50/50 px-3 py-2 text-xs text-amber-700 dark:border-amber-900/30 dark:bg-amber-950/30 dark:text-amber-300">
@@ -136,6 +150,32 @@ export function ProductsTab({
         <Plus className="h-3.5 w-3.5" />
         Add Product
       </Button>
+
+      {/* Previous shipment products */}
+      {available.length > 0 && (
+        <div className="mt-4 rounded-lg border border-primary/20 bg-primary/[0.03] p-3">
+          <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-primary">
+            <History className="h-3.5 w-3.5" />
+            From previous shipments
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {available.map((p, i) => (
+              <button
+                key={i}
+                type="button"
+                className="inline-flex items-center gap-1.5 rounded-md border border-primary/20 bg-background px-2.5 py-1 text-xs transition-colors hover:border-primary/40 hover:bg-primary/5"
+                onClick={() => addPrevious(p)}
+              >
+                <span className="max-w-[200px] truncate">{p.product_description}</span>
+                {p.hsn_code && (
+                  <span className="font-mono text-[10px] text-muted-foreground">{p.hsn_code}</span>
+                )}
+                <Plus className="h-3 w-3 text-primary" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </TabsContent>
   );
 }

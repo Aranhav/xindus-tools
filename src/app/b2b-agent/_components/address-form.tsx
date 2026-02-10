@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Sparkles, Phone, Mail, Check, X, Building2, FileCheck, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Pencil, Sparkles, Phone, Mail, Check, X, Building2, FileCheck, AlertTriangle, CheckCircle2, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,7 @@ interface AddressFormProps {
   sellerDefault?: ShipmentAddress;
   onCorrections: (corrections: CorrectionItem[]) => void;
   icon?: "billing" | "ior";
+  previousAddresses?: ShipmentAddress[];
 }
 
 export function AddressForm({
@@ -36,6 +37,7 @@ export function AddressForm({
   sellerDefault,
   onCorrections,
   icon,
+  previousAddresses,
 }: AddressFormProps) {
   const [editing, setEditing] = useState(false);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
@@ -67,6 +69,22 @@ export function AddressForm({
     setFormValues(vals);
     setEditing(true);
   };
+
+  const applyPreviousAddress = (prev: ShipmentAddress) => {
+    const prevRecord = prev as unknown as Record<string, string>;
+    const vals: Record<string, string> = {};
+    for (const f of ADDRESS_FIELDS) {
+      vals[f.key] = prevRecord[f.key] || "";
+    }
+    setFormValues(vals);
+    if (!editing) setEditing(true);
+  };
+
+  // Filter previous addresses that differ from current
+  const prevAddresses = (previousAddresses ?? []).filter((pa) => {
+    const pr = pa as unknown as Record<string, string>;
+    return pr.name && pr.name.toLowerCase() !== (addrRecord.name || "").toLowerCase();
+  });
 
   const applyDefaults = () => {
     if (!defaultRecord) return;
@@ -230,6 +248,36 @@ export function AddressForm({
           >
             Apply
           </Button>
+        </div>
+      )}
+
+      {/* ── Previous addresses from approved shipments ── */}
+      {prevAddresses.length > 0 && !editing && (
+        <div className="mt-3 ml-[34px] rounded-lg border border-primary/20 bg-primary/[0.03] p-3">
+          <div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium text-primary">
+            <History className="h-3.5 w-3.5" />
+            From previous shipments
+          </div>
+          <div className="space-y-1.5">
+            {prevAddresses.map((pa, i) => {
+              const pr = pa as unknown as Record<string, string>;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-md border border-primary/15 bg-background px-2.5 py-1.5 text-left text-xs transition-colors hover:border-primary/30 hover:bg-primary/5"
+                  onClick={() => applyPreviousAddress(pa)}
+                >
+                  <span className="min-w-0 flex-1 truncate">
+                    <span className="font-medium">{pr.name}</span>
+                    {pr.city && <span className="text-muted-foreground">, {pr.city}</span>}
+                    {pr.country && <span className="text-muted-foreground">, {pr.country}</span>}
+                  </span>
+                  <span className="ml-2 shrink-0 text-[10px] text-primary">Use</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

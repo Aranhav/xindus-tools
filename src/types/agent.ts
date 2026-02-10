@@ -191,6 +191,17 @@ export interface SellerMatchResult {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Seller history (previous approved shipments)                       */
+/* ------------------------------------------------------------------ */
+
+export interface SellerHistory {
+  products: ProductDetail[];
+  billing_addresses: ShipmentAddress[];
+  ior_addresses: ShipmentAddress[];
+  receiver_addresses: ShipmentAddress[];
+}
+
+/* ------------------------------------------------------------------ */
 /*  Xindus customer (from platform DB via Metabase)                   */
 /* ------------------------------------------------------------------ */
 

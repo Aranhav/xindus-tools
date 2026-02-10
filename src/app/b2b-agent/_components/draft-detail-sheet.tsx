@@ -47,6 +47,7 @@ import type {
   ProductDetail,
   SellerProfile,
   SellerMatchResult,
+  SellerHistory,
 } from "@/types/agent";
 
 /* ── Main Component ───────────────────────────────────────── */
@@ -66,6 +67,8 @@ interface DraftDetailSheetProps {
   onAddFiles: (draftId: string, files: File[]) => Promise<DraftDetail | null>;
   onRemoveFile: (draftId: string, fileId: string) => Promise<DraftDetail | null>;
   onDownloadFile: (draftId: string, fileId: string) => void;
+  sellerHistory?: SellerHistory | null;
+  onFetchSellerHistory?: (sellerId: string) => Promise<SellerHistory | null>;
 }
 
 export function DraftDetailSheet({
@@ -83,6 +86,8 @@ export function DraftDetailSheet({
   onAddFiles,
   onRemoveFile,
   onDownloadFile,
+  sellerHistory,
+  onFetchSellerHistory,
 }: DraftDetailSheetProps) {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -240,10 +245,14 @@ export function DraftDetailSheet({
     [onOpenChange],
   );
 
-  // Reset when draft changes
+  // Reset when draft changes + fetch seller history
   useEffect(() => {
     setLocalBoxes(null);
     setLocalProducts(null);
+    if (draft?.seller_id && onFetchSellerHistory) {
+      onFetchSellerHistory(draft.seller_id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft?.id]);
 
   if (!draft || !data) {
@@ -364,7 +373,7 @@ export function DraftDetailSheet({
               </TabsTrigger>
               <TabsTrigger value="products" className="text-xs">
                 <Receipt className="mr-1 h-3 w-3" />
-                Customs ({products.length})
+                Products ({products.length})
               </TabsTrigger>
             </TabsList>
           </div>
@@ -396,6 +405,7 @@ export function DraftDetailSheet({
                   sellerDefault={sellerDefaults.billing_address as ShipmentAddress | undefined}
                   onCorrections={addCorrections}
                   icon="billing"
+                  previousAddresses={sellerHistory?.billing_addresses}
                 />
                 {/* Connector */}
                 <div className="relative z-10 flex justify-center -my-1.5">
@@ -412,6 +422,7 @@ export function DraftDetailSheet({
                   sellerDefault={sellerDefaults.ior_address as ShipmentAddress | undefined}
                   onCorrections={addCorrections}
                   icon="ior"
+                  previousAddresses={sellerHistory?.ior_addresses}
                 />
               </div>
             </TabsContent>
@@ -426,7 +437,7 @@ export function DraftDetailSheet({
                   Saving...
                 </Badge>
               )}
-              <BoxEditor boxes={boxes} onChange={setLocalBoxes} multiAddress={!!data.multi_address_destination_delivery} />
+              <BoxEditor boxes={boxes} onChange={setLocalBoxes} multiAddress={!!data.multi_address_destination_delivery} previousReceiverAddresses={sellerHistory?.receiver_addresses} />
             </TabsContent>
 
             {/* ── Customs Products tab ──────────────────────── */}
@@ -434,6 +445,7 @@ export function DraftDetailSheet({
               products={products}
               productsModified={localProducts !== null}
               setLocalProducts={setLocalProducts}
+              previousProducts={sellerHistory?.products}
             />
           </ScrollArea>
         </Tabs>

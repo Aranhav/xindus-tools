@@ -11,6 +11,7 @@ import type {
   ApprovalResponse,
   SellerProfile,
   SellerMatchResult,
+  SellerHistory,
   ActiveBatchesResponse,
 } from "@/types/agent";
 
@@ -32,6 +33,7 @@ export function useB2BAgent() {
   const [draftsTotal, setDraftsTotal] = useState(0);
   const [activeDraft, setActiveDraft] = useState<DraftDetail | null>(null);
   const [sellerProfile, setSellerProfile] = useState<SellerProfile | null>(null);
+  const [sellerHistory, setSellerHistory] = useState<SellerHistory | null>(null);
 
   // Upload / processing state
   const [processing, setProcessing] = useState(false);
@@ -605,6 +607,27 @@ export function useB2BAgent() {
     [fetchDrafts],
   );
 
+  // ── Fetch seller history (previous approved shipments) ────
+
+  const fetchSellerHistory = useCallback(
+    async (sellerId: string) => {
+      try {
+        const res = await fetch(`/api/b2b-agent/sellers/${sellerId}/history`);
+        if (!res.ok) {
+          setSellerHistory(null);
+          return null;
+        }
+        const data: SellerHistory = await res.json();
+        setSellerHistory(data);
+        return data;
+      } catch {
+        setSellerHistory(null);
+        return null;
+      }
+    },
+    [],
+  );
+
   return {
     // Tab state
     activeTab,
@@ -612,6 +635,7 @@ export function useB2BAgent() {
     draftsTotal,
     activeDraft,
     sellerProfile,
+    sellerHistory,
 
     // Processing state
     processing,
@@ -641,6 +665,7 @@ export function useB2BAgent() {
     bulkDelete,
     searchSellers,
     linkSellerToDraft,
+    fetchSellerHistory,
     setActiveDraft,
     setError,
   };

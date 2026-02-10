@@ -29,6 +29,7 @@ function BoxCard({
   isShared,
   canCopyFromFirst,
   onCopyFromFirst,
+  previousReceiverAddresses,
 }: {
   box: ShipmentBox;
   index: number;
@@ -37,6 +38,7 @@ function BoxCard({
   isShared: boolean;
   canCopyFromFirst: boolean;
   onCopyFromFirst?: () => void;
+  previousReceiverAddresses?: ShipmentAddress[];
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -112,6 +114,7 @@ function BoxCard({
             isShared={isShared}
             canCopyFromFirst={canCopyFromFirst}
             onCopyFromFirst={onCopyFromFirst}
+            previousAddresses={previousReceiverAddresses}
           />
 
           {/* Dimensions row */}
@@ -218,9 +221,10 @@ interface BoxEditorProps {
   boxes: ShipmentBox[];
   onChange: (boxes: ShipmentBox[]) => void;
   multiAddress: boolean;
+  previousReceiverAddresses?: ShipmentAddress[];
 }
 
-export function BoxEditor({ boxes, onChange, multiAddress }: BoxEditorProps) {
+export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddresses }: BoxEditorProps) {
   const updateBox = useCallback(
     (index: number, box: ShipmentBox) => {
       const next = [...boxes];
@@ -281,6 +285,7 @@ export function BoxEditor({ boxes, onChange, multiAddress }: BoxEditorProps) {
           isShared={!multiAddress}
           canCopyFromFirst={multiAddress && i > 0}
           onCopyFromFirst={() => copyFromFirst(i)}
+          previousReceiverAddresses={previousReceiverAddresses}
         />
       ))}
       <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={addBox}>

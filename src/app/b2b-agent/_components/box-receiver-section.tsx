@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronRight, Copy, Link2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, Link2, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ interface BoxReceiverSectionProps {
   isShared: boolean;
   canCopyFromFirst: boolean;
   onCopyFromFirst?: () => void;
+  previousAddresses?: ShipmentAddress[];
 }
 
 export function BoxReceiverSection({
@@ -23,6 +24,7 @@ export function BoxReceiverSection({
   isShared,
   canCopyFromFirst,
   onCopyFromFirst,
+  previousAddresses,
 }: BoxReceiverSectionProps) {
   const [expanded, setExpanded] = useState(false);
   const addrRecord = address as unknown as Record<string, string>;
@@ -32,6 +34,12 @@ export function BoxReceiverSection({
   const setField = (key: string, value: string) => {
     onChange({ ...address, [key]: value });
   };
+
+  // Filter previous addresses that differ from current
+  const available = (previousAddresses ?? []).filter((pa) => {
+    const pr = pa as unknown as Record<string, string>;
+    return pr.name && pr.name.toLowerCase() !== (addrRecord.name || "").toLowerCase();
+  });
 
   return (
     <div className="mt-2 rounded-md border border-dashed border-border/60 bg-muted/10 px-3 py-2">
@@ -73,18 +81,50 @@ export function BoxReceiverSection({
 
       {/* Expanded: editable fields */}
       {expanded && (
-        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {ADDRESS_FIELDS.map((f) => (
-            <div key={f.key}>
-              <Label className="text-[10px] text-muted-foreground">{f.label}</Label>
-              <Input
-                value={addrRecord[f.key] || ""}
-                onChange={(e) => setField(f.key, e.target.value)}
-                className="h-7 text-xs"
-              />
+        <>
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {ADDRESS_FIELDS.map((f) => (
+              <div key={f.key}>
+                <Label className="text-[10px] text-muted-foreground">{f.label}</Label>
+                <Input
+                  value={addrRecord[f.key] || ""}
+                  onChange={(e) => setField(f.key, e.target.value)}
+                  className="h-7 text-xs"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Previous receiver addresses */}
+          {available.length > 0 && (
+            <div className="mt-2 rounded-md border border-primary/15 bg-primary/[0.03] p-2">
+              <div className="mb-1.5 flex items-center gap-1 text-[10px] font-medium text-primary">
+                <History className="h-3 w-3" />
+                From previous shipments
+              </div>
+              <div className="space-y-1">
+                {available.map((pa, i) => {
+                  const pr = pa as unknown as Record<string, string>;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      className="flex w-full items-center justify-between rounded border border-primary/10 bg-background px-2 py-1 text-left text-[11px] transition-colors hover:border-primary/25 hover:bg-primary/5"
+                      onClick={() => onChange(pa)}
+                    >
+                      <span className="min-w-0 flex-1 truncate">
+                        <span className="font-medium">{pr.name}</span>
+                        {pr.city && <span className="text-muted-foreground">, {pr.city}</span>}
+                        {pr.country && <span className="text-muted-foreground">, {pr.country}</span>}
+                      </span>
+                      <span className="ml-2 shrink-0 text-[10px] text-primary">Use</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );

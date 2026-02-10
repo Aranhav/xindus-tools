@@ -345,6 +345,8 @@ export default function B2BAgentPage() {
         onAddFiles={agent.addFilesToDraft}
         onRemoveFile={agent.removeFileFromDraft}
         onDownloadFile={agent.downloadDraftFile}
+        sellerHistory={agent.sellerHistory}
+        onFetchSellerHistory={agent.fetchSellerHistory}
       />
     </PageContainer>
   );
