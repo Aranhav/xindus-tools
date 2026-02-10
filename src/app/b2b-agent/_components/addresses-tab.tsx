@@ -155,7 +155,7 @@ export function AddressesTab({
             onToggle={() => toggleSection("compliance")}
           />
           {openSections.compliance && (
-            <div className="mt-1.5 space-y-2">
+            <div className="mt-1.5 grid grid-cols-2 gap-3">
               <AddressForm
                 label="Billing (Consignee)"
                 address={data.billing_address}

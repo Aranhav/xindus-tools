@@ -371,7 +371,7 @@ export function SellerMatch({
             {searching ? "Finding seller..." : "No seller linked"}
           </span>
           {shipperName && !autoMatch && !searching && (
-            <span className="ml-auto text-[10px] text-muted-foreground truncate max-w-[140px]">
+            <span className="ml-auto text-[10px] text-muted-foreground truncate max-w-[200px]">
               {shipperName}
             </span>
           )}
@@ -396,7 +396,7 @@ export function SellerMatch({
 
 function CustomerProfile({ customer }: { customer: XindusCustomer }) {
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+    <div className="grid grid-cols-3 gap-x-4 gap-y-1 text-xs">
       {customer.contact_name && (
         <ProfileRow icon={User} label="Contact" value={customer.contact_name} />
       )}

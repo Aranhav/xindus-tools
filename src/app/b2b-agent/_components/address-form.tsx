@@ -244,7 +244,7 @@ export function AddressForm({
 
       {editing ? (
         /* Edit mode: 3-column grid */
-        <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 px-3 pb-3 pt-2">
+        <div className="grid grid-cols-3 gap-x-4 gap-y-2 px-3 pb-3 pt-2">
           {ADDRESS_FIELDS.map((f) => (
             <div key={f.key} className={f.span === "full" ? "col-span-3" : ""}>
               <Label className="mb-0.5 text-[10px] text-muted-foreground">{f.label}</Label>
@@ -302,7 +302,7 @@ export function AddressForm({
                   {email && (
                     <p className="flex items-center justify-end gap-1">
                       <Mail className="h-2.5 w-2.5" />
-                      <span className="truncate max-w-[160px]">{email}</span>
+                      <span className="truncate max-w-[220px]">{email}</span>
                     </p>
                   )}
                 </div>

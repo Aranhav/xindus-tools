@@ -248,7 +248,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                     <Input
                       type="number"
                       value={item.unit_price ?? ""}
-                      className="h-6 w-24 text-right text-xs tabular-nums"
+                      className="h-6 w-28 text-right text-xs tabular-nums"
                       onChange={(e) => updateItem(i, "unit_price", e.target.value ? Number(e.target.value) : null)}
                     />
                   </div>
@@ -271,12 +271,12 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
 
                 {/* Line 3: Secondary fields */}
                 {showMore && (
-                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-dashed border-border/50 pl-[22px] pt-2">
-                    <InlineField label="iHSN" value={item.ihsn} mono width="w-20"
+                  <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1.5 border-t border-dashed border-border/50 pl-[22px] pt-2">
+                    <InlineField label="iHSN" value={item.ihsn} mono width="w-24"
                       onChange={(v) => updateItem(i, "ihsn", v)} />
                     <InlineField label="Wt" value={item.weight} type="number" width="w-14" suffix="kg"
                       onChange={(v) => updateItem(i, "weight", v)} />
-                    <InlineField label="Origin" value={item.country_of_origin} width="w-10"
+                    <InlineField label="Origin" value={item.country_of_origin} width="w-14"
                       onChange={(v) => updateItem(i, "country_of_origin", v)} />
                     <InlineField label="IGST" value={item.igst_amount} type="number" width="w-14" suffix="%"
                       onChange={(v) => updateItem(i, "igst_amount", v)} />

@@ -266,7 +266,7 @@ export function OverviewTab({
     <TabsContent value="overview" className="mt-0 px-6 py-4 space-y-4">
       {/* ── Shipment Summary (top) ───────────────────────── */}
       <div className="rounded-lg border bg-muted/30 p-4">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="flex items-center justify-between gap-6">
           <SummaryStat
             icon={Package}
             label="Boxes"
@@ -347,7 +347,7 @@ export function OverviewTab({
         bgColor="bg-blue-50/40 dark:bg-blue-950/20"
         borderColor="border-blue-200/60 dark:border-blue-900/40"
       >
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <div className="space-y-1">
             <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Origin Clearance</Label>
             <p className="text-sm font-medium">Commercial</p>
@@ -360,7 +360,7 @@ export function OverviewTab({
             onChanged={addFieldCorrection}
             sellerDefault={sellerDefaults?.destination_clearance_type as string | undefined}
           />
-          <div className="col-span-2 space-y-1">
+          <div className="space-y-1">
             <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Shipping Method</Label>
             <Select
               value={data.shipping_method || undefined}
@@ -401,7 +401,7 @@ export function OverviewTab({
         bgColor="bg-violet-50/30 dark:bg-violet-950/20"
         borderColor="border-violet-200/50 dark:border-violet-900/40"
       >
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <SelectField
             label="Purpose"
             value={data.purpose_of_booking}
@@ -471,7 +471,7 @@ export function OverviewTab({
         bgColor="bg-amber-50/30 dark:bg-amber-950/20"
         borderColor="border-amber-200/50 dark:border-amber-900/40"
       >
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+        <div className="grid grid-cols-3 gap-x-4 gap-y-3">
           <EditableField
             label="Invoice Number"
             value={data.invoice_number}
@@ -524,7 +524,7 @@ export function OverviewTab({
         bgColor="bg-orange-50/30 dark:bg-orange-950/20"
         borderColor="border-orange-200/50 dark:border-orange-900/40"
       >
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <ToggleField
             label="Self Drop"
             value={data.self_drop}

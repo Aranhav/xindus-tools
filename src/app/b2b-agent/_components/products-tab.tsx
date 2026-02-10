@@ -210,7 +210,7 @@ export function ProductsTab({
                 className="inline-flex items-center gap-1.5 rounded-md border border-primary/20 bg-background px-2.5 py-1 text-xs transition-colors hover:border-primary/40 hover:bg-primary/5"
                 onClick={() => addPrevious(p)}
               >
-                <span className="max-w-[180px] truncate">{p.product_description}</span>
+                <span className="max-w-[240px] truncate">{p.product_description}</span>
                 {p.hsn_code && (
                   <span className="font-mono text-[10px] text-muted-foreground">{p.hsn_code}</span>
                 )}
