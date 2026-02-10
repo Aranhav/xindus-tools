@@ -3,8 +3,6 @@
 import { useState, useMemo } from "react";
 import { ChevronDown, ChevronRight, Link2, History, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -13,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ADDRESS_FIELDS } from "./address-field-config";
 import type { ShipmentAddress } from "@/types/agent";
 
 interface BoxReceiverSectionProps {
@@ -47,8 +44,6 @@ export function BoxReceiverSection({
   allReceivers,
 }: BoxReceiverSectionProps) {
   const [expanded, setExpanded] = useState(false);
-  const [showCustomForm, setShowCustomForm] = useState(false);
-  const addrRecord = address as unknown as Record<string, string>;
 
   const summary = addressSummary(address);
 
@@ -80,20 +75,11 @@ export function BoxReceiverSection({
 
   const currentKey = addressMatchKey(address);
 
-  const setField = (key: string, value: string) => {
-    onChange({ ...address, [key]: value });
-  };
-
   const handleDropdownSelect = (value: string) => {
-    if (value === "__custom__") {
-      setShowCustomForm(true);
-      return;
-    }
     const idx = parseInt(value, 10);
     const option = dropdownOptions[idx];
     if (option) {
       onChange({ ...option.address });
-      setShowCustomForm(false);
     }
   };
 
@@ -150,9 +136,6 @@ export function BoxReceiverSection({
                     </div>
                   </SelectItem>
                 ))}
-                <SelectItem value="__custom__" className="text-xs">
-                  Custom address...
-                </SelectItem>
               </SelectContent>
             </Select>
           )}
@@ -169,21 +152,6 @@ export function BoxReceiverSection({
             </Button>
           )}
 
-          {/* Custom form (shown when "Custom..." selected, no options, or shared mode) */}
-          {(showCustomForm || dropdownOptions.length === 0 || isShared) && (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {ADDRESS_FIELDS.map((f) => (
-                <div key={f.key} className={f.span === "full" ? "col-span-full" : ""}>
-                  <Label className="text-[10px] text-muted-foreground">{f.label}</Label>
-                  <Input
-                    value={addrRecord[f.key] || ""}
-                    onChange={(e) => setField(f.key, e.target.value)}
-                    className="h-7 text-xs"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
     </div>
