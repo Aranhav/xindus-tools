@@ -108,11 +108,14 @@ export interface ShipmentBox {
 export interface ProductDetail {
   product_description: string;
   hsn_code: string;
+  ihsn?: string;
   value: number;
   country_of_origin?: string;
   unit_price?: number | null;
   duty_rate?: number | null;
   igst_percent?: number | null;
+  gaia_classified?: boolean;
+  gaia_description?: string;
 }
 
 /* ------------------------------------------------------------------ */

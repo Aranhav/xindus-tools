@@ -40,8 +40,23 @@ function ProductRow({
           value={product.hsn_code}
           onChange={(e) => set("hsn_code", e.target.value)}
           className="h-7 font-mono text-xs"
-          placeholder="HSN code"
+          placeholder="Export HSN"
         />
+      </td>
+      <td className="py-1.5 pr-2">
+        <div className="flex items-center gap-1">
+          <Input
+            value={product.ihsn ?? ""}
+            onChange={(e) => set("ihsn", e.target.value)}
+            className={`h-7 font-mono text-xs ${product.gaia_classified && product.ihsn ? "border-emerald-300 dark:border-emerald-800" : ""}`}
+            placeholder="Import HSN"
+          />
+          {product.gaia_classified && product.ihsn && (
+            <span className="shrink-0 rounded bg-emerald-100 px-1 py-px text-[9px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+              Gaia
+            </span>
+          )}
+        </div>
       </td>
       <td className="py-1.5 pr-2">
         <Input
@@ -70,13 +85,20 @@ function ProductRow({
         />
       </td>
       <td className="py-1.5 pr-2">
-        <Input
-          type="number"
-          value={product.duty_rate ?? ""}
-          onChange={(e) => set("duty_rate", e.target.value ? Number(e.target.value) : null)}
-          className="h-7 text-right text-xs"
-          placeholder="%"
-        />
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            value={product.duty_rate ?? ""}
+            onChange={(e) => set("duty_rate", e.target.value ? Number(e.target.value) : null)}
+            className={`h-7 text-right text-xs ${product.gaia_classified && product.duty_rate != null ? "border-emerald-300 dark:border-emerald-800" : ""}`}
+            placeholder="%"
+          />
+          {product.gaia_classified && product.duty_rate != null && (
+            <span className="shrink-0 rounded bg-emerald-100 px-1 py-px text-[9px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+              Gaia
+            </span>
+          )}
+        </div>
       </td>
       <td className="py-1.5 pr-2">
         <Input
@@ -145,7 +167,8 @@ export function ProductsTab({
           <thead>
             <tr className="border-b bg-muted/30 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
               <th className="px-3 py-2">Description</th>
-              <th className="px-3 py-2 w-28">HSN Code</th>
+              <th className="px-3 py-2 w-28">Export HSN</th>
+              <th className="px-3 py-2 w-32">Import HSN</th>
               <th className="px-3 py-2 w-20 text-right">Value {sym && <span className="normal-case">({sym})</span>}</th>
               <th className="px-3 py-2 w-16">Origin</th>
               <th className="px-3 py-2 w-20 text-right">Unit Price {sym && <span className="normal-case">({sym})</span>}</th>
@@ -172,7 +195,7 @@ export function ProductsTab({
             ))}
             {products.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-6 text-center text-xs text-muted-foreground">
+                <td colSpan={9} className="px-3 py-6 text-center text-xs text-muted-foreground">
                   No customs products added yet.
                 </td>
               </tr>

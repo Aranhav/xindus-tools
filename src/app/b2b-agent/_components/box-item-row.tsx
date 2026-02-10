@@ -131,10 +131,13 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
         ...items[rowIdx],
         description: product.product_description,
         ehsn: product.hsn_code,
+        ihsn: product.ihsn || "",
         country_of_origin: product.country_of_origin || "IN",
         unit_price: product.unit_price ?? null,
         duty_rate: product.duty_rate ?? null,
         igst_amount: product.igst_percent ?? null,
+        gaia_classified: product.gaia_classified || false,
+        gaia_description: product.gaia_description || "",
       };
       onChange(next);
     },
