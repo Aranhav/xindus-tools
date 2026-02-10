@@ -47,8 +47,25 @@ const BROWSER_HEADERS: Record<string, string> = {
 let sessionToken: string | null = null;
 let sessionExpiry: number | null = null;
 
+/**
+ * Pre-seed session from METABASE_SESSION_TOKEN env var.
+ * Useful when Railway's IP is blocked by Cloudflare WAF and cannot
+ * authenticate directly. Set the env var from a non-blocked machine:
+ *   curl -X POST https://reports.xindus.net/api/session \
+ *     -H 'Content-Type: application/json' \
+ *     -d '{"username":"...","password":"..."}' → {"id":"<token>"}
+ */
+const SEED_TOKEN = process.env.METABASE_SESSION_TOKEN || "";
+
 async function getSession(): Promise<string> {
   if (sessionToken && sessionExpiry && Date.now() < sessionExpiry) {
+    return sessionToken;
+  }
+
+  // Use pre-seeded token if available (bypasses Cloudflare WAF blocks)
+  if (SEED_TOKEN && !sessionToken) {
+    sessionToken = SEED_TOKEN;
+    sessionExpiry = Date.now() + 12 * 24 * 60 * 60 * 1000;
     return sessionToken;
   }
 
