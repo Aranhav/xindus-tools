@@ -203,7 +203,8 @@ export function DraftDetailSheet({
           new_value: localBoxes,
         }]);
       }
-      setLocalBoxes(null);
+      // Don't clear localBoxes here — keep showing user's edits until
+      // the sheet closes or the draft switches (prevents flash-back to stale server data)
     }, 800);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -353,7 +354,8 @@ export function DraftDetailSheet({
           new_value: localProducts,
         }]);
       }
-      setLocalProducts(null);
+      // Don't clear localProducts here — keep user's edits visible until
+      // the sheet closes or the draft switches (prevents flash-back)
     }, 800);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -433,7 +435,7 @@ export function DraftDetailSheet({
                 )}
               </SheetDescription>
             </div>
-            <div className="flex shrink-0 items-center gap-1.5">
+            <div className="flex shrink-0 items-center gap-3">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-8 gap-1">

@@ -131,7 +131,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
   products?: ProductDetail[];
   currency?: string;
 }) {
-  const [showMore, setShowMore] = useState(false);
+  const [showMore, setShowMore] = useState(true);
   const sym = currencySymbol(currency);
   const hasProducts = (products?.length ?? 0) > 0;
 

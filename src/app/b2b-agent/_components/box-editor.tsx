@@ -97,28 +97,30 @@ function BoxCard({
           )}
 
           {/* Compact dimensions */}
-          <div className="flex items-end gap-3">
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
             <div>
-              <Label className="text-[10px] text-muted-foreground">Dimensions (cm)</Label>
-              <div className="flex items-center">
-                <Input type="number" value={box.length || ""} placeholder="L"
-                  onChange={(e) => setField("length", Number(e.target.value) || 0)}
-                  className="h-7 w-[72px] rounded-r-none border-r-0 text-xs text-center" />
-                <span className="flex h-7 items-center border-y border-border bg-muted/50 px-1 text-[10px] text-muted-foreground">&times;</span>
-                <Input type="number" value={box.width || ""} placeholder="W"
-                  onChange={(e) => setField("width", Number(e.target.value) || 0)}
-                  className="h-7 w-[72px] rounded-none border-x-0 text-xs text-center" />
-                <span className="flex h-7 items-center border-y border-border bg-muted/50 px-1 text-[10px] text-muted-foreground">&times;</span>
-                <Input type="number" value={box.height || ""} placeholder="H"
-                  onChange={(e) => setField("height", Number(e.target.value) || 0)}
-                  className="h-7 w-[72px] rounded-l-none border-l-0 text-xs text-center" />
-              </div>
+              <Label className="text-[10px] text-muted-foreground">L (cm)</Label>
+              <Input type="number" value={box.length || ""} placeholder="0"
+                onChange={(e) => setField("length", Number(e.target.value) || 0)}
+                className="h-7 w-16 text-xs text-center" />
             </div>
-            <div className="w-20">
+            <div>
+              <Label className="text-[10px] text-muted-foreground">W (cm)</Label>
+              <Input type="number" value={box.width || ""} placeholder="0"
+                onChange={(e) => setField("width", Number(e.target.value) || 0)}
+                className="h-7 w-16 text-xs text-center" />
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">H (cm)</Label>
+              <Input type="number" value={box.height || ""} placeholder="0"
+                onChange={(e) => setField("height", Number(e.target.value) || 0)}
+                className="h-7 w-16 text-xs text-center" />
+            </div>
+            <div>
               <Label className="text-[10px] text-muted-foreground">Weight (kg)</Label>
               <Input type="number" value={box.weight || ""}
                 onChange={(e) => setField("weight", Number(e.target.value) || 0)}
-                className="h-7 text-xs" />
+                className="h-7 w-20 text-xs" />
             </div>
             <span className="whitespace-nowrap pb-1.5 text-[10px] text-muted-foreground">
               Vol: {volWeight} kg
