@@ -1,19 +1,5 @@
 import { NextRequest } from "next/server";
-import { queryMetabase, rowsToObjects, MetabaseError } from "@/lib/metabase";
-import { jsonResponse } from "@/lib/api";
-
-export interface XindusAddress {
-  id: number;
-  name: string;
-  address: string;
-  city: string;
-  district: string;
-  state: string;
-  zip: string;
-  country: string;
-  phone: string;
-  email: string;
-}
+import { proxyFetch, jsonResponse, errorResponse } from "@/lib/api";
 
 export async function GET(
   req: NextRequest,
@@ -27,22 +13,14 @@ export async function GET(
 
   const type = req.nextUrl.searchParams.get("type") || "P";
 
-  const sql = `
-SELECT id, name, address, city, district, state, zip, country, phone, email
-FROM addresses
-WHERE customer_id = ${idNum}
-  AND type = '${type}'
-  AND is_active = 1
-ORDER BY modified_on DESC`;
-
   try {
-    const result = await queryMetabase(sql);
-    const addresses = rowsToObjects<XindusAddress>(result);
-    return jsonResponse({ addresses });
+    const res = await proxyFetch(
+      "b2b",
+      `/api/agent/xindus/customers/${idNum}/addresses?type=${encodeURIComponent(type)}`,
+    );
+    const data = await res.json();
+    return jsonResponse(data);
   } catch (err) {
-    if (err instanceof MetabaseError) {
-      return jsonResponse({ error: err.message }, err.status);
-    }
-    return jsonResponse({ error: "Internal server error" }, 500);
+    return errorResponse(err);
   }
 }

@@ -1,7 +1,12 @@
 import { NextRequest } from "next/server";
-import { queryMetabase, rowsToObjects, escapeSql, MetabaseError } from "@/lib/metabase";
-import { jsonResponse } from "@/lib/api";
-import type { XindusCustomer } from "@/types/agent";
+import { proxyFetch, jsonResponse, errorResponse } from "@/lib/api";
+
+// Backend returns company_name; frontend expects company
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapCustomer(c: any) {
+  const { company_name, ...rest } = c;
+  return { ...rest, company: company_name ?? c.company };
+}
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q")?.trim();
@@ -13,24 +18,12 @@ export async function GET(req: NextRequest) {
     if (isNaN(idNum)) {
       return jsonResponse({ customers: [] });
     }
-
-    const sql = `
-SELECT
-  id, crn_number, company, contact_name, email, phone,
-  iec, gstn, status, shipment_count, city, state
-FROM customers
-WHERE id = ${idNum}
-LIMIT 1`;
-
     try {
-      const result = await queryMetabase(sql);
-      const customers = rowsToObjects<XindusCustomer>(result);
-      return jsonResponse({ customers });
+      const res = await proxyFetch("b2b", `/api/agent/xindus/customers/${idNum}`);
+      const customer = await res.json();
+      return jsonResponse({ customers: [mapCustomer(customer)] });
     } catch (err) {
-      if (err instanceof MetabaseError) {
-        return jsonResponse({ error: err.message }, err.status);
-      }
-      return jsonResponse({ error: "Internal server error" }, 500);
+      return errorResponse(err);
     }
   }
 
@@ -39,29 +32,15 @@ LIMIT 1`;
     return jsonResponse({ customers: [] });
   }
 
-  const escaped = escapeSql(q);
-
-  const sql = `
-SELECT
-  id, crn_number, company, contact_name, email, phone,
-  iec, gstn, status, shipment_count, city, state
-FROM customers
-WHERE status = 'APPROVED'
-  AND company IS NOT NULL
-  AND company LIKE '%${escaped}%'
-ORDER BY
-  CASE WHEN company LIKE '${escaped}%' THEN 0 ELSE 1 END,
-  COALESCE(shipment_count, 0) DESC
-LIMIT 10`;
-
   try {
-    const result = await queryMetabase(sql);
-    const customers = rowsToObjects<XindusCustomer>(result);
+    const res = await proxyFetch(
+      "b2b",
+      `/api/agent/xindus/customers/search?q=${encodeURIComponent(q)}&limit=10`,
+    );
+    const data = await res.json();
+    const customers = (data.customers || []).map(mapCustomer);
     return jsonResponse({ customers });
   } catch (err) {
-    if (err instanceof MetabaseError) {
-      return jsonResponse({ error: err.message }, err.status);
-    }
-    return jsonResponse({ error: "Internal server error" }, 500);
+    return errorResponse(err);
   }
 }
