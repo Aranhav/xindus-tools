@@ -178,7 +178,7 @@ export function AddressForm({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge variant="secondary" className="text-[10px] shrink-0 cursor-default">{boxLabel}</Badge>
+                    <Badge variant="secondary" className="text-[11px] shrink-0 cursor-default">{boxLabel}</Badge>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
                     <p>{boxTooltip}</p>
@@ -186,11 +186,11 @@ export function AddressForm({
                 </Tooltip>
               </TooltipProvider>
             ) : (
-              <Badge variant="secondary" className="text-[10px] shrink-0">{boxLabel}</Badge>
+              <Badge variant="secondary" className="text-[11px] shrink-0">{boxLabel}</Badge>
             )
           )}
           {avgConf != null && (
-            <div className={`flex items-center gap-0.5 text-[10px] font-medium shrink-0 ${
+            <div className={`flex items-center gap-0.5 text-[11px] font-medium shrink-0 ${
               avgConf >= 0.85 ? "text-emerald-600 dark:text-emerald-400"
               : avgConf >= 0.65 ? "text-amber-600 dark:text-amber-400"
               : "text-red-600 dark:text-red-400"
@@ -200,7 +200,7 @@ export function AddressForm({
             </div>
           )}
           {eori && !editing && (
-            <Badge variant="outline" className="gap-0.5 text-[9px] shrink-0 py-0">
+            <Badge variant="outline" className="gap-0.5 text-[11px] shrink-0 py-0">
               <Shield className="h-2 w-2" /> EORI: {eori}
             </Badge>
           )}
@@ -211,7 +211,7 @@ export function AddressForm({
               <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={cancelEdit}>
                 <X className="h-3 w-3" />
               </Button>
-              <Button size="sm" className="h-5 gap-0.5 px-1.5 text-[10px]" onClick={saveEdit}>
+              <Button size="sm" className="h-5 gap-0.5 px-1.5 text-[11px]" onClick={saveEdit}>
                 <Check className="h-2.5 w-2.5" />
                 Save
               </Button>
@@ -221,7 +221,7 @@ export function AddressForm({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-5 gap-0.5 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
+                className="h-5 gap-0.5 px-1.5 text-[11px] text-muted-foreground hover:text-foreground"
                 onClick={startEdit}
               >
                 <Pencil className="h-2.5 w-2.5" />
@@ -247,7 +247,7 @@ export function AddressForm({
         <div className="grid grid-cols-3 gap-x-4 gap-y-2 px-3 pb-3 pt-2">
           {ADDRESS_FIELDS.map((f) => (
             <div key={f.key} className={f.span === "full" ? "col-span-3" : ""}>
-              <Label className="mb-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">{f.label}</Label>
+              <Label className="mb-0.5 text-[11px] uppercase tracking-wider text-muted-foreground">{f.label}</Label>
               {f.key === "address" && isUSCountry ? (
                 <AddressAutocomplete
                   value={formValues[f.key] || ""}
@@ -325,7 +325,7 @@ export function AddressForm({
           <Button
             variant="outline"
             size="sm"
-            className="h-5 shrink-0 border-primary/30 px-1.5 text-[10px] text-primary hover:bg-primary/10"
+            className="h-5 shrink-0 border-primary/30 px-1.5 text-[11px] text-primary hover:bg-primary/10"
             onClick={applyDefaults}
           >
             Apply
@@ -336,7 +336,7 @@ export function AddressForm({
       {/* Previous addresses */}
       {prevAddresses.length > 0 && !editing && !readOnly && (
         <div className="mx-3 mb-2 rounded-md border border-primary/15 bg-primary/[0.02] p-2">
-          <div className="mb-1.5 flex items-center gap-1 text-[10px] font-medium text-primary">
+          <div className="mb-1.5 flex items-center gap-1 text-[11px] font-medium text-primary">
             <History className="h-3 w-3" />
             Previous shipments
           </div>
@@ -355,7 +355,7 @@ export function AddressForm({
                     {pr.city && <span className="text-muted-foreground">, {pr.city}</span>}
                     {pr.country && <span className="text-muted-foreground">, {pr.country}</span>}
                   </span>
-                  <span className="ml-2 shrink-0 text-[10px] text-primary">Use</span>
+                  <span className="ml-2 shrink-0 text-[11px] text-primary">Use</span>
                 </button>
               );
             })}

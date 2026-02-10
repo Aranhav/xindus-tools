@@ -200,7 +200,7 @@ export function IorPicker({
               </span>
               {loading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
             </div>
-            <Badge variant="secondary" className="text-[10px]">
+            <Badge variant="secondary" className="text-[11px]">
               {mergedAddresses.length}
             </Badge>
           </div>
@@ -243,7 +243,7 @@ export function IorPicker({
                               <p className="truncate font-medium">{addr.name}</p>
                               <Badge
                                 variant="outline"
-                                className={`shrink-0 text-[9px] py-0 ${
+                                className={`shrink-0 text-[11px] py-0 ${
                                   addr.source === "xindus"
                                     ? "border-teal-300 text-teal-600 dark:border-teal-700 dark:text-teal-400"
                                     : "border-violet-300 text-violet-600 dark:border-violet-700 dark:text-violet-400"
@@ -276,7 +276,7 @@ export function IorPicker({
                   </p>
                   {selectedAddr.country && <p className="text-xs text-foreground/60">{selectedAddr.country}</p>}
                   {(selectedAddr.phone || selectedAddr.email) && (
-                    <div className="flex items-center gap-3 pt-1 text-[10px] text-muted-foreground">
+                    <div className="flex items-center gap-3 pt-1 text-[11px] text-muted-foreground">
                       {selectedAddr.phone && (
                         <span className="flex items-center gap-1">
                           <Phone className="h-2.5 w-2.5" /> {selectedAddr.phone}

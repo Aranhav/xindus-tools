@@ -136,14 +136,14 @@ export function ProductsTab({
   return (
     <TabsContent value="products" className="mt-0 px-6 py-4">
       {productsModified && (
-        <Badge variant="outline" className="mb-2 text-[10px] text-primary">
+        <Badge variant="outline" className="mb-2 text-[11px] text-primary">
           Modified (unsaved)
         </Badge>
       )}
       <div className="overflow-x-auto rounded-md border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b bg-muted/30 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
+            <tr className="border-b bg-muted/30 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
               <th className="px-3 py-2">Description</th>
               <th className="px-3 py-2 w-28">HSN Code</th>
               <th className="px-3 py-2 w-20 text-right">Value {sym && <span className="normal-case">({sym})</span>}</th>
@@ -212,10 +212,10 @@ export function ProductsTab({
               >
                 <span className="max-w-[240px] truncate">{p.product_description}</span>
                 {p.hsn_code && (
-                  <span className="font-mono text-[10px] text-muted-foreground">{p.hsn_code}</span>
+                  <span className="font-mono text-[11px] text-muted-foreground">{p.hsn_code}</span>
                 )}
                 {p.country_of_origin && (
-                  <span className="text-[10px] text-muted-foreground">{p.country_of_origin}</span>
+                  <span className="text-[11px] text-muted-foreground">{p.country_of_origin}</span>
                 )}
                 <Plus className="h-3 w-3 text-primary" />
               </button>

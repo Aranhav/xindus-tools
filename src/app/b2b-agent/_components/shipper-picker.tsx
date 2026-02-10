@@ -224,7 +224,7 @@ export function ShipperPicker({
                 </div>
               )}
             </div>
-            <Badge variant="outline" className="mt-2 gap-1 text-[10px] text-blue-600 dark:text-blue-400">
+            <Badge variant="outline" className="mt-2 gap-1 text-[11px] text-blue-600 dark:text-blue-400">
               <MapPin className="h-2.5 w-2.5" />
               Xindus Warehouse #{selectedAddr.id}
             </Badge>

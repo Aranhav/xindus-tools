@@ -219,20 +219,20 @@ export function SellerMatch({
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-sm font-medium">{displayName}</span>
               {linkedCustomer && (
-                <Badge variant="outline" className="text-[10px] font-mono font-normal">
+                <Badge variant="outline" className="text-[11px] font-mono font-normal">
                   {linkedCustomer.crn_number || `#${linkedCustomer.id}`}
                 </Badge>
               )}
               {isSellerOnly ? (
-                <Badge variant="outline" className="text-[10px] font-normal text-rose-700 dark:text-rose-300">
+                <Badge variant="outline" className="text-[11px] font-normal text-rose-700 dark:text-rose-300">
                   No Xindus customer
                 </Badge>
               ) : currentSeller ? (
-                <Badge variant="outline" className="text-[10px] font-normal text-emerald-700 dark:text-emerald-300">
+                <Badge variant="outline" className="text-[11px] font-normal text-emerald-700 dark:text-emerald-300">
                   {currentSeller.shipment_count} shipment{currentSeller.shipment_count !== 1 ? "s" : ""}
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-[10px] font-normal text-blue-700 dark:text-blue-300">
+                <Badge variant="outline" className="text-[11px] font-normal text-blue-700 dark:text-blue-300">
                   Xindus Customer
                 </Badge>
               )}
@@ -242,7 +242,7 @@ export function SellerMatch({
             <Button
               size="sm"
               variant="ghost"
-              className="h-6 gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+              className="h-6 gap-1 text-[11px] text-muted-foreground hover:text-foreground"
               onClick={(e) => { e.stopPropagation(); setChangingSeller(true); }}
             >
               <RefreshCw className="h-3 w-3" />
@@ -261,7 +261,7 @@ export function SellerMatch({
 
             {isSellerOnly && isActionable && (
               <div className="space-y-2">
-                <p className="text-[10px] text-rose-600 dark:text-rose-400">
+                <p className="text-[11px] text-rose-600 dark:text-rose-400">
                   This seller has no linked Xindus customer. Search to link one:
                 </p>
                 <CustomerCombobox
@@ -274,7 +274,7 @@ export function SellerMatch({
             )}
 
             {!currentSeller && linkedCustomer && (
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground">
                 Shipper info queued from Xindus. Click Save to apply.
               </p>
             )}
@@ -298,7 +298,7 @@ export function SellerMatch({
           </div>
           <Button
             size="sm" variant="ghost"
-            className="h-6 gap-1 text-[10px] text-muted-foreground"
+            className="h-6 gap-1 text-[11px] text-muted-foreground"
             onClick={() => setChangingSeller(false)}
           >
             <X className="h-3 w-3" />
@@ -332,7 +332,7 @@ export function SellerMatch({
               {autoMatch.confidence > 0 && (
                 <Badge
                   variant="outline"
-                  className={`text-[9px] ${
+                  className={`text-[11px] ${
                     autoMatch.confidence >= 0.8
                       ? "border-emerald-300 text-emerald-700"
                       : autoMatch.confidence >= 0.5
@@ -344,13 +344,13 @@ export function SellerMatch({
                 </Badge>
               )}
             </div>
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               {autoMatch.seller.shipment_count} past shipment{autoMatch.seller.shipment_count !== 1 ? "s" : ""}
               {autoMatch.match_reason && ` · ${autoMatch.match_reason}`}
             </p>
           </div>
           <Button
-            size="sm" className="h-6 gap-1 text-[10px]"
+            size="sm" className="h-6 gap-1 text-[11px]"
             onClick={handleLinkAutoMatch} disabled={isBusy}
           >
             <ArrowRight className="h-3 w-3" />
@@ -371,7 +371,7 @@ export function SellerMatch({
             {searching ? "Finding seller..." : "No seller linked"}
           </span>
           {shipperName && !autoMatch && !searching && (
-            <span className="ml-auto text-[10px] text-muted-foreground truncate max-w-[200px]">
+            <span className="ml-auto text-[11px] text-muted-foreground truncate max-w-[200px]">
               {shipperName}
             </span>
           )}
@@ -423,7 +423,7 @@ function ProfileRow({ icon: Icon, label, value }: {
   return (
     <div className="flex items-center gap-1.5">
       <Icon className="h-3 w-3 shrink-0 text-muted-foreground" />
-      <span className="w-14 shrink-0 text-[10px] text-muted-foreground">{label}</span>
+      <span className="w-14 shrink-0 text-[11px] text-muted-foreground">{label}</span>
       <span className="min-w-0 flex-1 truncate">{value}</span>
     </div>
   );

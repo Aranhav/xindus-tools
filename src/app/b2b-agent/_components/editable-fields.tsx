@@ -94,7 +94,7 @@ export function EditableField({
 
   return (
     <div className="space-y-1">
-      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</Label>
+      <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</Label>
       {isEditing ? (
         <div className="flex items-center gap-1">
           <Input
@@ -165,7 +165,7 @@ export function SelectField({
   const showDefault = sellerDefault && sellerDefault !== value;
   return (
     <div className="space-y-1">
-      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</Label>
+      <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</Label>
       <Select
         value={value || undefined}
         onValueChange={(v) => {
@@ -229,7 +229,7 @@ export function ToggleField({
 export function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="text-sm font-semibold">{value || "---"}</p>
     </div>
   );

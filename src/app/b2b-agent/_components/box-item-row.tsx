@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { Plus, Trash2, ChevronRight, ChevronsUpDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Plus, Trash2, ChevronsUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Popover, PopoverContent, PopoverTrigger,
@@ -77,7 +76,7 @@ function ProductCombobox({ options, onSelect }: {
                 >
                   <span className="min-w-0 flex-1 truncate">{p.product_description}</span>
                   {p.hsn_code && (
-                    <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                    <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
                       {p.hsn_code}
                     </span>
                   )}
@@ -91,38 +90,7 @@ function ProductCombobox({ options, onSelect }: {
   );
 }
 
-/* ── Inline field (underline-style for secondary row) ─────── */
-
-function InlineField({ label, value, onChange, width, mono, suffix, type }: {
-  label: string;
-  value: string | number | null | undefined;
-  onChange: (v: string | number | null) => void;
-  width: string;
-  mono?: boolean;
-  suffix?: string;
-  type?: "number";
-}) {
-  return (
-    <div className="flex items-center gap-1">
-      <span className="whitespace-nowrap text-[10px] text-muted-foreground">{label}</span>
-      <input
-        type={type || "text"}
-        value={value ?? ""}
-        onChange={(e) => {
-          if (type === "number") {
-            onChange(e.target.value ? Number(e.target.value) : null);
-          } else {
-            onChange(e.target.value);
-          }
-        }}
-        className={`${width} h-5 bg-transparent border-b border-dashed border-border/60 px-0.5 text-[11px] transition-colors focus:outline-none focus:border-foreground ${mono ? "font-mono" : ""} ${type === "number" ? "text-right tabular-nums" : ""}`}
-      />
-      {suffix && <span className="text-[10px] text-muted-foreground">{suffix}</span>}
-    </div>
-  );
-}
-
-/* ── Items list (card-based layout) ───────────────────────── */
+/* ── Items list (grid-based layout) ───────────────────────── */
 
 export function ItemsTable({ items, onChange, onAdd, products, currency }: {
   items: ShipmentBoxItem[];
@@ -131,7 +99,6 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
   products?: ProductDetail[];
   currency?: string;
 }) {
-  const [showMore, setShowMore] = useState(false);
   const sym = currencySymbol(currency);
   const hasProducts = (products?.length ?? 0) > 0;
 
@@ -165,7 +132,6 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
         description: product.product_description,
         ehsn: product.hsn_code,
         country_of_origin: product.country_of_origin || "IN",
-        // Direct replacement — always apply product values
         unit_price: product.unit_price ?? null,
         duty_rate: product.duty_rate ?? null,
         igst_amount: product.igst_percent ?? null,
@@ -181,107 +147,139 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
   );
 
   return (
-    <div className="rounded-lg border border-blue-200/50 bg-blue-50/30 p-2.5 dark:border-blue-900/30 dark:bg-blue-950/20">
+    <div className="rounded-lg border border-blue-200/50 bg-blue-50/30 p-3 dark:border-blue-900/30 dark:bg-blue-950/20">
       {/* Header */}
-      <div className="flex items-center justify-between pb-2">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="pb-2.5">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           Items
         </span>
-        <Button variant="ghost" size="sm" className="h-6 gap-1 text-[10px] text-muted-foreground"
-          onClick={() => setShowMore((v) => !v)}>
-          <ChevronRight className={`h-3 w-3 transition-transform ${showMore ? "rotate-90" : ""}`} />
-          {showMore ? "Hide details" : "Show details"}
-        </Button>
       </div>
 
       {/* Items */}
       {items.length === 0 ? (
-        <div className="rounded-md border border-dashed bg-background py-6 text-center text-xs text-muted-foreground">
+        <div className="rounded-md border border-dashed bg-background py-6 text-center text-sm text-muted-foreground">
           No items — click below to add one.
         </div>
       ) : (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {items.map((item, i) => {
             const total = (item.quantity || 0) * (item.unit_price || 0);
             return (
-              <div key={i} className="group rounded-md border border-border/60 bg-background px-2.5 py-1.5">
-                {/* Line 1: Description */}
-                <div className="flex items-center gap-1.5">
-                  <span className="w-4 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground">
+              <div key={i} className="group overflow-hidden rounded-lg border border-border/60 bg-background">
+                {/* Row 1: Description + Qty × Price = Total + actions */}
+                <div className="flex items-center gap-2 px-3 py-2">
+                  <span className="w-5 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
                     {i + 1}
                   </span>
                   <Input
                     value={item.description}
-                    className="h-7 min-w-0 flex-1 text-xs font-medium"
+                    className="h-8 min-w-0 flex-1 text-sm font-medium"
                     placeholder="Item description"
                     onChange={(e) => updateItem(i, "description", e.target.value)}
                   />
-                  {hasProducts && (
-                    <ProductCombobox
-                      options={productOptions}
-                      onSelect={(pi) => handleProductSelect(i, pi)}
-                    />
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => removeItem(i)}
-                    className="shrink-0 p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </div>
-
-                {/* Line 2: Qty × Price = Total + HSN + Secondary fields */}
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 pl-[18px]">
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-muted-foreground">Qty</span>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <span className="text-[11px] text-muted-foreground">Qty</span>
                     <Input
                       type="number"
                       value={item.quantity}
-                      className="h-6 w-14 text-center text-xs tabular-nums"
+                      className="h-7 w-16 text-center text-xs tabular-nums"
                       onChange={(e) => updateItem(i, "quantity", Number(e.target.value) || 0)}
                     />
-                  </div>
-                  <span className="text-xs text-muted-foreground">&times;</span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-muted-foreground">Price</span>
+                    <span className="text-xs text-muted-foreground">&times;</span>
                     <Input
                       type="number"
                       value={item.unit_price ?? ""}
-                      className="h-6 w-20 text-right text-xs tabular-nums"
+                      className="h-7 w-20 text-right text-xs tabular-nums"
+                      placeholder="Price"
                       onChange={(e) => updateItem(i, "unit_price", e.target.value ? Number(e.target.value) : null)}
                     />
+                    <span className="text-xs text-muted-foreground">=</span>
+                    <span className="min-w-[60px] text-right text-xs font-semibold tabular-nums">
+                      {total > 0
+                        ? `${sym}${total.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+                        : "—"}
+                    </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">=</span>
-                  <span className="min-w-[48px] text-xs font-medium tabular-nums">
-                    {total > 0
-                      ? `${sym}${total.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
-                      : "—"}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-muted-foreground">HSN</span>
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    {hasProducts && (
+                      <ProductCombobox
+                        options={productOptions}
+                        onSelect={(pi) => handleProductSelect(i, pi)}
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeItem(i)}
+                      className="shrink-0 p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Row 2: Customs & classification grid (always visible) */}
+                <div className="grid grid-cols-6 gap-x-3 border-t border-border/40 bg-muted/30 px-3 py-2 pl-10">
+                  <div>
+                    <span className="mb-0.5 block text-[11px] text-muted-foreground">Export HSN</span>
                     <Input
                       value={item.ehsn}
-                      className="h-6 w-20 font-mono text-xs"
+                      className="h-7 font-mono text-xs"
                       placeholder="8-digit"
                       onChange={(e) => updateItem(i, "ehsn", e.target.value)}
                     />
                   </div>
-                  {showMore && (
-                    <>
-                      <div className="mx-0.5 h-4 w-px bg-border/40" />
-                      <InlineField label="iHSN" value={item.ihsn} mono width="w-20"
-                        onChange={(v) => updateItem(i, "ihsn", v)} />
-                      <InlineField label="Wt" value={item.weight} type="number" width="w-14" suffix="kg"
-                        onChange={(v) => updateItem(i, "weight", v)} />
-                      <InlineField label="Origin" value={item.country_of_origin} width="w-12"
-                        onChange={(v) => updateItem(i, "country_of_origin", v)} />
-                      <InlineField label="IGST" value={item.igst_amount} type="number" width="w-12" suffix="%"
-                        onChange={(v) => updateItem(i, "igst_amount", v)} />
-                      <InlineField label="Duty" value={item.duty_rate} type="number" width="w-12" suffix="%"
-                        onChange={(v) => updateItem(i, "duty_rate", v)} />
-                    </>
-                  )}
+                  <div>
+                    <span className="mb-0.5 block text-[11px] text-muted-foreground">Import HSN</span>
+                    <Input
+                      value={item.ihsn ?? ""}
+                      className="h-7 font-mono text-xs"
+                      placeholder="8-digit"
+                      onChange={(e) => updateItem(i, "ihsn", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <span className="mb-0.5 block text-[11px] text-muted-foreground">Weight</span>
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        value={item.weight ?? ""}
+                        className="h-7 min-w-0 flex-1 text-xs tabular-nums"
+                        placeholder="0.00"
+                        onChange={(e) => updateItem(i, "weight", e.target.value ? Number(e.target.value) : null)}
+                      />
+                      <span className="shrink-0 text-[11px] text-muted-foreground">kg</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="mb-0.5 block text-[11px] text-muted-foreground">Origin</span>
+                    <Input
+                      value={item.country_of_origin ?? ""}
+                      className="h-7 text-xs uppercase"
+                      placeholder="IN"
+                      maxLength={2}
+                      onChange={(e) => updateItem(i, "country_of_origin", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <span className="mb-0.5 block text-[11px] text-muted-foreground">IGST %</span>
+                    <Input
+                      type="number"
+                      value={item.igst_amount ?? ""}
+                      className="h-7 text-xs tabular-nums"
+                      placeholder="0"
+                      onChange={(e) => updateItem(i, "igst_amount", e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </div>
+                  <div>
+                    <span className="mb-0.5 block text-[11px] text-muted-foreground">Duty %</span>
+                    <Input
+                      type="number"
+                      value={item.duty_rate ?? ""}
+                      className="h-7 text-xs tabular-nums"
+                      placeholder="0"
+                      onChange={(e) => updateItem(i, "duty_rate", e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </div>
                 </div>
               </div>
             );
@@ -293,7 +291,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
       <button
         type="button"
         onClick={onAdd}
-        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed bg-background py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+        className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed bg-background py-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
       >
         <Plus className="h-3.5 w-3.5" /> Add item
       </button>

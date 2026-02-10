@@ -133,7 +133,7 @@ function SummaryStat({
         <Icon className={`h-3.5 w-3.5 ${iconColor}`} />
       </div>
       <div>
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
         <p className="text-sm font-semibold">{value || "---"}</p>
       </div>
     </div>
@@ -349,7 +349,7 @@ export function OverviewTab({
       >
         <div className="grid grid-cols-3 gap-3">
           <div className="space-y-1">
-            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Origin Clearance</Label>
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Origin Clearance</Label>
             <p className="text-sm font-medium">Commercial</p>
           </div>
           <SelectField
@@ -361,7 +361,7 @@ export function OverviewTab({
             sellerDefault={sellerDefaults?.destination_clearance_type as string | undefined}
           />
           <div className="space-y-1">
-            <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Shipping Method</Label>
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Shipping Method</Label>
             <Select
               value={data.shipping_method || undefined}
               onValueChange={(v) => {

@@ -425,7 +425,7 @@ export function DraftDetailSheet({
                     <ArrowRight className="h-3 w-3 text-muted-foreground" />
                     <span className="font-medium text-foreground">{data.receiver_address.name}</span>
                     {data.receiver_address.country && (
-                      <Badge variant="outline" className="ml-1 text-[10px] font-normal">
+                      <Badge variant="outline" className="ml-1 text-[11px] font-normal">
                         {data.receiver_address.country}
                       </Badge>
                     )}
@@ -541,7 +541,7 @@ export function DraftDetailSheet({
             {/* ── Boxes tab ─────────────────────────────────── */}
             <TabsContent value="boxes" className="mt-0 px-6 py-4">
               {localBoxes !== null && (
-                <Badge variant="outline" className="mb-2 text-[10px] text-primary">
+                <Badge variant="outline" className="mb-2 text-[11px] text-primary">
                   Saving...
                 </Badge>
               )}

@@ -18,7 +18,7 @@ export function DraftStatusBadge({ status }: { status: string }) {
   return (
     <Badge
       variant="secondary"
-      className={`border-0 text-[10px] leading-tight ${STATUS_STYLES[status] || "bg-muted text-muted-foreground"}`}
+      className={`border-0 text-[11px] leading-tight ${STATUS_STYLES[status] || "bg-muted text-muted-foreground"}`}
     >
       {status.replace("_", " ")}
     </Badge>

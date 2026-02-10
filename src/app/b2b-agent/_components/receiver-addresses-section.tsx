@@ -135,7 +135,7 @@ export function ReceiverAddressesSection({
     <div>
       {multiAddress && groups.length > 0 && (
         <div className="mb-2">
-          <span className="text-[10px] font-medium text-muted-foreground">
+          <span className="text-[11px] font-medium text-muted-foreground">
             {groups.length} receiver{groups.length !== 1 ? "s" : ""}
           </span>
         </div>

@@ -69,7 +69,7 @@ function BoxCard({
           <span>{box.weight} kg</span>
         </span>
 
-        <Badge variant="secondary" className="min-w-[72px] text-center text-[10px] shrink-0">
+        <Badge variant="secondary" className="min-w-[72px] text-center text-[11px] shrink-0">
           {itemCount} item{itemCount !== 1 ? "s" : ""}
           {totalValue > 0 && <>&nbsp;&middot;&nbsp;{sym}{totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</>}
         </Badge>
@@ -97,32 +97,32 @@ function BoxCard({
           )}
 
           {/* Compact dimensions */}
-          <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
             <div>
-              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">L (cm)</Label>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">L (cm)</Label>
               <Input type="number" value={box.length || ""} placeholder="0"
                 onChange={(e) => setField("length", Number(e.target.value) || 0)}
                 className="h-7 w-20 text-xs text-center" />
             </div>
             <div>
-              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">W (cm)</Label>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">W (cm)</Label>
               <Input type="number" value={box.width || ""} placeholder="0"
                 onChange={(e) => setField("width", Number(e.target.value) || 0)}
                 className="h-7 w-20 text-xs text-center" />
             </div>
             <div>
-              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">H (cm)</Label>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">H (cm)</Label>
               <Input type="number" value={box.height || ""} placeholder="0"
                 onChange={(e) => setField("height", Number(e.target.value) || 0)}
                 className="h-7 w-20 text-xs text-center" />
             </div>
             <div>
-              <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Weight (kg)</Label>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Weight (kg)</Label>
               <Input type="number" value={box.weight || ""}
                 onChange={(e) => setField("weight", Number(e.target.value) || 0)}
                 className="h-7 w-24 text-xs" />
             </div>
-            <span className="whitespace-nowrap pb-1.5 text-[10px] text-muted-foreground">
+            <span className="whitespace-nowrap pb-1.5 text-xs text-muted-foreground">
               Vol: {volWeight} kg
             </span>
           </div>

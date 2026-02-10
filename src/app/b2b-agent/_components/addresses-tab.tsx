@@ -50,7 +50,7 @@ function SectionHeader({
       <ChevronDown
         className={`h-3 w-3 text-muted-foreground/60 transition-transform ${open ? "" : "-rotate-90"}`}
       />
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
         {label}
       </span>
     </button>
@@ -99,7 +99,7 @@ export function AddressesTab({
         <Button
           variant="ghost"
           size="sm"
-          className="h-5 gap-1 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
+          className="h-5 gap-1 px-1.5 text-[11px] text-muted-foreground hover:text-foreground"
           onClick={toggleAll}
         >
           <ChevronsUpDown className="h-3 w-3" />

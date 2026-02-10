@@ -106,7 +106,7 @@ export function BoxReceiverSection({
           {summary || <span className="italic text-muted-foreground/60">No receiver set</span>}
         </span>
         {isShared && (
-          <Badge variant="secondary" className="gap-1 text-[10px]">
+          <Badge variant="secondary" className="gap-1 text-[11px]">
             <Link2 className="h-2.5 w-2.5" />
             Shared
           </Badge>
@@ -145,7 +145,7 @@ export function BoxReceiverSection({
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 gap-1 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+              className="h-6 gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground"
               onClick={onCopyFromFirst}
             >
               Copy from Box 1

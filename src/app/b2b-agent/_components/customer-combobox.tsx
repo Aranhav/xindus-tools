@@ -139,7 +139,7 @@ export function CustomerCombobox({
           role="listbox"
           className="absolute left-0 right-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-lg border bg-popover shadow-lg"
         >
-          <div className="px-3 py-1.5 text-[10px] font-medium text-muted-foreground border-b">
+          <div className="px-3 py-1.5 text-[11px] font-medium text-muted-foreground border-b">
             {results.length} result{results.length !== 1 ? "s" : ""}
           </div>
           {results.map((c, i) => (
@@ -159,9 +159,9 @@ export function CustomerCombobox({
                 <p className="truncate font-medium">
                   <HighlightMatch text={c.company} query={query} />
                 </p>
-                <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+                <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
                   {c.crn_number && (
-                    <span className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">
+                    <span className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">
                       {c.crn_number}
                     </span>
                   )}

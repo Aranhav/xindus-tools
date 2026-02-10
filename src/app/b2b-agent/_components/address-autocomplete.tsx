@@ -132,7 +132,7 @@ export function AddressAutocomplete({
             {/* Local / recent addresses */}
             {filteredLocal.length > 0 && (
               <>
-                <div className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <div className="px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                   Recent
                 </div>
                 {filteredLocal.map((addr, i) => (
@@ -167,7 +167,7 @@ export function AddressAutocomplete({
                 {filteredLocal.length > 0 && (
                   <div className="mx-2 my-1 border-t" />
                 )}
-                <div className="px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                <div className="px-2 py-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                   Suggestions
                 </div>
                 {suggestions.map((s, i) => (
@@ -191,7 +191,7 @@ export function AddressAutocomplete({
                         , {s.city}, {s.state} {s.zipcode}
                       </span>
                       {s.entries > 0 && (
-                        <span className="ml-1 text-[10px] font-medium text-primary">
+                        <span className="ml-1 text-[11px] font-medium text-primary">
                           ({s.entries} units)
                         </span>
                       )}
