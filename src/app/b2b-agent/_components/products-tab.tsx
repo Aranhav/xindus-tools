@@ -20,12 +20,16 @@ function ProductRow({
   onChange: (i: number, p: ProductDetail) => void;
   onRemove: (i: number) => void;
 }) {
+  const set = (field: keyof ProductDetail, value: unknown) => {
+    onChange(index, { ...product, [field]: value });
+  };
+
   return (
     <tr className="group border-b border-border/40 last:border-0">
       <td className="py-1.5 pr-2">
         <Input
           value={product.product_description}
-          onChange={(e) => onChange(index, { ...product, product_description: e.target.value })}
+          onChange={(e) => set("product_description", e.target.value)}
           className="h-7 text-xs"
           placeholder="Product description"
         />
@@ -33,7 +37,7 @@ function ProductRow({
       <td className="py-1.5 pr-2">
         <Input
           value={product.hsn_code}
-          onChange={(e) => onChange(index, { ...product, hsn_code: e.target.value })}
+          onChange={(e) => set("hsn_code", e.target.value)}
           className="h-7 font-mono text-xs"
           placeholder="HSN code"
         />
@@ -42,9 +46,44 @@ function ProductRow({
         <Input
           type="number"
           value={product.value ?? ""}
-          onChange={(e) => onChange(index, { ...product, value: Number(e.target.value) || 0 })}
+          onChange={(e) => set("value", Number(e.target.value) || 0)}
           className="h-7 text-right text-xs"
           placeholder="0"
+        />
+      </td>
+      <td className="py-1.5 pr-2">
+        <Input
+          value={product.country_of_origin ?? ""}
+          onChange={(e) => set("country_of_origin", e.target.value)}
+          className="h-7 text-xs"
+          placeholder="IN"
+        />
+      </td>
+      <td className="py-1.5 pr-2">
+        <Input
+          type="number"
+          value={product.unit_price ?? ""}
+          onChange={(e) => set("unit_price", e.target.value ? Number(e.target.value) : null)}
+          className="h-7 text-right text-xs"
+          placeholder="0"
+        />
+      </td>
+      <td className="py-1.5 pr-2">
+        <Input
+          type="number"
+          value={product.duty_rate ?? ""}
+          onChange={(e) => set("duty_rate", e.target.value ? Number(e.target.value) : null)}
+          className="h-7 text-right text-xs"
+          placeholder="%"
+        />
+      </td>
+      <td className="py-1.5 pr-2">
+        <Input
+          type="number"
+          value={product.igst_percent ?? ""}
+          onChange={(e) => set("igst_percent", e.target.value ? Number(e.target.value) : null)}
+          className="h-7 text-right text-xs"
+          placeholder="%"
         />
       </td>
       <td className="py-1.5 text-right">
@@ -106,7 +145,11 @@ export function ProductsTab({
             <tr className="border-b bg-muted/30 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
               <th className="px-3 py-2">Description</th>
               <th className="px-3 py-2 w-28">HSN Code</th>
-              <th className="px-3 py-2 w-24 text-right">Value</th>
+              <th className="px-3 py-2 w-20 text-right">Value</th>
+              <th className="px-3 py-2 w-16">Origin</th>
+              <th className="px-3 py-2 w-20 text-right">Unit Price</th>
+              <th className="px-3 py-2 w-16 text-right">Duty %</th>
+              <th className="px-3 py-2 w-16 text-right">IGST %</th>
               <th className="px-3 py-2 w-8" />
             </tr>
           </thead>
@@ -128,7 +171,7 @@ export function ProductsTab({
             ))}
             {products.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-3 py-6 text-center text-xs text-muted-foreground">
+                <td colSpan={8} className="px-3 py-6 text-center text-xs text-muted-foreground">
                   No customs products added yet.
                 </td>
               </tr>
@@ -143,7 +186,7 @@ export function ProductsTab({
         onClick={() => {
           setLocalProducts([
             ...products,
-            { product_description: "", hsn_code: "", value: 0 },
+            { product_description: "", hsn_code: "", value: 0, country_of_origin: "IN" },
           ]);
         }}
       >
@@ -166,9 +209,12 @@ export function ProductsTab({
                 className="inline-flex items-center gap-1.5 rounded-md border border-primary/20 bg-background px-2.5 py-1 text-xs transition-colors hover:border-primary/40 hover:bg-primary/5"
                 onClick={() => addPrevious(p)}
               >
-                <span className="max-w-[200px] truncate">{p.product_description}</span>
+                <span className="max-w-[180px] truncate">{p.product_description}</span>
                 {p.hsn_code && (
                   <span className="font-mono text-[10px] text-muted-foreground">{p.hsn_code}</span>
+                )}
+                {p.country_of_origin && (
+                  <span className="text-[10px] text-muted-foreground">{p.country_of_origin}</span>
                 )}
                 <Plus className="h-3 w-3 text-primary" />
               </button>

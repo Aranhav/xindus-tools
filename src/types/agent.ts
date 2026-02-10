@@ -106,6 +106,10 @@ export interface ProductDetail {
   product_description: string;
   hsn_code: string;
   value: number;
+  country_of_origin?: string;
+  unit_price?: number | null;
+  duty_rate?: number | null;
+  igst_percent?: number | null;
 }
 
 /* ------------------------------------------------------------------ */

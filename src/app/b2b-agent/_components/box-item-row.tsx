@@ -1,10 +1,18 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { useMemo } from "react";
+import { Trash2, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { ShipmentBox, ShipmentBoxItem, ShipmentAddress } from "@/types/agent";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { ShipmentBox, ShipmentBoxItem, ShipmentAddress, ProductDetail } from "@/types/agent";
 
 /* ── Empty factories ──────────────────────────────────────── */
 
@@ -44,14 +52,56 @@ export function ItemRow({
   index,
   onChange,
   onRemove,
+  products,
 }: {
   item: ShipmentBoxItem;
   index: number;
   onChange: (index: number, item: ShipmentBoxItem) => void;
   onRemove: (index: number) => void;
+  products?: ProductDetail[];
 }) {
   const set = (field: keyof ShipmentBoxItem, value: unknown) => {
     onChange(index, { ...item, [field]: value });
+  };
+
+  // Auto-calculate total_price and fob_value
+  const computedTotal = item.quantity && item.unit_price
+    ? (item.quantity * item.unit_price).toFixed(2)
+    : "";
+  const computedFob = item.quantity && item.unit_fob_value
+    ? (item.quantity * item.unit_fob_value).toFixed(2)
+    : "";
+
+  // Build product dropdown options (deduplicated by description+hsn)
+  const productOptions = useMemo(() => {
+    if (!products?.length) return [];
+    const seen = new Set<string>();
+    return products.filter((p) => {
+      const key = `${p.product_description.toLowerCase()}|${p.hsn_code}`;
+      if (seen.has(key) || !p.product_description) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [products]);
+
+  // Find current product match
+  const currentProductIdx = productOptions.findIndex(
+    (p) => p.product_description === item.description && p.hsn_code === item.ehsn,
+  );
+
+  const handleProductSelect = (value: string) => {
+    const idx = parseInt(value, 10);
+    const product = productOptions[idx];
+    if (!product) return;
+    onChange(index, {
+      ...item,
+      description: product.product_description,
+      ehsn: product.hsn_code,
+      country_of_origin: product.country_of_origin || item.country_of_origin || "IN",
+      unit_price: product.unit_price ?? item.unit_price,
+      duty_rate: product.duty_rate ?? item.duty_rate,
+      igst_amount: product.igst_percent ?? item.igst_amount,
+    });
   };
 
   return (
@@ -67,9 +117,39 @@ export function ItemRow({
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+
+      {/* Product picker */}
+      {productOptions.length > 0 && (
+        <div className="mb-2">
+          <Label className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <Receipt className="h-2.5 w-2.5" />
+            Product
+          </Label>
+          <Select
+            value={currentProductIdx >= 0 ? String(currentProductIdx) : undefined}
+            onValueChange={handleProductSelect}
+          >
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder="Select from products..." />
+            </SelectTrigger>
+            <SelectContent>
+              {productOptions.map((p, i) => (
+                <SelectItem key={i} value={String(i)} className="text-xs">
+                  <span className="truncate">{p.product_description}</span>
+                  {p.hsn_code && (
+                    <span className="ml-1.5 font-mono text-[10px] text-muted-foreground">{p.hsn_code}</span>
+                  )}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Row 1: Required — Description, Qty, Unit Price */}
+      <div className="grid grid-cols-4 gap-2">
         <div className="col-span-2">
-          <Label className="text-[10px] text-muted-foreground">Description</Label>
+          <Label className="text-[10px] text-muted-foreground">Description *</Label>
           <Input
             value={item.description}
             onChange={(e) => set("description", e.target.value)}
@@ -78,7 +158,7 @@ export function ItemRow({
           />
         </div>
         <div>
-          <Label className="text-[10px] text-muted-foreground">Qty</Label>
+          <Label className="text-[10px] text-muted-foreground">Qty *</Label>
           <Input
             type="number"
             value={item.quantity}
@@ -87,16 +167,7 @@ export function ItemRow({
           />
         </div>
         <div>
-          <Label className="text-[10px] text-muted-foreground">Weight (kg)</Label>
-          <Input
-            type="number"
-            value={item.weight ?? ""}
-            onChange={(e) => set("weight", e.target.value ? Number(e.target.value) : null)}
-            className="h-7 text-xs"
-          />
-        </div>
-        <div>
-          <Label className="text-[10px] text-muted-foreground">Unit Price</Label>
+          <Label className="text-[10px] text-muted-foreground">Unit Price *</Label>
           <Input
             type="number"
             value={item.unit_price ?? ""}
@@ -104,17 +175,12 @@ export function ItemRow({
             className="h-7 text-xs"
           />
         </div>
+      </div>
+
+      {/* Row 2: HSN + calculated total */}
+      <div className="mt-2 grid grid-cols-4 gap-2">
         <div>
-          <Label className="text-[10px] text-muted-foreground">Total Price</Label>
-          <Input
-            type="number"
-            value={item.total_price ?? ""}
-            onChange={(e) => set("total_price", e.target.value ? Number(e.target.value) : null)}
-            className="h-7 text-xs"
-          />
-        </div>
-        <div>
-          <Label className="text-[10px] text-muted-foreground">Export HSN</Label>
+          <Label className="text-[10px] text-muted-foreground">Export HSN *</Label>
           <Input
             value={item.ehsn}
             onChange={(e) => set("ehsn", e.target.value)}
@@ -131,19 +197,32 @@ export function ItemRow({
           />
         </div>
         <div>
-          <Label className="text-[10px] text-muted-foreground">Country of Origin</Label>
+          <Label className="text-[10px] text-muted-foreground">Unit Weight (kg)</Label>
           <Input
-            value={item.country_of_origin}
-            onChange={(e) => set("country_of_origin", e.target.value)}
+            type="number"
+            value={item.weight ?? ""}
+            onChange={(e) => set("weight", e.target.value ? Number(e.target.value) : null)}
             className="h-7 text-xs"
           />
         </div>
         <div>
-          <Label className="text-[10px] text-muted-foreground">FOB Value</Label>
+          <Label className="text-[10px] text-muted-foreground">Total Price</Label>
           <Input
-            type="number"
-            value={item.unit_fob_value ?? ""}
-            onChange={(e) => set("unit_fob_value", e.target.value ? Number(e.target.value) : null)}
+            value={computedTotal}
+            readOnly
+            tabIndex={-1}
+            className="h-7 text-xs bg-muted/50 text-muted-foreground"
+          />
+        </div>
+      </div>
+
+      {/* Row 3: Optional — Origin, IGST, Duty, FOB */}
+      <div className="mt-2 grid grid-cols-4 gap-2">
+        <div>
+          <Label className="text-[10px] text-muted-foreground">Country of Origin</Label>
+          <Input
+            value={item.country_of_origin}
+            onChange={(e) => set("country_of_origin", e.target.value)}
             className="h-7 text-xs"
           />
         </div>
@@ -157,14 +236,39 @@ export function ItemRow({
           />
         </div>
         <div>
-          <Label className="text-[10px] text-muted-foreground">Category</Label>
+          <Label className="text-[10px] text-muted-foreground">Duty Rate %</Label>
           <Input
-            value={item.category}
-            onChange={(e) => set("category", e.target.value)}
+            type="number"
+            value={item.duty_rate ?? ""}
+            onChange={(e) => set("duty_rate", e.target.value ? Number(e.target.value) : null)}
+            className="h-7 text-xs"
+          />
+        </div>
+        <div>
+          <Label className="text-[10px] text-muted-foreground">Unit FOB Value</Label>
+          <Input
+            type="number"
+            value={item.unit_fob_value ?? ""}
+            onChange={(e) => set("unit_fob_value", e.target.value ? Number(e.target.value) : null)}
             className="h-7 text-xs"
           />
         </div>
       </div>
+
+      {/* FOB total (auto-calc, shown only if unit_fob has a value) */}
+      {item.unit_fob_value != null && (
+        <div className="mt-2 grid grid-cols-4 gap-2">
+          <div className="col-start-4">
+            <Label className="text-[10px] text-muted-foreground">FOB Total</Label>
+            <Input
+              value={computedFob}
+              readOnly
+              tabIndex={-1}
+              className="h-7 text-xs bg-muted/50 text-muted-foreground"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

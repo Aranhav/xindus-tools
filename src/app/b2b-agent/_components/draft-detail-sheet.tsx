@@ -558,7 +558,7 @@ export function DraftDetailSheet({
                   Saving...
                 </Badge>
               )}
-              <BoxEditor boxes={boxes} onChange={setLocalBoxes} multiAddress={computedMultiAddress} previousReceiverAddresses={sellerHistory?.receiver_addresses} />
+              <BoxEditor boxes={boxes} onChange={setLocalBoxes} multiAddress={computedMultiAddress} previousReceiverAddresses={sellerHistory?.receiver_addresses} products={products} />
             </TabsContent>
 
             {/* ── Customs Products tab ──────────────────────── */}

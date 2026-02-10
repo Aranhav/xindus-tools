@@ -12,12 +12,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { emptyBox, emptyItem, ItemRow } from "./box-item-row";
 import { BoxReceiverSection } from "./box-receiver-section";
-import type { ShipmentBox, ShipmentBoxItem, ShipmentAddress } from "@/types/agent";
+import type { ShipmentBox, ShipmentBoxItem, ShipmentAddress, ProductDetail } from "@/types/agent";
 
 /* ── Single box editor ────────────────────────────────────── */
 
@@ -31,6 +30,7 @@ function BoxCard({
   onCopyFromFirst,
   previousReceiverAddresses,
   allReceivers,
+  products,
 }: {
   box: ShipmentBox;
   index: number;
@@ -41,6 +41,7 @@ function BoxCard({
   onCopyFromFirst?: () => void;
   previousReceiverAddresses?: ShipmentAddress[];
   allReceivers?: ShipmentAddress[];
+  products?: ProductDetail[];
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -88,7 +89,7 @@ function BoxCard({
         <Package className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="text-sm font-medium">Box #{box.box_id}</span>
         <span className="ml-auto text-xs text-muted-foreground">
-          {box.length}x{box.width}x{box.height} {box.uom} | {box.weight} kg | Vol: {volWeight} kg
+          {box.length}×{box.width}×{box.height} cm | {box.weight} kg (Vol: {volWeight} kg)
         </span>
         <Badge variant="outline" className="text-[10px]">
           {box.shipment_box_items.length} item{box.shipment_box_items.length !== 1 ? "s" : ""}
@@ -121,7 +122,7 @@ function BoxCard({
           />
 
           {/* Dimensions row */}
-          <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
             <div>
               <Label className="text-[10px] text-muted-foreground">Length</Label>
               <Input
@@ -158,35 +159,6 @@ function BoxCard({
                 className="h-7 text-xs"
               />
             </div>
-            <div>
-              <Label className="text-[10px] text-muted-foreground">UOM</Label>
-              <Input
-                value={box.uom}
-                onChange={(e) => setField("uom", e.target.value)}
-                className="h-7 text-xs"
-              />
-            </div>
-            <div className="flex items-end gap-2 pb-0.5">
-              <div className="flex items-center gap-1.5">
-                <Switch
-                  checked={box.has_battery}
-                  onCheckedChange={(v) => setField("has_battery", v)}
-                  className="scale-75"
-                />
-                <Label className="text-[10px] text-muted-foreground">Battery</Label>
-              </div>
-            </div>
-          </div>
-
-          {/* Remarks */}
-          <div className="mt-2">
-            <Label className="text-[10px] text-muted-foreground">Remarks</Label>
-            <Input
-              value={box.remarks}
-              onChange={(e) => setField("remarks", e.target.value)}
-              className="h-7 text-xs"
-              placeholder="Optional remarks"
-            />
           </div>
 
           <Separator className="my-3" />
@@ -209,6 +181,7 @@ function BoxCard({
                 index={j}
                 onChange={updateItem}
                 onRemove={removeItem}
+                products={products}
               />
             ))}
           </div>
@@ -225,9 +198,10 @@ interface BoxEditorProps {
   onChange: (boxes: ShipmentBox[]) => void;
   multiAddress: boolean;
   previousReceiverAddresses?: ShipmentAddress[];
+  products?: ProductDetail[];
 }
 
-export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddresses }: BoxEditorProps) {
+export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddresses, products }: BoxEditorProps) {
   // Derive unique receiver addresses from all boxes for the dropdown
   const allReceivers = useMemo(() => {
     const seen = new Set<string>();
@@ -306,6 +280,7 @@ export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddre
           onCopyFromFirst={() => copyFromFirst(i)}
           previousReceiverAddresses={previousReceiverAddresses}
           allReceivers={allReceivers}
+          products={products}
         />
       ))}
       <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={addBox}>
