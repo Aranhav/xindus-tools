@@ -9,8 +9,11 @@ import {
 import {
   Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem,
 } from "@/components/ui/command";
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { currencySymbol } from "./editable-fields";
-import type { ShipmentBox, ShipmentBoxItem, ShipmentAddress, ProductDetail } from "@/types/agent";
+import type { ShipmentBox, ShipmentBoxItem, ShipmentAddress, ProductDetail, TariffScenario } from "@/types/agent";
 
 /* ── Empty factories ──────────────────────────────────────── */
 
@@ -41,6 +44,49 @@ export function emptyBox(index: number, inheritReceiver?: ShipmentAddress): Ship
     receiver_address: inheritReceiver ? { ...inheritReceiver } : emptyAddress(),
     shipment_box_items: [emptyItem()],
   };
+}
+
+/* ── Duty breakdown tooltip ─────────────────────────────── */
+
+function DutyBreakdownTooltip({
+  baseDuty,
+  scenarios,
+  children,
+}: {
+  baseDuty?: number | null;
+  scenarios?: TariffScenario[];
+  children: React.ReactNode;
+}) {
+  const active = (scenarios ?? []).filter((s) => s.is_additional && s.value > 0);
+  if (baseDuty == null || active.length === 0) return <>{children}</>;
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs text-xs">
+          <div className="space-y-1">
+            <div className="flex justify-between gap-4">
+              <span className="text-muted-foreground">Base MFN rate</span>
+              <span className="font-mono">{baseDuty}%</span>
+            </div>
+            {active.map((s, i) => (
+              <div key={i} className="flex justify-between gap-4">
+                <span className="text-muted-foreground">{s.title}</span>
+                <span className="font-mono">+{s.value}%</span>
+              </div>
+            ))}
+            <div className="flex justify-between gap-4 border-t pt-1 font-semibold">
+              <span>Total duty</span>
+              <span className="font-mono">
+                {(baseDuty + active.reduce((sum, s) => sum + s.value, 0)).toFixed(1)}%
+              </span>
+            </div>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 /* ── Gaia confidence badge (color-coded: HIGH/MEDIUM/LOW) ── */
@@ -156,6 +202,8 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
         gaia_classified: product.gaia_classified || false,
         gaia_description: product.gaia_description || "",
         hsn_confidence: product.hsn_confidence || "",
+        base_duty_rate: product.base_duty_rate ?? null,
+        tariff_scenarios: product.tariff_scenarios || [],
       };
       onChange(next);
     },
@@ -295,21 +343,23 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                       onChange={(e) => updateItem(i, "igst_amount", e.target.value ? Number(e.target.value) : null)}
                     />
                   </div>
-                  <div>
-                    <span className="mb-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-                      Duty %
-                      {item.gaia_classified && item.duty_rate != null && (
-                        <GaiaConfidence confidence={item.hsn_confidence} />
-                      )}
-                    </span>
-                    <Input
-                      type="number"
-                      value={item.duty_rate ?? ""}
-                      className={`h-7 text-xs tabular-nums ${item.gaia_classified && item.duty_rate != null ? "border-emerald-300 dark:border-emerald-800" : ""}`}
-                      placeholder="0"
-                      onChange={(e) => updateItem(i, "duty_rate", e.target.value ? Number(e.target.value) : null)}
-                    />
-                  </div>
+                  <DutyBreakdownTooltip baseDuty={item.base_duty_rate} scenarios={item.tariff_scenarios}>
+                    <div>
+                      <span className="mb-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                        Duty %
+                        {item.gaia_classified && item.duty_rate != null && (
+                          <GaiaConfidence confidence={item.hsn_confidence} />
+                        )}
+                      </span>
+                      <Input
+                        type="number"
+                        value={item.duty_rate ?? ""}
+                        className={`h-7 text-xs tabular-nums ${item.gaia_classified && item.duty_rate != null ? "border-emerald-300 dark:border-emerald-800" : ""}`}
+                        placeholder="0"
+                        onChange={(e) => updateItem(i, "duty_rate", e.target.value ? Number(e.target.value) : null)}
+                      />
+                    </div>
+                  </DutyBreakdownTooltip>
                 </div>
               </div>
             );

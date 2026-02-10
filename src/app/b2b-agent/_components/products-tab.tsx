@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { currencySymbol } from "./editable-fields";
-import type { ProductDetail } from "@/types/agent";
+import type { ProductDetail, TariffScenario } from "@/types/agent";
 
 /* ── Gaia badge (reusable) ───────────────────────────────── */
 
@@ -22,6 +25,49 @@ function GaiaBadge({ confidence }: { confidence?: string }) {
     <span className={`rounded px-1 py-px text-[9px] font-semibold leading-none ${colors}`}>
       Gaia{confidence ? ` · ${confidence[0]}${confidence.slice(1).toLowerCase()}` : ""}
     </span>
+  );
+}
+
+/* ── Duty breakdown tooltip ─────────────────────────────── */
+
+function DutyBreakdownTooltip({
+  baseDuty,
+  scenarios,
+  children,
+}: {
+  baseDuty?: number | null;
+  scenarios?: TariffScenario[];
+  children: React.ReactNode;
+}) {
+  const active = (scenarios ?? []).filter((s) => s.is_additional && s.value > 0);
+  if (baseDuty == null || active.length === 0) return <>{children}</>;
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs text-xs">
+          <div className="space-y-1">
+            <div className="flex justify-between gap-4">
+              <span className="text-muted-foreground">Base MFN rate</span>
+              <span className="font-mono">{baseDuty}%</span>
+            </div>
+            {active.map((s, i) => (
+              <div key={i} className="flex justify-between gap-4">
+                <span className="text-muted-foreground">{s.title}</span>
+                <span className="font-mono">+{s.value}%</span>
+              </div>
+            ))}
+            <div className="flex justify-between gap-4 border-t pt-1 font-semibold">
+              <span>Total duty</span>
+              <span className="font-mono">
+                {(baseDuty + active.reduce((sum, s) => sum + s.value, 0)).toFixed(1)}%
+              </span>
+            </div>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
@@ -102,18 +148,20 @@ function ProductRow({
         />
       </td>
       <td className="py-1.5 pr-2">
-        <div className="space-y-0.5">
-          <Input
-            type="number"
-            value={product.duty_rate ?? ""}
-            onChange={(e) => set("duty_rate", e.target.value ? Number(e.target.value) : null)}
-            className={`h-7 text-right text-xs ${isGaia && product.duty_rate != null ? "border-emerald-300 dark:border-emerald-800" : ""}`}
-            placeholder="%"
-          />
-          {isGaia && product.duty_rate != null && (
-            <div className="flex justify-end"><GaiaBadge confidence={product.hsn_confidence} /></div>
-          )}
-        </div>
+        <DutyBreakdownTooltip baseDuty={product.base_duty_rate} scenarios={product.tariff_scenarios}>
+          <div className="space-y-0.5">
+            <Input
+              type="number"
+              value={product.duty_rate ?? ""}
+              onChange={(e) => set("duty_rate", e.target.value ? Number(e.target.value) : null)}
+              className={`h-7 text-right text-xs ${isGaia && product.duty_rate != null ? "border-emerald-300 dark:border-emerald-800" : ""}`}
+              placeholder="%"
+            />
+            {isGaia && product.duty_rate != null && (
+              <div className="flex justify-end"><GaiaBadge confidence={product.hsn_confidence} /></div>
+            )}
+          </div>
+        </DutyBreakdownTooltip>
       </td>
       <td className="py-1.5 pr-2">
         <Input

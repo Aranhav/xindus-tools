@@ -57,6 +57,19 @@ export interface ShipmentAddress {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Tariff scenario (reciprocal tariffs, Section 232, etc.)            */
+/* ------------------------------------------------------------------ */
+
+export interface TariffScenario {
+  title: string;
+  value: number;
+  is_additional: boolean;
+  is_rumored: boolean;
+  tariff_code?: string;
+  tariff_category?: string;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Box item — Xindus ShipmentBoxItemRequestDTO                        */
 /* ------------------------------------------------------------------ */
 
@@ -83,6 +96,9 @@ export interface ShipmentBoxItem {
   gaia_classified?: boolean;
   gaia_description?: string;
   hsn_confidence?: string;
+  base_duty_rate?: number | null;
+  tariff_scenarios?: TariffScenario[];
+  remedy_flags?: { add_risk?: boolean; cvd_risk?: boolean };
 }
 
 /* ------------------------------------------------------------------ */
@@ -118,6 +134,8 @@ export interface ProductDetail {
   gaia_classified?: boolean;
   gaia_description?: string;
   hsn_confidence?: string;
+  base_duty_rate?: number | null;
+  tariff_scenarios?: TariffScenario[];
 }
 
 /* ------------------------------------------------------------------ */
