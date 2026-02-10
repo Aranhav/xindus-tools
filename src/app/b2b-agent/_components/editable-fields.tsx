@@ -25,6 +25,18 @@ export const COUNTRY_OPTIONS = ["US", "GB", "SG"];
 export const PORT_OF_ENTRY_OPTIONS = ["JFK", "SFO", "ORD", "EWR"];
 export const DESTINATION_CHA_OPTIONS = ["Pace Global", "GrandCHB", "Lisa Ragan", "Importal"];
 
+/* ── Currency symbol helper ───────────────────────────────── */
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$", EUR: "€", GBP: "£", INR: "₹", AUD: "A$",
+  CAD: "C$", AED: "د.إ", SGD: "S$", JPY: "¥", CNY: "¥",
+};
+
+export function currencySymbol(code: string | undefined): string {
+  if (!code) return "";
+  return CURRENCY_SYMBOLS[code] ?? code;
+}
+
 /* ── Section header ───────────────────────────────────────── */
 
 export function SectionHeader({

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
+import { currencySymbol } from "./editable-fields";
 import type { ProductDetail } from "@/types/agent";
 
 /* ── Product row ──────────────────────────────────────────── */
@@ -107,6 +108,7 @@ interface ProductsTabProps {
   productsModified: boolean;
   setLocalProducts: (products: ProductDetail[] | null) => void;
   previousProducts?: ProductDetail[];
+  currency?: string;
 }
 
 /* ── Component ────────────────────────────────────────────── */
@@ -116,7 +118,9 @@ export function ProductsTab({
   productsModified,
   setLocalProducts,
   previousProducts,
+  currency,
 }: ProductsTabProps) {
+  const sym = currencySymbol(currency);
   // Filter out products that are already in the current list
   const currentKeys = new Set(
     products.map((p) => `${p.product_description.toLowerCase()}|${p.hsn_code.toLowerCase()}`),
@@ -131,9 +135,6 @@ export function ProductsTab({
 
   return (
     <TabsContent value="products" className="mt-0 px-6 py-4">
-      <div className="mb-3 rounded-md border border-amber-200/50 bg-amber-50/50 px-3 py-2 text-xs text-amber-700 dark:border-amber-900/30 dark:bg-amber-950/30 dark:text-amber-300">
-        Customs declaration summary. These are <code className="font-semibold">product_details</code> for the shipment, separate from box items.
-      </div>
       {productsModified && (
         <Badge variant="outline" className="mb-2 text-[10px] text-primary">
           Modified (unsaved)
@@ -145,9 +146,9 @@ export function ProductsTab({
             <tr className="border-b bg-muted/30 text-left text-[10px] uppercase tracking-wider text-muted-foreground">
               <th className="px-3 py-2">Description</th>
               <th className="px-3 py-2 w-28">HSN Code</th>
-              <th className="px-3 py-2 w-20 text-right">Value</th>
+              <th className="px-3 py-2 w-20 text-right">Value {sym && <span className="normal-case">({sym})</span>}</th>
               <th className="px-3 py-2 w-16">Origin</th>
-              <th className="px-3 py-2 w-20 text-right">Unit Price</th>
+              <th className="px-3 py-2 w-20 text-right">Unit Price {sym && <span className="normal-case">({sym})</span>}</th>
               <th className="px-3 py-2 w-16 text-right">Duty %</th>
               <th className="px-3 py-2 w-16 text-right">IGST %</th>
               <th className="px-3 py-2 w-8" />

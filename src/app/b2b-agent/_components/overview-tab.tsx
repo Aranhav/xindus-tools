@@ -42,6 +42,7 @@ import {
   EditableField,
   SelectField,
   ToggleField,
+  currencySymbol,
   PURPOSE_OPTIONS,
   TERMS_OPTIONS,
   DEST_CLEARANCE_OPTIONS,
@@ -281,7 +282,7 @@ export function OverviewTab({
           <SummaryStat
             icon={DollarSign}
             label="Total Value"
-            value={data.total_amount != null ? `${data.shipping_currency || ""} ${data.total_amount}`.trim() : "---"}
+            value={data.total_amount != null ? `${currencySymbol(data.billing_currency) || data.billing_currency || ""} ${data.total_amount}`.trim() : "---"}
             iconColor="text-emerald-600 dark:text-emerald-400"
           />
           <SummaryStat
@@ -491,6 +492,14 @@ export function OverviewTab({
             options={CURRENCY_OPTIONS}
             onChanged={addFieldCorrection}
             sellerDefault={sellerDefaults?.shipping_currency as string | undefined}
+          />
+          <SelectField
+            label="Billing Currency"
+            value={data.billing_currency}
+            fieldPath="billing_currency"
+            options={CURRENCY_OPTIONS}
+            onChanged={addFieldCorrection}
+            sellerDefault={sellerDefaults?.billing_currency as string | undefined}
           />
           <EditableField
             label="Order Number"

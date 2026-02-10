@@ -31,6 +31,7 @@ function BoxCard({
   previousReceiverAddresses,
   allReceivers,
   products,
+  currency,
 }: {
   box: ShipmentBox;
   index: number;
@@ -42,6 +43,7 @@ function BoxCard({
   previousReceiverAddresses?: ShipmentAddress[];
   allReceivers?: ShipmentAddress[];
   products?: ProductDetail[];
+  currency?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -182,6 +184,7 @@ function BoxCard({
                 onChange={updateItem}
                 onRemove={removeItem}
                 products={products}
+                currency={currency}
               />
             ))}
           </div>
@@ -199,9 +202,10 @@ interface BoxEditorProps {
   multiAddress: boolean;
   previousReceiverAddresses?: ShipmentAddress[];
   products?: ProductDetail[];
+  currency?: string;
 }
 
-export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddresses, products }: BoxEditorProps) {
+export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddresses, products, currency }: BoxEditorProps) {
   // Derive unique receiver addresses from all boxes for the dropdown
   const allReceivers = useMemo(() => {
     const seen = new Set<string>();
@@ -281,6 +285,7 @@ export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddre
           previousReceiverAddresses={previousReceiverAddresses}
           allReceivers={allReceivers}
           products={products}
+          currency={currency}
         />
       ))}
       <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={addBox}>

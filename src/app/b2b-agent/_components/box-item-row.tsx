@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { currencySymbol } from "./editable-fields";
 import type { ShipmentBox, ShipmentBoxItem, ShipmentAddress, ProductDetail } from "@/types/agent";
 
 /* ── Empty factories ──────────────────────────────────────── */
@@ -53,13 +54,16 @@ export function ItemRow({
   onChange,
   onRemove,
   products,
+  currency,
 }: {
   item: ShipmentBoxItem;
   index: number;
   onChange: (index: number, item: ShipmentBoxItem) => void;
   onRemove: (index: number) => void;
   products?: ProductDetail[];
+  currency?: string;
 }) {
+  const sym = currencySymbol(currency);
   const set = (field: keyof ShipmentBoxItem, value: unknown) => {
     onChange(index, { ...item, [field]: value });
   };
@@ -167,7 +171,7 @@ export function ItemRow({
           />
         </div>
         <div>
-          <Label className="text-[10px] text-muted-foreground">Unit Price *</Label>
+          <Label className="text-[10px] text-muted-foreground">Unit Price {sym && `(${sym})`} *</Label>
           <Input
             type="number"
             value={item.unit_price ?? ""}
@@ -206,7 +210,7 @@ export function ItemRow({
           />
         </div>
         <div>
-          <Label className="text-[10px] text-muted-foreground">Total Price</Label>
+          <Label className="text-[10px] text-muted-foreground">Total {sym && `(${sym})`}</Label>
           <Input
             value={computedTotal}
             readOnly
@@ -245,7 +249,7 @@ export function ItemRow({
           />
         </div>
         <div>
-          <Label className="text-[10px] text-muted-foreground">Unit FOB Value</Label>
+          <Label className="text-[10px] text-muted-foreground">Unit FOB {sym && `(${sym})`}</Label>
           <Input
             type="number"
             value={item.unit_fob_value ?? ""}
@@ -259,7 +263,7 @@ export function ItemRow({
       {item.unit_fob_value != null && (
         <div className="mt-2 grid grid-cols-4 gap-2">
           <div className="col-start-4">
-            <Label className="text-[10px] text-muted-foreground">FOB Total</Label>
+            <Label className="text-[10px] text-muted-foreground">FOB Total {sym && `(${sym})`}</Label>
             <Input
               value={computedFob}
               readOnly

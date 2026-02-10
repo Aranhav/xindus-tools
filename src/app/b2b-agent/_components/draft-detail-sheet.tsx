@@ -48,7 +48,7 @@ import { ProductsTab } from "./products-tab";
 import { AddressesTab } from "./addresses-tab";
 import { BoxEditor } from "./box-editor";
 import { SellerMatch } from "./seller-match";
-import { SelectField, CURRENCY_OPTIONS } from "./editable-fields";
+import { currencySymbol } from "./editable-fields";
 import { DraftStatusBadge } from "./draft-table";
 import { getNestedValue } from "./helpers";
 import type {
@@ -538,27 +538,12 @@ export function DraftDetailSheet({
 
             {/* ── Boxes tab ─────────────────────────────────── */}
             <TabsContent value="boxes" className="mt-0 px-6 py-4">
-              <div className="mb-3 flex items-center justify-between gap-4">
-                <div className="rounded-md border border-blue-200/50 bg-blue-50/50 px-3 py-2 text-xs text-blue-700 dark:border-blue-900/30 dark:bg-blue-950/30 dark:text-blue-300">
-                  Physical items with dimensions &mdash; maps to <code className="font-semibold">shipment_box_items</code>
-                </div>
-                <div className="w-36 shrink-0">
-                  <SelectField
-                    label="Billing Currency"
-                    value={data.billing_currency}
-                    fieldPath="billing_currency"
-                    options={CURRENCY_OPTIONS}
-                    onChanged={addFieldCorrection}
-                    sellerDefault={sellerDefaults.billing_currency as string | undefined}
-                  />
-                </div>
-              </div>
               {localBoxes !== null && (
                 <Badge variant="outline" className="mb-2 text-[10px] text-primary">
                   Saving...
                 </Badge>
               )}
-              <BoxEditor boxes={boxes} onChange={setLocalBoxes} multiAddress={computedMultiAddress} previousReceiverAddresses={sellerHistory?.receiver_addresses} products={products} />
+              <BoxEditor boxes={boxes} onChange={setLocalBoxes} multiAddress={computedMultiAddress} previousReceiverAddresses={sellerHistory?.receiver_addresses} products={products} currency={data.billing_currency} />
             </TabsContent>
 
             {/* ── Customs Products tab ──────────────────────── */}
@@ -567,6 +552,7 @@ export function DraftDetailSheet({
               productsModified={localProducts !== null}
               setLocalProducts={setLocalProducts}
               previousProducts={sellerHistory?.products}
+              currency={data.billing_currency}
             />
           </ScrollArea>
         </Tabs>
