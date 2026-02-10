@@ -153,7 +153,7 @@ export function ShipperPicker({
               variant="outline"
               role="combobox"
               aria-expanded={open}
-              className="h-8 w-full justify-between text-xs"
+              className="h-7 w-full justify-between text-xs"
             >
               {selectedAddr
                 ? `${selectedAddr.name} — ${selectedAddr.city || ""}`
@@ -201,12 +201,12 @@ export function ShipperPicker({
           <div className="mt-3 rounded-lg border border-blue-200/50 bg-blue-50/30 p-3 dark:border-blue-900/30 dark:bg-blue-950/20">
             <div className="space-y-0.5">
               <p className="text-sm font-semibold text-foreground">{selectedAddr.name}</p>
-              {selectedAddr.address && <p className="text-[13px] leading-snug text-foreground/80">{selectedAddr.address}</p>}
-              <p className="text-[13px] leading-snug text-foreground/80">
+              {selectedAddr.address && <p className="text-xs leading-snug text-foreground/80">{selectedAddr.address}</p>}
+              <p className="text-xs leading-snug text-foreground/80">
                 {[selectedAddr.city, selectedAddr.district, selectedAddr.state].filter(Boolean).join(", ")}
                 {selectedAddr.zip ? ` ${selectedAddr.zip}` : ""}
               </p>
-              {selectedAddr.country && <p className="text-[13px] leading-snug text-foreground/60">{selectedAddr.country}</p>}
+              {selectedAddr.country && <p className="text-xs leading-snug text-foreground/60">{selectedAddr.country}</p>}
               {(selectedAddr.phone || selectedAddr.email) && (
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1.5 text-xs text-muted-foreground">
                   {selectedAddr.phone && (

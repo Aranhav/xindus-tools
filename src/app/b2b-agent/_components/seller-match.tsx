@@ -350,7 +350,7 @@ export function SellerMatch({
             </p>
           </div>
           <Button
-            size="sm" className="h-6 gap-1 text-[11px]"
+            size="sm" className="h-6 gap-1 text-[10px]"
             onClick={handleLinkAutoMatch} disabled={isBusy}
           >
             <ArrowRight className="h-3 w-3" />

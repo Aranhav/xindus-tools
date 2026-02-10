@@ -184,7 +184,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
     <div className="rounded-lg border border-blue-200/50 bg-blue-50/30 p-2.5 dark:border-blue-900/30 dark:bg-blue-950/20">
       {/* Header */}
       <div className="flex items-center justify-between pb-2">
-        <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Items
         </span>
         <Button variant="ghost" size="sm" className="h-6 gap-1 text-[10px] text-muted-foreground"
@@ -212,7 +212,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                   </span>
                   <Input
                     value={item.description}
-                    className="h-7 min-w-0 flex-1 text-[13px] font-medium"
+                    className="h-7 min-w-0 flex-1 text-xs font-medium"
                     placeholder="Item description"
                     onChange={(e) => updateItem(i, "description", e.target.value)}
                   />

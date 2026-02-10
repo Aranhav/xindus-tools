@@ -50,7 +50,7 @@ function SectionHeader({
       <ChevronDown
         className={`h-3 w-3 text-muted-foreground/60 transition-transform ${open ? "" : "-rotate-90"}`}
       />
-      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
         {label}
       </span>
     </button>

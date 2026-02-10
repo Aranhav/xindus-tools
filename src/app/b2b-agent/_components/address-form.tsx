@@ -247,7 +247,7 @@ export function AddressForm({
         <div className="grid grid-cols-3 gap-x-4 gap-y-2 px-3 pb-3 pt-2">
           {ADDRESS_FIELDS.map((f) => (
             <div key={f.key} className={f.span === "full" ? "col-span-3" : ""}>
-              <Label className="mb-0.5 text-[10px] text-muted-foreground">{f.label}</Label>
+              <Label className="mb-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">{f.label}</Label>
               {f.key === "address" && isUSCountry ? (
                 <AddressAutocomplete
                   value={formValues[f.key] || ""}
@@ -276,7 +276,7 @@ export function AddressForm({
             <div className="flex gap-6">
               {/* Left: address block */}
               <div className="min-w-0 flex-1 space-y-0">
-                {name && <p className="text-[13px] font-semibold text-foreground leading-tight">{name}</p>}
+                {name && <p className="text-sm font-semibold text-foreground leading-tight">{name}</p>}
                 {contactName && (
                   <p className="text-xs text-foreground/60 leading-snug">c/o {contactName}</p>
                 )}

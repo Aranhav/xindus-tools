@@ -120,7 +120,7 @@ export function CustomerCombobox({
           onKeyDown={handleKeyDown}
           onFocus={() => { if (results.length > 0) setIsOpen(true); }}
           placeholder={placeholder}
-          className="h-8 pl-8 pr-8 text-xs"
+          className="h-7 pl-8 pr-8 text-xs"
           autoFocus
           role="searchbox"
           aria-autocomplete="list"
@@ -161,7 +161,7 @@ export function CustomerCombobox({
                 </p>
                 <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
                   {c.crn_number && (
-                    <span className="rounded bg-muted px-1 py-0.5 font-mono text-[9px]">
+                    <span className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">
                       {c.crn_number}
                     </span>
                   )}

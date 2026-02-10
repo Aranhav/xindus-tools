@@ -211,7 +211,7 @@ export function IorPicker({
                   variant="outline"
                   role="combobox"
                   aria-expanded={open}
-                  className="h-8 w-full justify-between text-xs"
+                  className="h-7 w-full justify-between text-xs"
                 >
                   {selectedAddr
                     ? `${selectedAddr.name} — ${selectedAddr.city || selectedAddr.country}`
@@ -268,13 +268,13 @@ export function IorPicker({
             {selectedAddr && (
               <div className="mt-2 rounded-md border border-teal-200/50 bg-teal-50/30 p-2.5 dark:border-teal-900/30 dark:bg-teal-950/20">
                 <div className="space-y-0">
-                  <p className="text-xs font-semibold text-foreground">{selectedAddr.name}</p>
-                  {selectedAddr.address && <p className="text-[11px] text-foreground/70">{selectedAddr.address}</p>}
-                  <p className="text-[11px] text-foreground/70">
+                  <p className="text-sm font-semibold text-foreground">{selectedAddr.name}</p>
+                  {selectedAddr.address && <p className="text-xs text-foreground/70">{selectedAddr.address}</p>}
+                  <p className="text-xs text-foreground/70">
                     {[selectedAddr.city, selectedAddr.state].filter(Boolean).join(", ")}
                     {selectedAddr.zip ? ` ${selectedAddr.zip}` : ""}
                   </p>
-                  {selectedAddr.country && <p className="text-[11px] text-foreground/60">{selectedAddr.country}</p>}
+                  {selectedAddr.country && <p className="text-xs text-foreground/60">{selectedAddr.country}</p>}
                   {(selectedAddr.phone || selectedAddr.email) && (
                     <div className="flex items-center gap-3 pt-1 text-[10px] text-muted-foreground">
                       {selectedAddr.phone && (
