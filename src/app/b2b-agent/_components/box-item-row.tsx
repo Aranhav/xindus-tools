@@ -131,7 +131,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
   products?: ProductDetail[];
   currency?: string;
 }) {
-  const [showMore, setShowMore] = useState(true);
+  const [showMore, setShowMore] = useState(false);
   const sym = currencySymbol(currency);
   const hasProducts = (products?.length ?? 0) > 0;
 
@@ -190,7 +190,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
         <Button variant="ghost" size="sm" className="h-6 gap-1 text-[10px] text-muted-foreground"
           onClick={() => setShowMore((v) => !v)}>
           <ChevronRight className={`h-3 w-3 transition-transform ${showMore ? "rotate-90" : ""}`} />
-          {showMore ? "Less" : "More fields"}
+          {showMore ? "Hide details" : "Show details"}
         </Button>
       </div>
 
@@ -200,11 +200,11 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
           No items — click below to add one.
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {items.map((item, i) => {
             const total = (item.quantity || 0) * (item.unit_price || 0);
             return (
-              <div key={i} className="group rounded-md border border-border/60 bg-background p-2.5">
+              <div key={i} className="group rounded-md border border-border/60 bg-background px-2.5 py-1.5">
                 {/* Line 1: Description */}
                 <div className="flex items-center gap-1.5">
                   <span className="w-4 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground">
@@ -212,7 +212,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                   </span>
                   <Input
                     value={item.description}
-                    className="h-7 min-w-0 flex-1 text-xs"
+                    className="h-7 min-w-0 flex-1 text-[13px] font-medium"
                     placeholder="Item description"
                     onChange={(e) => updateItem(i, "description", e.target.value)}
                   />
@@ -231,14 +231,14 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                   </button>
                 </div>
 
-                {/* Line 2: Qty × Price = Total    HSN */}
-                <div className="mt-2 flex items-center gap-2 pl-[22px]">
+                {/* Line 2: Qty × Price = Total + HSN + Secondary fields */}
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 pl-[18px]">
                   <div className="flex items-center gap-1">
                     <span className="text-[10px] text-muted-foreground">Qty</span>
                     <Input
                       type="number"
                       value={item.quantity}
-                      className="h-6 w-20 text-center text-xs tabular-nums"
+                      className="h-6 w-14 text-center text-xs tabular-nums"
                       onChange={(e) => updateItem(i, "quantity", Number(e.target.value) || 0)}
                     />
                   </div>
@@ -248,42 +248,41 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                     <Input
                       type="number"
                       value={item.unit_price ?? ""}
-                      className="h-6 w-28 text-right text-xs tabular-nums"
+                      className="h-6 w-20 text-right text-xs tabular-nums"
                       onChange={(e) => updateItem(i, "unit_price", e.target.value ? Number(e.target.value) : null)}
                     />
                   </div>
                   <span className="text-xs text-muted-foreground">=</span>
-                  <span className="min-w-[56px] text-xs font-medium tabular-nums">
+                  <span className="min-w-[48px] text-xs font-medium tabular-nums">
                     {total > 0
                       ? `${sym}${total.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
                       : "—"}
                   </span>
-                  <div className="ml-auto flex items-center gap-1">
+                  <div className="flex items-center gap-1">
                     <span className="text-[10px] text-muted-foreground">HSN</span>
                     <Input
                       value={item.ehsn}
-                      className="h-6 w-24 font-mono text-xs"
+                      className="h-6 w-20 font-mono text-xs"
                       placeholder="8-digit"
                       onChange={(e) => updateItem(i, "ehsn", e.target.value)}
                     />
                   </div>
+                  {showMore && (
+                    <>
+                      <div className="mx-0.5 h-4 w-px bg-border/40" />
+                      <InlineField label="iHSN" value={item.ihsn} mono width="w-20"
+                        onChange={(v) => updateItem(i, "ihsn", v)} />
+                      <InlineField label="Wt" value={item.weight} type="number" width="w-14" suffix="kg"
+                        onChange={(v) => updateItem(i, "weight", v)} />
+                      <InlineField label="Origin" value={item.country_of_origin} width="w-12"
+                        onChange={(v) => updateItem(i, "country_of_origin", v)} />
+                      <InlineField label="IGST" value={item.igst_amount} type="number" width="w-12" suffix="%"
+                        onChange={(v) => updateItem(i, "igst_amount", v)} />
+                      <InlineField label="Duty" value={item.duty_rate} type="number" width="w-12" suffix="%"
+                        onChange={(v) => updateItem(i, "duty_rate", v)} />
+                    </>
+                  )}
                 </div>
-
-                {/* Line 3: Secondary fields */}
-                {showMore && (
-                  <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1.5 border-t border-dashed border-border/50 pl-[22px] pt-2">
-                    <InlineField label="iHSN" value={item.ihsn} mono width="w-24"
-                      onChange={(v) => updateItem(i, "ihsn", v)} />
-                    <InlineField label="Wt" value={item.weight} type="number" width="w-14" suffix="kg"
-                      onChange={(v) => updateItem(i, "weight", v)} />
-                    <InlineField label="Origin" value={item.country_of_origin} width="w-14"
-                      onChange={(v) => updateItem(i, "country_of_origin", v)} />
-                    <InlineField label="IGST" value={item.igst_amount} type="number" width="w-14" suffix="%"
-                      onChange={(v) => updateItem(i, "igst_amount", v)} />
-                    <InlineField label="Duty" value={item.duty_rate} type="number" width="w-14" suffix="%"
-                      onChange={(v) => updateItem(i, "duty_rate", v)} />
-                  </div>
-                )}
               </div>
             );
           })}
