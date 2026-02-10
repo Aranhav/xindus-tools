@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
 import { TabsContent } from "@/components/ui/tabs";
 import { ShipperPicker } from "./shipper-picker";
 import { ReceiverAddressesSection } from "./receiver-addresses-section";
@@ -39,11 +38,11 @@ export function AddressesTab({
   multiAddress,
 }: AddressesTabProps) {
   return (
-    <TabsContent value="addresses" className="mt-0 px-6 py-4">
-      <div className="space-y-6">
+    <TabsContent value="addresses" className="mt-0 px-6 py-3">
+      <div className="space-y-4">
         {/* Section 1: Origin — Shipper pickup */}
         <div>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
             Origin
           </p>
           <ShipperPicker
@@ -56,7 +55,7 @@ export function AddressesTab({
 
         {/* Section 2: Destination — Receiver addresses */}
         <div>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
             Destination
           </p>
           <ReceiverAddressesSection
@@ -70,10 +69,10 @@ export function AddressesTab({
 
         {/* Section 3: Compliance & Billing */}
         <div>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
             Compliance &amp; Billing
           </p>
-          <div className="relative space-y-0">
+          <div className="space-y-2">
             <AddressForm
               label="Billing (Consignee)"
               address={data.billing_address}
@@ -84,12 +83,6 @@ export function AddressesTab({
               addressType="billing"
               previousAddresses={sellerHistory?.billing_addresses}
             />
-            {/* Connector */}
-            <div className="relative z-10 flex justify-center -my-1.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full border bg-background shadow-sm">
-                <ArrowRight className="h-3.5 w-3.5 rotate-90 text-muted-foreground" />
-              </div>
-            </div>
             <AddressForm
               label="Importer of Record"
               address={data.ior_address}

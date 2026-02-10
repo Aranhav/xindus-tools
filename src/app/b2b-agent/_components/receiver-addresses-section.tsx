@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useCallback } from "react";
-import { Plus, MapPin } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddressForm } from "./address-form";
-import { ADDRESS_TYPE_CONFIG } from "./address-field-config";
 import type { ShipmentBox, ShipmentAddress, CorrectionItem, SellerHistory } from "@/types/agent";
 
 interface ReceiverAddressesSectionProps {
@@ -34,8 +33,6 @@ export function ReceiverAddressesSection({
   sellerHistory,
   confidence,
 }: ReceiverAddressesSectionProps) {
-  const config = ADDRESS_TYPE_CONFIG.receiver;
-
   // Derive unique receiver groups from boxes
   const groups = useMemo<ReceiverGroup[]>(() => {
     const map = new Map<string, ReceiverGroup>();
@@ -124,32 +121,31 @@ export function ReceiverAddressesSection({
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className={`flex h-6 w-6 items-center justify-center rounded-lg ${config.iconBg}`}>
-            <MapPin className={`h-3.5 w-3.5 ${config.iconColor}`} />
-          </div>
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Receiver {multiAddress ? `Addresses (${groups.length})` : "Address"}
-          </h4>
-        </div>
-        {multiAddress && (
+      {multiAddress && (
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-[10px] font-medium text-muted-foreground">
+            {groups.length} receiver{groups.length !== 1 ? "s" : ""}
+          </span>
           <Button
             variant="outline"
             size="sm"
-            className="h-6 gap-1 px-2 text-[10px]"
+            className="h-5 gap-0.5 px-1.5 text-[10px]"
             onClick={addReceiver}
           >
-            <Plus className="h-3 w-3" />
-            Add Receiver
+            <Plus className="h-2.5 w-2.5" />
+            Add
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         {groups.map((group, i) => {
+          const MAX_BOX_DISPLAY = 3;
+          const boxNums = group.boxIndices.map((idx) => idx + 1);
           const boxLabel = multiAddress
-            ? `Box ${group.boxIndices.map((idx) => idx + 1).join(", ")}`
+            ? boxNums.length <= MAX_BOX_DISPLAY
+              ? `Box ${boxNums.join(", ")}`
+              : `Box ${boxNums.slice(0, MAX_BOX_DISPLAY).join(", ")} +${boxNums.length - MAX_BOX_DISPLAY}`
             : boxes.length > 1
               ? "All Boxes"
               : undefined;
