@@ -517,12 +517,6 @@ export function OverviewTab({
             fieldPath="self_destination_clearance"
             onChanged={addFieldCorrection}
           />
-          <ToggleField
-            label="Amazon FBA"
-            value={data.amazon_fba}
-            fieldPath="amazon_fba"
-            onChanged={addFieldCorrection}
-          />
         </div>
         <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
           <SelectField

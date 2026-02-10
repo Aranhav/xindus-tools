@@ -248,6 +248,28 @@ export function DraftDetailSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [computedMultiAddress]);
 
+  /* ── Auto-calculate amazon_fba from marketplace ─────────── */
+
+  useEffect(() => {
+    if (!data || !draft) return;
+    const computedFba = data.marketplace === "AMAZON_FBA";
+    if (computedFba === !!data.amazon_fba) return;
+
+    const timer = setTimeout(() => {
+      const d = draftRef.current;
+      const dd = dataRef.current;
+      if (d && dd) {
+        onCorrect(d.id, [{
+          field_path: "amazon_fba",
+          old_value: dd.amazon_fba,
+          new_value: computedFba,
+        }]);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.marketplace]);
+
   /* ── Auto-save: products (debounced 800ms) ─────────────── */
 
   useEffect(() => {
