@@ -181,7 +181,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
   );
 
   return (
-    <div>
+    <div className="rounded-lg bg-muted/30 p-2.5">
       {/* Header */}
       <div className="flex items-center justify-between pb-2">
         <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -196,7 +196,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
 
       {/* Items */}
       {items.length === 0 ? (
-        <div className="rounded-md border border-dashed py-6 text-center text-xs text-muted-foreground">
+        <div className="rounded-md border border-dashed bg-background py-6 text-center text-xs text-muted-foreground">
           No items — click below to add one.
         </div>
       ) : (
@@ -204,7 +204,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
           {items.map((item, i) => {
             const total = (item.quantity || 0) * (item.unit_price || 0);
             return (
-              <div key={i} className="group rounded-md border border-border/60 p-2.5">
+              <div key={i} className="group rounded-md border border-border/60 bg-background p-2.5">
                 {/* Line 1: Description */}
                 <div className="flex items-center gap-1.5">
                   <span className="w-4 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground">
@@ -232,25 +232,28 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                 </div>
 
                 {/* Line 2: Qty × Price = Total    HSN */}
-                <div className="mt-2 flex items-center gap-1.5 pl-[22px]">
-                  <Input
-                    type="number"
-                    value={item.quantity}
-                    className="h-6 w-14 text-center text-xs tabular-nums"
-                    onChange={(e) => updateItem(i, "quantity", Number(e.target.value) || 0)}
-                  />
+                <div className="mt-2 flex items-center gap-2 pl-[22px]">
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-muted-foreground">Qty</span>
+                    <Input
+                      type="number"
+                      value={item.quantity}
+                      className="h-6 w-16 text-center text-xs tabular-nums"
+                      onChange={(e) => updateItem(i, "quantity", Number(e.target.value) || 0)}
+                    />
+                  </div>
                   <span className="text-xs text-muted-foreground">&times;</span>
-                  <div className="flex items-center">
-                    {sym && <span className="mr-0.5 text-[10px] text-muted-foreground">{sym}</span>}
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-muted-foreground">Price</span>
                     <Input
                       type="number"
                       value={item.unit_price ?? ""}
-                      className="h-6 w-16 text-right text-xs tabular-nums"
+                      className="h-6 w-[72px] text-right text-xs tabular-nums"
                       onChange={(e) => updateItem(i, "unit_price", e.target.value ? Number(e.target.value) : null)}
                     />
                   </div>
                   <span className="text-xs text-muted-foreground">=</span>
-                  <span className="min-w-[48px] text-xs font-medium tabular-nums">
+                  <span className="min-w-[56px] text-xs font-medium tabular-nums">
                     {total > 0
                       ? `${sym}${total.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
                       : "—"}
@@ -291,7 +294,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
       <button
         type="button"
         onClick={onAdd}
-        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed bg-background py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
       >
         <Plus className="h-3.5 w-3.5" /> Add item
       </button>
