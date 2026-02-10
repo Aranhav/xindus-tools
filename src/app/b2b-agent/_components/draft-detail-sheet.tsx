@@ -386,7 +386,7 @@ export function DraftDetailSheet({
   if (!draft || !data) {
     return (
       <Sheet open={open} onOpenChange={handleOpenChange}>
-        <SheetContent side="right" className="sm:max-w-3xl" aria-describedby={undefined}>
+        <SheetContent side="right" className="max-w-[calc(100vw-3rem)]" aria-describedby={undefined}>
           <SheetTitle className="sr-only">Loading draft</SheetTitle>
         </SheetContent>
       </Sheet>
@@ -404,7 +404,7 @@ export function DraftDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent side="right" className="flex flex-col p-0 sm:max-w-3xl" showCloseButton>
+      <SheetContent side="right" className="flex flex-col p-0 max-w-[calc(100vw-3rem)]" showCloseButton>
         {/* ── Header ────────────────────────────────────────── */}
         <SheetHeader className="border-b px-6 pb-4 pt-6">
           <div className="flex items-start justify-between gap-3">

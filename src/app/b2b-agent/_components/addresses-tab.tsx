@@ -107,27 +107,61 @@ export function AddressesTab({
         </Button>
       </div>
 
-      <div className="space-y-3">
-        {/* Section 1: Origin — Shipper pickup */}
-        <div>
-          <SectionHeader
-            label="Origin"
-            open={openSections.origin}
-            onToggle={() => toggleSection("origin")}
-          />
-          {openSections.origin && (
-            <div className="mt-1.5">
-              <ShipperPicker
-                shipperAddress={data.shipper_address}
-                xindusCustomerId={sellerProfile?.xindus_customer_id}
-                onCorrections={addCorrections}
-                confidence={draft.confidence_scores?.shipper_address as Record<string, number> | undefined}
-              />
-            </div>
-          )}
+      <div className="grid grid-cols-2 gap-6">
+        {/* Left column: Origin + Compliance */}
+        <div className="space-y-3">
+          {/* Section 1: Origin — Shipper pickup */}
+          <div>
+            <SectionHeader
+              label="Origin"
+              open={openSections.origin}
+              onToggle={() => toggleSection("origin")}
+            />
+            {openSections.origin && (
+              <div className="mt-1.5">
+                <ShipperPicker
+                  shipperAddress={data.shipper_address}
+                  xindusCustomerId={sellerProfile?.xindus_customer_id}
+                  onCorrections={addCorrections}
+                  confidence={draft.confidence_scores?.shipper_address as Record<string, number> | undefined}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Section 3: Compliance & Billing */}
+          <div>
+            <SectionHeader
+              label="Compliance & Billing"
+              open={openSections.compliance}
+              onToggle={() => toggleSection("compliance")}
+            />
+            {openSections.compliance && (
+              <div className="mt-1.5 space-y-2">
+                <AddressForm
+                  label="Billing (Consignee)"
+                  address={data.billing_address}
+                  basePath="billing_address"
+                  confidence={draft.confidence_scores?.billing_address as Record<string, number> | undefined}
+                  sellerDefault={sellerDefaults.billing_address as ShipmentAddress | undefined}
+                  onCorrections={addCorrections}
+                  addressType="billing"
+                  previousAddresses={sellerHistory?.billing_addresses}
+                />
+                <IorPicker
+                  iorAddress={data.ior_address}
+                  xindusCustomerId={sellerProfile?.xindus_customer_id}
+                  onCorrections={addCorrections}
+                  confidence={draft.confidence_scores?.ior_address as Record<string, number> | undefined}
+                  sellerDefault={sellerDefaults.ior_address as ShipmentAddress | undefined}
+                  sellerHistory={sellerHistory}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Section 2: Destination — Receiver addresses */}
+        {/* Right column: Destination */}
         <div>
           <SectionHeader
             label="Destination"
@@ -142,37 +176,6 @@ export function AddressesTab({
                 multiAddress={multiAddress}
                 sellerHistory={sellerHistory}
                 confidence={draft.confidence_scores?.receiver_address as Record<string, number> | undefined}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Section 3: Compliance & Billing */}
-        <div>
-          <SectionHeader
-            label="Compliance & Billing"
-            open={openSections.compliance}
-            onToggle={() => toggleSection("compliance")}
-          />
-          {openSections.compliance && (
-            <div className="mt-1.5 space-y-2">
-              <AddressForm
-                label="Billing (Consignee)"
-                address={data.billing_address}
-                basePath="billing_address"
-                confidence={draft.confidence_scores?.billing_address as Record<string, number> | undefined}
-                sellerDefault={sellerDefaults.billing_address as ShipmentAddress | undefined}
-                onCorrections={addCorrections}
-                addressType="billing"
-                previousAddresses={sellerHistory?.billing_addresses}
-              />
-              <IorPicker
-                iorAddress={data.ior_address}
-                xindusCustomerId={sellerProfile?.xindus_customer_id}
-                onCorrections={addCorrections}
-                confidence={draft.confidence_scores?.ior_address as Record<string, number> | undefined}
-                sellerDefault={sellerDefaults.ior_address as ShipmentAddress | undefined}
-                sellerHistory={sellerHistory}
               />
             </div>
           )}
