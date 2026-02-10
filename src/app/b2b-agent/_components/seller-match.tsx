@@ -218,9 +218,9 @@ export function SellerMatch({
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-sm font-medium">{displayName}</span>
-              {linkedCustomer?.crn_number && (
+              {linkedCustomer && (
                 <Badge variant="outline" className="text-[10px] font-mono font-normal">
-                  {linkedCustomer.crn_number}
+                  {linkedCustomer.crn_number || `#${linkedCustomer.id}`}
                 </Badge>
               )}
               {isSellerOnly ? (
