@@ -8,6 +8,16 @@ import { TabsContent } from "@/components/ui/tabs";
 import { currencySymbol } from "./editable-fields";
 import type { ProductDetail } from "@/types/agent";
 
+/* ── Gaia badge (reusable) ───────────────────────────────── */
+
+function GaiaBadge() {
+  return (
+    <span className="rounded bg-emerald-100 px-1 py-px text-[9px] font-semibold leading-none text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
+      Gaia
+    </span>
+  );
+}
+
 /* ── Product row ──────────────────────────────────────────── */
 
 function ProductRow({
@@ -25,6 +35,8 @@ function ProductRow({
     onChange(index, { ...product, [field]: value });
   };
 
+  const isGaia = product.gaia_classified;
+
   return (
     <tr className="group border-b border-border/40 last:border-0">
       <td className="py-1.5 pr-2">
@@ -40,21 +52,19 @@ function ProductRow({
           value={product.hsn_code}
           onChange={(e) => set("hsn_code", e.target.value)}
           className="h-7 font-mono text-xs"
-          placeholder="Export HSN"
+          placeholder="8-digit"
         />
       </td>
       <td className="py-1.5 pr-2">
-        <div className="flex items-center gap-1">
+        <div className="space-y-0.5">
           <Input
             value={product.ihsn ?? ""}
             onChange={(e) => set("ihsn", e.target.value)}
-            className={`h-7 font-mono text-xs ${product.gaia_classified && product.ihsn ? "border-emerald-300 dark:border-emerald-800" : ""}`}
-            placeholder="Import HSN"
+            className={`h-7 font-mono text-xs ${isGaia && product.ihsn ? "border-emerald-300 dark:border-emerald-800" : ""}`}
+            placeholder="8-digit"
           />
-          {product.gaia_classified && product.ihsn && (
-            <span className="shrink-0 rounded bg-emerald-100 px-1 py-px text-[9px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
-              Gaia
-            </span>
+          {isGaia && product.ihsn && (
+            <div className="flex justify-end"><GaiaBadge /></div>
           )}
         </div>
       </td>
@@ -85,18 +95,16 @@ function ProductRow({
         />
       </td>
       <td className="py-1.5 pr-2">
-        <div className="flex items-center gap-1">
+        <div className="space-y-0.5">
           <Input
             type="number"
             value={product.duty_rate ?? ""}
             onChange={(e) => set("duty_rate", e.target.value ? Number(e.target.value) : null)}
-            className={`h-7 text-right text-xs ${product.gaia_classified && product.duty_rate != null ? "border-emerald-300 dark:border-emerald-800" : ""}`}
+            className={`h-7 text-right text-xs ${isGaia && product.duty_rate != null ? "border-emerald-300 dark:border-emerald-800" : ""}`}
             placeholder="%"
           />
-          {product.gaia_classified && product.duty_rate != null && (
-            <span className="shrink-0 rounded bg-emerald-100 px-1 py-px text-[9px] font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
-              Gaia
-            </span>
+          {isGaia && product.duty_rate != null && (
+            <div className="flex justify-end"><GaiaBadge /></div>
           )}
         </div>
       </td>
@@ -168,11 +176,11 @@ export function ProductsTab({
             <tr className="border-b bg-muted/30 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
               <th className="px-3 py-2">Description</th>
               <th className="px-3 py-2 w-28">Export HSN</th>
-              <th className="px-3 py-2 w-32">Import HSN</th>
+              <th className="px-3 py-2 w-28">Import HSN</th>
               <th className="px-3 py-2 w-20 text-right">Value {sym && <span className="normal-case">({sym})</span>}</th>
               <th className="px-3 py-2 w-16">Origin</th>
               <th className="px-3 py-2 w-20 text-right">Unit Price {sym && <span className="normal-case">({sym})</span>}</th>
-              <th className="px-3 py-2 w-16 text-right">Duty %</th>
+              <th className="px-3 py-2 w-20 text-right">Duty %</th>
               <th className="px-3 py-2 w-16 text-right">IGST %</th>
               <th className="px-3 py-2 w-8" />
             </tr>
