@@ -34,7 +34,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OverviewTab } from "./overview-tab";
 import { ProductsTab } from "./products-tab";
-import { AddressForm } from "./address-form";
+import { AddressesTab } from "./addresses-tab";
 import { BoxEditor } from "./box-editor";
 import { SellerMatch } from "./seller-match";
 import { SelectField, CURRENCY_OPTIONS } from "./editable-fields";
@@ -43,7 +43,6 @@ import { getNestedValue } from "./helpers";
 import type {
   DraftDetail,
   CorrectionItem,
-  ShipmentAddress,
   ShipmentBox,
   ProductDetail,
   SellerProfile,
@@ -193,7 +192,7 @@ export function DraftDetailSheet({
       if (!d || !dd) return;
       const current = dd.receiver_address as unknown as Record<string, string>;
       const corrections: CorrectionItem[] = [];
-      for (const key of ["name", "address", "city", "state", "zip", "country", "phone", "email"] as const) {
+      for (const key of ["name", "address", "city", "state", "zip", "country", "phone", "email", "district", "contact_name", "contact_phone", "extension_number", "eori_number"] as const) {
         const newVal = (firstReceiver as unknown as Record<string, string>)[key] || "";
         const oldVal = String(current?.[key] ?? "");
         if (newVal !== oldVal) {
@@ -222,7 +221,7 @@ export function DraftDetailSheet({
       const corrections: CorrectionItem[] = [];
       const box0Rec = box0Receiver as unknown as Record<string, string>;
       const topRec = (topReceiver ?? {}) as unknown as Record<string, string>;
-      for (const key of ["name", "address", "city", "state", "zip", "country", "phone", "email"] as const) {
+      for (const key of ["name", "address", "city", "state", "zip", "country", "phone", "email", "district", "contact_name", "contact_phone", "extension_number", "eori_number"] as const) {
         const newVal = box0Rec[key] || "";
         const oldVal = topRec[key] ?? "";
         if (newVal !== oldVal) {
@@ -473,39 +472,18 @@ export function DraftDetailSheet({
               loading={loading}
             />
 
-            {/* ── Addresses tab (Billing + IOR only) ────────── */}
-            <TabsContent value="addresses" className="mt-0 px-6 py-4">
-              <div className="relative space-y-0">
-                {/* Billing card */}
-                <AddressForm
-                  label="Billing (Consignee)"
-                  address={data.billing_address}
-                  basePath="billing_address"
-                  confidence={draft.confidence_scores?.billing_address as Record<string, number> | undefined}
-                  sellerDefault={sellerDefaults.billing_address as ShipmentAddress | undefined}
-                  onCorrections={addCorrections}
-                  icon="billing"
-                  previousAddresses={sellerHistory?.billing_addresses}
-                />
-                {/* Connector */}
-                <div className="relative z-10 flex justify-center -my-1.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full border bg-background shadow-sm">
-                    <ArrowRight className="h-3.5 w-3.5 rotate-90 text-muted-foreground" />
-                  </div>
-                </div>
-                {/* IOR card */}
-                <AddressForm
-                  label="Importer of Record"
-                  address={data.ior_address}
-                  basePath="ior_address"
-                  confidence={draft.confidence_scores?.ior_address as Record<string, number> | undefined}
-                  sellerDefault={sellerDefaults.ior_address as ShipmentAddress | undefined}
-                  onCorrections={addCorrections}
-                  icon="ior"
-                  previousAddresses={sellerHistory?.ior_addresses}
-                />
-              </div>
-            </TabsContent>
+            {/* ── Addresses tab ────────────────────────────── */}
+            <AddressesTab
+              data={data}
+              draft={draft}
+              boxes={boxes}
+              onBoxesChange={setLocalBoxes}
+              addCorrections={addCorrections}
+              sellerDefaults={sellerDefaults}
+              sellerProfile={sellerProfile}
+              sellerHistory={sellerHistory}
+              multiAddress={computedMultiAddress}
+            />
 
             {/* ── Boxes tab ─────────────────────────────────── */}
             <TabsContent value="boxes" className="mt-0 px-6 py-4">

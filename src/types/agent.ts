@@ -206,6 +206,19 @@ export interface SellerHistory {
 /*  Xindus customer (from platform DB via Metabase)                   */
 /* ------------------------------------------------------------------ */
 
+export interface XindusAddress {
+  id: number;
+  name: string;
+  address: string;
+  city: string;
+  district: string;
+  state: string;
+  zip: string;
+  country: string;
+  phone: string;
+  email: string;
+}
+
 export interface XindusCustomer {
   id: number;
   crn_number: string | null;

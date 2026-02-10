@@ -1,22 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Sparkles, Phone, Mail, Check, X, Building2, FileCheck, AlertTriangle, CheckCircle2, History } from "lucide-react";
+import { Pencil, Sparkles, Phone, Mail, Check, X, AlertTriangle, CheckCircle2, History, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { ADDRESS_FIELDS, ADDRESS_TYPE_CONFIG, type AddressType } from "./address-field-config";
 import type { ShipmentAddress, CorrectionItem } from "@/types/agent";
 
-export const ADDRESS_FIELDS = [
-  { key: "name", label: "Name" },
-  { key: "address", label: "Address" },
-  { key: "city", label: "City" },
-  { key: "state", label: "State" },
-  { key: "zip", label: "ZIP" },
-  { key: "country", label: "Country" },
-  { key: "phone", label: "Phone" },
-  { key: "email", label: "Email" },
-] as const;
+// Re-export for backwards compat (box-receiver-section imports ADDRESS_FIELDS from here)
+export { ADDRESS_FIELDS } from "./address-field-config";
 
 interface AddressFormProps {
   label: string;
@@ -25,8 +19,10 @@ interface AddressFormProps {
   confidence?: Record<string, number>;
   sellerDefault?: ShipmentAddress;
   onCorrections: (corrections: CorrectionItem[]) => void;
-  icon?: "billing" | "ior";
+  addressType: AddressType;
   previousAddresses?: ShipmentAddress[];
+  readOnly?: boolean;
+  boxLabel?: string;
 }
 
 export function AddressForm({
@@ -36,11 +32,16 @@ export function AddressForm({
   confidence,
   sellerDefault,
   onCorrections,
-  icon,
+  addressType,
   previousAddresses,
+  readOnly,
+  boxLabel,
 }: AddressFormProps) {
   const [editing, setEditing] = useState(false);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
+
+  const config = ADDRESS_TYPE_CONFIG[addressType];
+  const IconComponent = config.icon;
 
   const addrRecord = address as unknown as Record<string, string>;
   const defaultRecord = sellerDefault as unknown as Record<string, string> | undefined;
@@ -53,7 +54,7 @@ export function AddressForm({
       return def && def !== cur;
     });
 
-  /* ── Aggregate confidence ── */
+  /* Aggregate confidence */
   const confValues = confidence
     ? ADDRESS_FIELDS.map((f) => confidence[f.key]).filter((v): v is number => v != null && v > 0)
     : [];
@@ -62,6 +63,7 @@ export function AddressForm({
     : null;
 
   const startEdit = () => {
+    if (readOnly) return;
     const vals: Record<string, string> = {};
     for (const f of ADDRESS_FIELDS) {
       vals[f.key] = addrRecord[f.key] || "";
@@ -80,7 +82,6 @@ export function AddressForm({
     if (!editing) setEditing(true);
   };
 
-  // Filter previous addresses that differ from current
   const prevAddresses = (previousAddresses ?? []).filter((pa) => {
     const pr = pa as unknown as Record<string, string>;
     return pr.name && pr.name.toLowerCase() !== (addrRecord.name || "").toLowerCase();
@@ -121,32 +122,35 @@ export function AddressForm({
     setFormValues({});
   };
 
-  const IconComponent = icon === "ior" ? FileCheck : Building2;
-  const iconBg = icon === "ior" ? "bg-emerald-500/10" : "bg-blue-500/10";
-  const iconColor = icon === "ior" ? "text-emerald-600 dark:text-emerald-400" : "text-blue-600 dark:text-blue-400";
-
+  /* View-mode derived values */
   const name = addrRecord.name || "";
+  const contactName = addrRecord.contact_name || "";
   const street = addrRecord.address || "";
-  const cityStateZip = [addrRecord.city, addrRecord.state].filter(Boolean).join(", ")
-    + (addrRecord.zip ? ` ${addrRecord.zip}` : "");
+  const cityParts = [addrRecord.city, addrRecord.district].filter(Boolean);
+  const cityLine = cityParts.join(", ") + (addrRecord.state ? `, ${addrRecord.state}` : "") + (addrRecord.zip ? ` ${addrRecord.zip}` : "");
   const country = addrRecord.country || "";
   const phone = addrRecord.phone || "";
   const email = addrRecord.email || "";
+  const contactPhone = addrRecord.contact_phone || "";
+  const extension = addrRecord.extension_number || "";
+  const eori = addrRecord.eori_number || "";
 
   return (
-    <div className={`rounded-xl border bg-card p-4 transition-all ${editing ? "ring-1 ring-primary/20 border-primary/30" : ""}`}>
-      {/* ── Header ── */}
+    <div className={`rounded-xl border bg-card p-4 transition-all ${editing ? `ring-1 ${config.ringColor}` : ""}`}>
+      {/* Header */}
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className={`flex h-6 w-6 items-center justify-center rounded-lg ${iconBg}`}>
-            <IconComponent className={`h-3.5 w-3.5 ${iconColor}`} />
+          <div className={`flex h-6 w-6 items-center justify-center rounded-lg ${config.iconBg}`}>
+            <IconComponent className={`h-3.5 w-3.5 ${config.iconColor}`} />
           </div>
           <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             {label}
           </h4>
+          {boxLabel && (
+            <Badge variant="secondary" className="text-[10px]">{boxLabel}</Badge>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          {/* Aggregate confidence pill */}
           {avgConf != null && (
             <div className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
               avgConf >= 0.85 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
@@ -161,35 +165,37 @@ export function AddressForm({
               {Math.round(avgConf * 100)}%
             </div>
           )}
-          {editing ? (
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={cancelEdit}>
-                <X className="h-3.5 w-3.5" />
+          {!readOnly && (
+            editing ? (
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={cancelEdit}>
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+                <Button size="sm" className="h-6 gap-1 px-2 text-[11px]" onClick={saveEdit}>
+                  <Check className="h-3 w-3" />
+                  Save
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+                onClick={startEdit}
+              >
+                <Pencil className="h-3 w-3" />
+                Edit
               </Button>
-              <Button size="sm" className="h-6 gap-1 px-2 text-[11px]" onClick={saveEdit}>
-                <Check className="h-3 w-3" />
-                Save
-              </Button>
-            </div>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground"
-              onClick={startEdit}
-            >
-              <Pencil className="h-3 w-3" />
-              Edit
-            </Button>
+            )
           )}
         </div>
       </div>
 
       {editing ? (
-        /* ── Edit mode ── */
-        <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+        /* Edit mode: 3-column grid */
+        <div className="grid grid-cols-3 gap-x-3 gap-y-2">
           {ADDRESS_FIELDS.map((f) => (
-            <div key={f.key} className={f.key === "address" ? "col-span-2" : ""}>
+            <div key={f.key} className={f.span === "full" ? "col-span-3" : ""}>
               <Label className="mb-0.5 text-[10px] text-muted-foreground">{f.label}</Label>
               <Input
                 value={formValues[f.key] || ""}
@@ -202,18 +208,29 @@ export function AddressForm({
           ))}
         </div>
       ) : (
-        /* ── View mode: natural address block ── */
+        /* View mode: natural address block */
         <div className="space-y-0.5 pl-[34px]">
           {name && <p className="text-sm font-semibold text-foreground">{name}</p>}
+          {contactName && (
+            <p className="text-[13px] leading-snug text-foreground/70">
+              c/o {contactName}
+            </p>
+          )}
           {street && <p className="text-[13px] leading-snug text-foreground/80">{street}</p>}
-          {cityStateZip && <p className="text-[13px] leading-snug text-foreground/80">{cityStateZip}</p>}
+          {cityLine && <p className="text-[13px] leading-snug text-foreground/80">{cityLine}</p>}
           {country && <p className="text-[13px] leading-snug text-foreground/60">{country}</p>}
-          {(phone || email) && (
+          {(phone || email || contactPhone) && (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1.5 text-xs text-muted-foreground">
               {phone && (
                 <span className="flex items-center gap-1.5">
                   <Phone className="h-3 w-3" />
-                  {phone}
+                  {phone}{extension ? ` ext. ${extension}` : ""}
+                </span>
+              )}
+              {contactPhone && contactPhone !== phone && (
+                <span className="flex items-center gap-1.5">
+                  <Phone className="h-3 w-3" />
+                  {contactPhone}
                 </span>
               )}
               {email && (
@@ -224,14 +241,22 @@ export function AddressForm({
               )}
             </div>
           )}
+          {eori && (
+            <div className="pt-1">
+              <Badge variant="outline" className="gap-1 text-[10px]">
+                <Shield className="h-2.5 w-2.5" />
+                EORI: {eori}
+              </Badge>
+            </div>
+          )}
           {!name && !street && !country && (
             <p className="text-xs italic text-muted-foreground/50">No address data</p>
           )}
         </div>
       )}
 
-      {/* ── Seller defaults suggestion ── */}
-      {hasDiff && !editing && (
+      {/* Seller defaults suggestion */}
+      {hasDiff && !editing && !readOnly && (
         <div className="mt-3 ml-[34px] flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/[0.03] px-3 py-2">
           <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
           <div className="min-w-0 flex-1">
@@ -251,8 +276,8 @@ export function AddressForm({
         </div>
       )}
 
-      {/* ── Previous addresses from approved shipments ── */}
-      {prevAddresses.length > 0 && !editing && (
+      {/* Previous addresses from approved shipments */}
+      {prevAddresses.length > 0 && !editing && !readOnly && (
         <div className="mt-3 ml-[34px] rounded-lg border border-primary/20 bg-primary/[0.03] p-3">
           <div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium text-primary">
             <History className="h-3.5 w-3.5" />
