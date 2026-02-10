@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   Plus,
   Trash2,
@@ -30,6 +30,7 @@ function BoxCard({
   canCopyFromFirst,
   onCopyFromFirst,
   previousReceiverAddresses,
+  allReceivers,
 }: {
   box: ShipmentBox;
   index: number;
@@ -39,6 +40,7 @@ function BoxCard({
   canCopyFromFirst: boolean;
   onCopyFromFirst?: () => void;
   previousReceiverAddresses?: ShipmentAddress[];
+  allReceivers?: ShipmentAddress[];
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -115,6 +117,7 @@ function BoxCard({
             canCopyFromFirst={canCopyFromFirst}
             onCopyFromFirst={onCopyFromFirst}
             previousAddresses={previousReceiverAddresses}
+            allReceivers={allReceivers}
           />
 
           {/* Dimensions row */}
@@ -225,6 +228,22 @@ interface BoxEditorProps {
 }
 
 export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddresses }: BoxEditorProps) {
+  // Derive unique receiver addresses from all boxes for the dropdown
+  const allReceivers = useMemo(() => {
+    const seen = new Set<string>();
+    const result: ShipmentAddress[] = [];
+    for (const b of boxes) {
+      const addr = b.receiver_address;
+      if (!addr?.name) continue;
+      const key = `${addr.address ?? ""}|${addr.city ?? ""}|${addr.zip ?? ""}`;
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        result.push(addr);
+      }
+    }
+    return result;
+  }, [boxes]);
+
   const updateBox = useCallback(
     (index: number, box: ShipmentBox) => {
       const next = [...boxes];
@@ -286,6 +305,7 @@ export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddre
           canCopyFromFirst={multiAddress && i > 0}
           onCopyFromFirst={() => copyFromFirst(i)}
           previousReceiverAddresses={previousReceiverAddresses}
+          allReceivers={allReceivers}
         />
       ))}
       <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={addBox}>
