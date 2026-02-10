@@ -1,37 +1,31 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import {
-  Plus,
-  Trash2,
-  ChevronDown,
-  ChevronRight,
-  Package,
-  GripVertical,
-} from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronRight, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { emptyBox, emptyItem, ItemRow } from "./box-item-row";
+import { emptyBox, emptyItem, ItemsTable } from "./box-item-row";
 import { BoxReceiverSection } from "./box-receiver-section";
-import type { ShipmentBox, ShipmentBoxItem, ShipmentAddress, ProductDetail } from "@/types/agent";
+import { currencySymbol } from "./editable-fields";
+import type { ShipmentBox, ShipmentAddress, ProductDetail } from "@/types/agent";
 
-/* ── Single box editor ────────────────────────────────────── */
+/* ── Validation helper ──────────────────────────────────────── */
+
+function isBoxValid(box: ShipmentBox): boolean {
+  if (box.shipment_box_items.length === 0) return false;
+  return box.shipment_box_items.every(
+    (it) => it.description && it.quantity && it.unit_price && it.ehsn,
+  );
+}
+
+/* ── Single box card ──────────────────────────────────────── */
 
 function BoxCard({
-  box,
-  index,
-  onChange,
-  onRemove,
-  isShared,
-  canCopyFromFirst,
-  onCopyFromFirst,
-  previousReceiverAddresses,
-  allReceivers,
-  products,
-  currency,
+  box, index, onChange, onRemove, isShared, canCopyFromFirst,
+  onCopyFromFirst, previousReceiverAddresses, allReceivers, products, currency,
 }: {
   box: ShipmentBox;
   index: number;
@@ -47,147 +41,115 @@ function BoxCard({
 }) {
   const [expanded, setExpanded] = useState(false);
 
-  const setField = (field: keyof ShipmentBox, value: unknown) => {
+  const setField = (field: keyof ShipmentBox, value: unknown) =>
     onChange(index, { ...box, [field]: value });
-  };
 
-  const updateItem = (itemIdx: number, item: ShipmentBoxItem) => {
-    const items = [...box.shipment_box_items];
-    items[itemIdx] = item;
-    onChange(index, { ...box, shipment_box_items: items });
-  };
-
-  const addItem = () => {
-    onChange(index, {
-      ...box,
-      shipment_box_items: [...box.shipment_box_items, emptyItem()],
-    });
-  };
-
-  const removeItem = (itemIdx: number) => {
-    const items = box.shipment_box_items.filter((_, i) => i !== itemIdx);
-    onChange(index, { ...box, shipment_box_items: items });
-  };
-
-  const handleReceiverChange = (addr: ShipmentAddress) => {
+  const handleReceiverChange = (addr: ShipmentAddress) =>
     onChange(index, { ...box, receiver_address: addr });
-  };
 
   const volWeight = ((box.length * box.width * box.height) / 5000).toFixed(2);
+  const sym = currencySymbol(currency);
+  const itemCount = box.shipment_box_items.length;
+
+  const totalValue = useMemo(
+    () => box.shipment_box_items.reduce(
+      (s, it) => s + (it.quantity || 0) * (it.unit_price || 0), 0,
+    ),
+    [box.shipment_box_items],
+  );
+
+  const valid = isBoxValid(box);
+  const rcv = box.receiver_address;
+  const receiverLine = !isShared && rcv?.name
+    ? [rcv.name, rcv.city, rcv.country].filter(Boolean).join(", ")
+    : null;
 
   return (
-    <div className="rounded-lg border">
-      {/* Box header */}
+    <div className={`rounded-lg border border-l-2 ${valid ? "border-l-emerald-500" : "border-l-amber-400"}`}>
+      {/* Header line 1 */}
       <div
         className="flex cursor-pointer items-center gap-2 px-3 py-2.5"
         onClick={() => setExpanded(!expanded)}
       >
-        <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50" />
-        {expanded ? (
-          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-        )}
+        {expanded
+          ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
         <Package className="h-3.5 w-3.5 text-muted-foreground" />
         <span className="text-sm font-medium">Box #{box.box_id}</span>
         <span className="ml-auto text-xs text-muted-foreground">
-          {box.length}×{box.width}×{box.height} cm | {box.weight} kg (Vol: {volWeight} kg)
+          {box.length}&#x200a;&#xd7;&#x200a;{box.width}&#x200a;&#xd7;&#x200a;{box.height} cm | {box.weight} kg
         </span>
         <Badge variant="outline" className="text-[10px]">
-          {box.shipment_box_items.length} item{box.shipment_box_items.length !== 1 ? "s" : ""}
+          {sym}{totalValue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} | {itemCount} item{itemCount !== 1 ? "s" : ""}
         </Badge>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-destructive"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove(index);
-          }}
-        >
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive"
+          onClick={(e) => { e.stopPropagation(); onRemove(index); }}>
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
 
-      {/* Box body (expanded) */}
+      {/* Header line 2: receiver (multi-address only) */}
+      {receiverLine && (
+        <div className="-mt-1 px-3 pb-2">
+          <span className="text-[11px] text-muted-foreground">&rarr; {receiverLine}</span>
+        </div>
+      )}
+
+      {/* Expanded body */}
       {expanded && (
         <div className="border-t px-3 py-3">
-          {/* Receiver address (editable) */}
-          <BoxReceiverSection
-            address={box.receiver_address}
-            onChange={handleReceiverChange}
-            isShared={isShared}
-            canCopyFromFirst={canCopyFromFirst}
-            onCopyFromFirst={onCopyFromFirst}
-            previousAddresses={previousReceiverAddresses}
-            allReceivers={allReceivers}
-          />
+          {/* Receiver section (multi-address only) */}
+          {!isShared && (
+            <BoxReceiverSection
+              address={box.receiver_address}
+              onChange={handleReceiverChange}
+              isShared={isShared}
+              canCopyFromFirst={canCopyFromFirst}
+              onCopyFromFirst={onCopyFromFirst}
+              previousAddresses={previousReceiverAddresses}
+              allReceivers={allReceivers}
+            />
+          )}
 
-          {/* Dimensions row */}
-          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <div>
-              <Label className="text-[10px] text-muted-foreground">Length</Label>
-              <Input
-                type="number"
-                value={box.length || ""}
-                onChange={(e) => setField("length", Number(e.target.value) || 0)}
-                className="h-7 text-xs"
-              />
+          {/* Compact dimensions */}
+          <div className={`flex items-end gap-3 ${!isShared ? "mt-3" : ""}`}>
+            <div className="flex-1">
+              <Label className="text-[10px] text-muted-foreground">Dimensions (cm)</Label>
+              <div className="flex items-center">
+                <Input type="number" value={box.length || ""} placeholder="L"
+                  onChange={(e) => setField("length", Number(e.target.value) || 0)}
+                  className="h-7 rounded-r-none border-r-0 text-xs" />
+                <span className="flex h-7 items-center border-y border-border bg-muted/50 px-1 text-[10px] text-muted-foreground">&times;</span>
+                <Input type="number" value={box.width || ""} placeholder="W"
+                  onChange={(e) => setField("width", Number(e.target.value) || 0)}
+                  className="h-7 rounded-none border-x-0 text-xs" />
+                <span className="flex h-7 items-center border-y border-border bg-muted/50 px-1 text-[10px] text-muted-foreground">&times;</span>
+                <Input type="number" value={box.height || ""} placeholder="H"
+                  onChange={(e) => setField("height", Number(e.target.value) || 0)}
+                  className="h-7 rounded-l-none border-l-0 text-xs" />
+              </div>
             </div>
-            <div>
-              <Label className="text-[10px] text-muted-foreground">Width</Label>
-              <Input
-                type="number"
-                value={box.width || ""}
-                onChange={(e) => setField("width", Number(e.target.value) || 0)}
-                className="h-7 text-xs"
-              />
-            </div>
-            <div>
-              <Label className="text-[10px] text-muted-foreground">Height</Label>
-              <Input
-                type="number"
-                value={box.height || ""}
-                onChange={(e) => setField("height", Number(e.target.value) || 0)}
-                className="h-7 text-xs"
-              />
-            </div>
-            <div>
+            <div className="w-24">
               <Label className="text-[10px] text-muted-foreground">Weight (kg)</Label>
-              <Input
-                type="number"
-                value={box.weight || ""}
+              <Input type="number" value={box.weight || ""}
                 onChange={(e) => setField("weight", Number(e.target.value) || 0)}
-                className="h-7 text-xs"
-              />
+                className="h-7 text-xs" />
+            </div>
+            <div className="whitespace-nowrap pb-1.5 text-[10px] text-muted-foreground">
+              Vol: {volWeight} kg
             </div>
           </div>
 
           <Separator className="my-3" />
 
-          {/* Items */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h5 className="text-xs font-medium text-muted-foreground">
-                Items ({box.shipment_box_items.length})
-              </h5>
-              <Button variant="outline" size="sm" className="h-6 gap-1 px-2 text-xs" onClick={addItem}>
-                <Plus className="h-3 w-3" />
-                Add Item
-              </Button>
-            </div>
-            {box.shipment_box_items.map((item, j) => (
-              <ItemRow
-                key={j}
-                item={item}
-                index={j}
-                onChange={updateItem}
-                onRemove={removeItem}
-                products={products}
-                currency={currency}
-              />
-            ))}
-          </div>
+          {/* Items table */}
+          <ItemsTable
+            items={box.shipment_box_items}
+            onChange={(items) => onChange(index, { ...box, shipment_box_items: items })}
+            onAdd={() => onChange(index, { ...box, shipment_box_items: [...box.shipment_box_items, emptyItem()] })}
+            products={products}
+            currency={currency}
+          />
         </div>
       )}
     </div>
@@ -206,7 +168,6 @@ interface BoxEditorProps {
 }
 
 export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddresses, products, currency }: BoxEditorProps) {
-  // Derive unique receiver addresses from all boxes for the dropdown
   const allReceivers = useMemo(() => {
     const seen = new Set<string>();
     const result: ShipmentAddress[] = [];
@@ -214,10 +175,7 @@ export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddre
       const addr = b.receiver_address;
       if (!addr?.name) continue;
       const key = `${addr.address ?? ""}|${addr.city ?? ""}|${addr.zip ?? ""}`;
-      if (key && !seen.has(key)) {
-        seen.add(key);
-        result.push(addr);
-      }
+      if (key && !seen.has(key)) { seen.add(key); result.push(addr); }
     }
     return result;
   }, [boxes]);
@@ -226,34 +184,24 @@ export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddre
     (index: number, box: ShipmentBox) => {
       const next = [...boxes];
       next[index] = box;
-
-      // Single-address mode: propagate receiver to all boxes
       if (!multiAddress) {
         const receiver = box.receiver_address;
         for (let i = 0; i < next.length; i++) {
-          if (i !== index) {
-            next[i] = { ...next[i], receiver_address: { ...receiver } };
-          }
+          if (i !== index) next[i] = { ...next[i], receiver_address: { ...receiver } };
         }
       }
-
       onChange(next);
     },
     [boxes, onChange, multiAddress],
   );
 
   const removeBox = useCallback(
-    (index: number) => {
-      onChange(boxes.filter((_, i) => i !== index));
-    },
+    (index: number) => onChange(boxes.filter((_, i) => i !== index)),
     [boxes, onChange],
   );
 
   const addBox = useCallback(() => {
-    // In single-address mode, inherit receiver from box 0
-    const inheritReceiver = !multiAddress && boxes.length > 0
-      ? boxes[0].receiver_address
-      : undefined;
+    const inheritReceiver = !multiAddress && boxes.length > 0 ? boxes[0].receiver_address : undefined;
     onChange([...boxes, emptyBox(boxes.length, inheritReceiver)]);
   }, [boxes, onChange, multiAddress]);
 
@@ -261,10 +209,7 @@ export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddre
     (targetIndex: number) => {
       if (boxes.length === 0) return;
       const next = [...boxes];
-      next[targetIndex] = {
-        ...next[targetIndex],
-        receiver_address: { ...boxes[0].receiver_address },
-      };
+      next[targetIndex] = { ...next[targetIndex], receiver_address: { ...boxes[0].receiver_address } };
       onChange(next);
     },
     [boxes, onChange],
@@ -275,17 +220,11 @@ export function BoxEditor({ boxes, onChange, multiAddress, previousReceiverAddre
       {boxes.map((box, i) => (
         <BoxCard
           key={`${box.box_id}-${i}`}
-          box={box}
-          index={i}
-          onChange={updateBox}
-          onRemove={removeBox}
-          isShared={!multiAddress}
-          canCopyFromFirst={multiAddress && i > 0}
+          box={box} index={i} onChange={updateBox} onRemove={removeBox}
+          isShared={!multiAddress} canCopyFromFirst={multiAddress && i > 0}
           onCopyFromFirst={() => copyFromFirst(i)}
           previousReceiverAddresses={previousReceiverAddresses}
-          allReceivers={allReceivers}
-          products={products}
-          currency={currency}
+          allReceivers={allReceivers} products={products} currency={currency}
         />
       ))}
       <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={addBox}>
