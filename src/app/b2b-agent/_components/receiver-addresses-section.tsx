@@ -10,6 +10,7 @@ interface ReceiverAddressesSectionProps {
   boxes: ShipmentBox[];
   onBoxesChange: (boxes: ShipmentBox[]) => void;
   multiAddress: boolean;
+  onMultiAddressChange?: (multi: boolean) => void;
   sellerHistory?: SellerHistory | null;
   confidence?: Record<string, number>;
 }
@@ -30,6 +31,7 @@ export function ReceiverAddressesSection({
   boxes,
   onBoxesChange,
   multiAddress,
+  onMultiAddressChange,
   sellerHistory,
   confidence,
 }: ReceiverAddressesSectionProps) {
@@ -92,13 +94,30 @@ export function ReceiverAddressesSection({
       // Remove all boxes belonging to this receiver group
       const removeSet = new Set(group.boxIndices);
       const next = boxes.filter((_, idx) => !removeSet.has(idx));
-      onBoxesChange(next.length > 0 ? next : []);
+
+      if (next.length === 0) {
+        onBoxesChange([]);
+        onMultiAddressChange?.(false);
+        return;
+      }
+
+      // Check if remaining boxes collapse to a single address group
+      const remainingKeys = new Set(next.map((b) => addressKey(b.receiver_address)));
+      if (remainingKeys.size <= 1) {
+        // Convert to single-address: assign remaining address to all boxes
+        const remainingAddr = next[0].receiver_address;
+        const singleBoxes = next.map((b) => ({ ...b, receiver_address: { ...remainingAddr } }));
+        onBoxesChange(singleBoxes);
+        onMultiAddressChange?.(false);
+      } else {
+        onBoxesChange(next);
+      }
     },
-    [groups, boxes, onBoxesChange],
+    [groups, boxes, onBoxesChange, onMultiAddressChange],
   );
 
   const addReceiver = useCallback(() => {
-    // Add a new box with empty receiver to trigger multi-address
+    // Add a new box with empty receiver for a new delivery address
     const emptyAddr: ShipmentAddress = {
       name: "",
       email: "",
@@ -128,8 +147,11 @@ export function ReceiverAddressesSection({
       receiver_address: emptyAddr,
       shipment_box_items: [],
     };
+
+    // Convert to multi-address mode — existing boxes keep their current address
+    onMultiAddressChange?.(true);
     onBoxesChange([...boxes, newBox]);
-  }, [boxes, onBoxesChange]);
+  }, [boxes, onBoxesChange, onMultiAddressChange]);
 
   return (
     <div>

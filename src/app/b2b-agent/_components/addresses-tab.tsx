@@ -28,6 +28,7 @@ interface AddressesTabProps {
   sellerProfile?: SellerProfile | null;
   sellerHistory?: SellerHistory | null;
   multiAddress: boolean;
+  onMultiAddressChange?: (multi: boolean) => void;
 }
 
 type SectionKey = "origin" | "destination" | "compliance";
@@ -67,6 +68,7 @@ export function AddressesTab({
   sellerProfile,
   sellerHistory,
   multiAddress,
+  onMultiAddressChange,
 }: AddressesTabProps) {
   const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
     origin: true,
@@ -140,6 +142,7 @@ export function AddressesTab({
                 boxes={boxes}
                 onBoxesChange={onBoxesChange}
                 multiAddress={multiAddress}
+                onMultiAddressChange={onMultiAddressChange}
                 sellerHistory={sellerHistory}
                 confidence={draft.confidence_scores?.receiver_address as Record<string, number> | undefined}
               />

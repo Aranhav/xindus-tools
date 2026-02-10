@@ -105,6 +105,7 @@ export function DraftDetailSheet({
   const [localBoxes, setLocalBoxes] = useState<ShipmentBox[] | null>(null);
   const [localProducts, setLocalProducts] = useState<ProductDetail[] | null>(null);
   const [reExtracting, setReExtracting] = useState(false);
+  const [manualMultiAddress, setManualMultiAddress] = useState(false);
 
   // Refs for stable access inside debounced effects
   const draftRef = useRef(draft);
@@ -131,6 +132,9 @@ export function DraftDetailSheet({
     }
     return false;
   }, [boxes]);
+
+  // Effective multi-address: computed from box data OR manually set by user
+  const effectiveMultiAddress = computedMultiAddress || manualMultiAddress;
 
   // Derive destination country from receiver addresses
   const derivedCountry = useMemo(() => {
@@ -213,7 +217,7 @@ export function DraftDetailSheet({
   /* ── Receiver sync: box[0] receiver → top-level receiver_address ── */
 
   useEffect(() => {
-    if (!localBoxes || computedMultiAddress) return;
+    if (!localBoxes || effectiveMultiAddress) return;
     const firstReceiver = localBoxes[0]?.receiver_address;
     if (!firstReceiver) return;
     const timer = setTimeout(() => {
@@ -264,7 +268,7 @@ export function DraftDetailSheet({
     }
 
     // Case 2: Boxes have empty receivers but top-level has data → fill boxes from top-level
-    if (!computedMultiAddress && topReceiver?.name) {
+    if (!effectiveMultiAddress && topReceiver?.name) {
       const needsInit = currentBoxes.some((b: ShipmentBox) => !b.receiver_address?.name);
       if (needsInit) {
         const updated = currentBoxes.map((b: ShipmentBox) =>
@@ -280,7 +284,7 @@ export function DraftDetailSheet({
 
   useEffect(() => {
     if (!data || !draft) return;
-    if (computedMultiAddress === !!data.multi_address_destination_delivery) return;
+    if (effectiveMultiAddress === !!data.multi_address_destination_delivery) return;
 
     const timer = setTimeout(() => {
       const d = draftRef.current;
@@ -289,13 +293,13 @@ export function DraftDetailSheet({
         onCorrect(d.id, [{
           field_path: "multi_address_destination_delivery",
           old_value: dd.multi_address_destination_delivery,
-          new_value: computedMultiAddress,
+          new_value: effectiveMultiAddress,
         }]);
       }
     }, 1000);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [computedMultiAddress]);
+  }, [effectiveMultiAddress]);
 
   /* ── Auto-calculate amazon_fba from marketplace ─────────── */
 
@@ -367,6 +371,7 @@ export function DraftDetailSheet({
         setEditingField(null);
         setLocalBoxes(null);
         setLocalProducts(null);
+        setManualMultiAddress(false);
       }
       onOpenChange(isOpen);
     },
@@ -377,6 +382,7 @@ export function DraftDetailSheet({
   useEffect(() => {
     setLocalBoxes(null);
     setLocalProducts(null);
+    setManualMultiAddress(false);
     if (draft?.seller_id && onFetchSellerHistory) {
       onFetchSellerHistory(draft.seller_id);
     }
@@ -535,7 +541,8 @@ export function DraftDetailSheet({
               sellerDefaults={sellerDefaults}
               sellerProfile={sellerProfile}
               sellerHistory={sellerHistory}
-              multiAddress={computedMultiAddress}
+              multiAddress={effectiveMultiAddress}
+              onMultiAddressChange={setManualMultiAddress}
             />
 
             {/* ── Boxes tab ─────────────────────────────────── */}
@@ -545,7 +552,7 @@ export function DraftDetailSheet({
                   Saving...
                 </Badge>
               )}
-              <BoxEditor boxes={boxes} onChange={setLocalBoxes} multiAddress={computedMultiAddress} previousReceiverAddresses={sellerHistory?.receiver_addresses} products={products} currency={data.billing_currency || data.shipping_currency || "USD"} />
+              <BoxEditor boxes={boxes} onChange={setLocalBoxes} multiAddress={effectiveMultiAddress} previousReceiverAddresses={sellerHistory?.receiver_addresses} products={products} currency={data.billing_currency || data.shipping_currency || "USD"} />
             </TabsContent>
 
             {/* ── Customs Products tab ──────────────────────── */}
