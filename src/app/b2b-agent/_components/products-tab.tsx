@@ -1,6 +1,7 @@
 "use client";
 
-import { Plus, Trash2, History } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Plus, Trash2, History, RefreshCw, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { currencySymbol } from "./editable-fields";
-import type { ProductDetail, TariffScenario } from "@/types/agent";
+import type { ProductDetail, ShipmentBox, TariffScenario, TariffLookupResult } from "@/types/agent";
 
 /* ── Gaia badge (reusable) ───────────────────────────────── */
 
@@ -71,6 +72,30 @@ function DutyBreakdownTooltip({
   );
 }
 
+/* ── Tariff lookup helper ────────────────────────────────── */
+
+async function lookupTariff(
+  tariffCode: string,
+  destination: string,
+  origin: string,
+): Promise<TariffLookupResult | null> {
+  try {
+    const res = await fetch("/api/b2b-agent/tariff-lookup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tariff_code: tariffCode,
+        destination_country: destination,
+        origin_country: origin,
+      }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 /* ── Product row ──────────────────────────────────────────── */
 
 function ProductRow({
@@ -78,17 +103,22 @@ function ProductRow({
   index,
   onChange,
   onRemove,
+  onRecalculate,
+  recalculating,
 }: {
   product: ProductDetail;
   index: number;
   onChange: (i: number, p: ProductDetail) => void;
   onRemove: (i: number) => void;
+  onRecalculate: (i: number) => void;
+  recalculating: boolean;
 }) {
   const set = (field: keyof ProductDetail, value: unknown) => {
     onChange(index, { ...product, [field]: value });
   };
 
   const isGaia = product.gaia_classified;
+  const hasIhsn = !!(product.ihsn ?? "").trim();
 
   return (
     <tr className="group border-b border-border/40 last:border-0">
@@ -116,9 +146,22 @@ function ProductRow({
             className={`h-7 font-mono text-xs ${isGaia && product.ihsn ? "border-emerald-200 dark:border-emerald-900" : ""}`}
             placeholder="10-digit"
           />
-          {isGaia && product.ihsn && (
-            <div className="flex justify-end"><GaiaBadge confidence={product.hsn_confidence} /></div>
-          )}
+          <div className="flex items-center justify-between gap-1">
+            {hasIhsn && (
+              <button
+                type="button"
+                disabled={recalculating}
+                onClick={() => onRecalculate(index)}
+                className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
+              >
+                <RotateCcw className={`h-2.5 w-2.5 ${recalculating ? "animate-spin" : ""}`} />
+                {recalculating ? "Looking up..." : "Recalculate duty"}
+              </button>
+            )}
+            {isGaia && product.ihsn && (
+              <GaiaBadge confidence={product.hsn_confidence} />
+            )}
+          </div>
         </div>
       </td>
       <td className="py-1.5 pr-2">
@@ -194,6 +237,34 @@ interface ProductsTabProps {
   setLocalProducts: (products: ProductDetail[] | null) => void;
   previousProducts?: ProductDetail[];
   currency?: string;
+  destinationCountry?: string;
+  boxes?: ShipmentBox[];
+  onBoxItemsUpdate?: (boxes: ShipmentBox[]) => void;
+  onClassify?: () => Promise<unknown>;
+}
+
+/* ── Helpers: propagate product duty to matching box items ── */
+
+function applyDutyToMatchingBoxItems(
+  boxes: ShipmentBox[],
+  product: ProductDetail,
+  result: TariffLookupResult,
+): ShipmentBox[] {
+  const desc = product.product_description.toLowerCase().trim();
+  return boxes.map((box) => ({
+    ...box,
+    shipment_box_items: box.shipment_box_items.map((item) => {
+      if (item.description.toLowerCase().trim() !== desc) return item;
+      return {
+        ...item,
+        ihsn: product.ihsn ?? item.ihsn,
+        duty_rate: result.duty_rate ?? item.duty_rate,
+        base_duty_rate: result.base_duty_rate ?? item.base_duty_rate,
+        tariff_scenarios: result.tariff_scenarios ?? item.tariff_scenarios,
+        gaia_classified: true,
+      };
+    }),
+  }));
 }
 
 /* ── Component ────────────────────────────────────────────── */
@@ -204,8 +275,15 @@ export function ProductsTab({
   setLocalProducts,
   previousProducts,
   currency,
+  destinationCountry,
+  boxes,
+  onBoxItemsUpdate,
+  onClassify,
 }: ProductsTabProps) {
   const sym = currencySymbol(currency);
+  const [recalcIdx, setRecalcIdx] = useState<number | null>(null);
+  const [classifying, setClassifying] = useState(false);
+
   // Filter out products that are already in the current list
   const currentKeys = new Set(
     products.map((p) => `${p.product_description.toLowerCase()}|${p.hsn_code.toLowerCase()}`),
@@ -218,13 +296,71 @@ export function ProductsTab({
     setLocalProducts([...products, { ...p }]);
   };
 
+  const handleRecalculate = useCallback(async (idx: number) => {
+    const product = products[idx];
+    if (!product?.ihsn) return;
+
+    setRecalcIdx(idx);
+    try {
+      const result = await lookupTariff(
+        product.ihsn,
+        destinationCountry || "US",
+        product.country_of_origin || "IN",
+      );
+      if (!result) return;
+
+      // Update product
+      const next = [...products];
+      next[idx] = {
+        ...next[idx],
+        duty_rate: result.duty_rate,
+        base_duty_rate: result.base_duty_rate,
+        tariff_scenarios: result.tariff_scenarios,
+        gaia_classified: true,
+      };
+      setLocalProducts(next);
+
+      // Propagate to matching box items
+      if (boxes && onBoxItemsUpdate) {
+        onBoxItemsUpdate(applyDutyToMatchingBoxItems(boxes, product, result));
+      }
+    } finally {
+      setRecalcIdx(null);
+    }
+  }, [products, destinationCountry, boxes, onBoxItemsUpdate, setLocalProducts]);
+
+  const handleClassify = useCallback(async () => {
+    if (!onClassify) return;
+    setClassifying(true);
+    try {
+      await onClassify();
+    } finally {
+      setClassifying(false);
+    }
+  }, [onClassify]);
+
   return (
     <TabsContent value="products" className="mt-0 px-6 py-4">
-      {productsModified && (
-        <Badge variant="outline" className="mb-2 text-[11px] text-primary">
-          Modified (unsaved)
-        </Badge>
-      )}
+      <div className="mb-2 flex items-center gap-2">
+        {productsModified && (
+          <Badge variant="outline" className="text-[11px] text-primary">
+            Modified (unsaved)
+          </Badge>
+        )}
+        <div className="flex-1" />
+        {onClassify && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1.5 text-xs"
+            disabled={classifying}
+            onClick={handleClassify}
+          >
+            <RefreshCw className={`h-3 w-3 ${classifying ? "animate-spin" : ""}`} />
+            {classifying ? "Classifying..." : "Classify with Gaia"}
+          </Button>
+        )}
+      </div>
       <div className="overflow-x-auto rounded-md border">
         <table className="w-full text-sm">
           <thead>
@@ -254,6 +390,8 @@ export function ProductsTab({
                 onRemove={(idx) => {
                   setLocalProducts(products.filter((_, j) => j !== idx));
                 }}
+                onRecalculate={handleRecalculate}
+                recalculating={recalcIdx === i}
               />
             ))}
             {products.length === 0 && (

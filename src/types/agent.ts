@@ -368,6 +368,17 @@ export interface UploadResponse {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Tariff lookup result                                               */
+/* ------------------------------------------------------------------ */
+
+export interface TariffLookupResult {
+  duty_rate: number | null;
+  base_duty_rate: number | null;
+  tariff_scenarios: TariffScenario[];
+  remedy_flags?: { add_risk?: boolean; cvd_risk?: boolean };
+}
+
+/* ------------------------------------------------------------------ */
 /*  Correction                                                         */
 /* ------------------------------------------------------------------ */
 

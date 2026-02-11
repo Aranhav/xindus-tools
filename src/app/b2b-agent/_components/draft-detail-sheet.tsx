@@ -107,7 +107,6 @@ export function DraftDetailSheet({
   const [localBoxes, setLocalBoxes] = useState<ShipmentBox[] | null>(null);
   const [localProducts, setLocalProducts] = useState<ProductDetail[] | null>(null);
   const [reExtracting, setReExtracting] = useState(false);
-  const [classifying, setClassifying] = useState(false);
   const [manualMultiAddress, setManualMultiAddress] = useState(false);
 
   // Refs for stable access inside debounced effects
@@ -550,33 +549,13 @@ export function DraftDetailSheet({
 
             {/* ── Boxes tab ─────────────────────────────────── */}
             <TabsContent value="boxes" className="mt-0 px-6 py-4">
-              <div className="mb-2 flex items-center gap-2">
-                {localBoxes !== null && (
+              {localBoxes !== null && (
+                <div className="mb-2">
                   <Badge variant="outline" className="text-[11px] text-primary">
                     Saving...
                   </Badge>
-                )}
-                <div className="flex-1" />
-                {onClassify && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 gap-1.5 text-xs"
-                    disabled={classifying || loading}
-                    onClick={async () => {
-                      setClassifying(true);
-                      try {
-                        await onClassify(draft.id);
-                      } finally {
-                        setClassifying(false);
-                      }
-                    }}
-                  >
-                    <RefreshCw className={`h-3 w-3 ${classifying ? "animate-spin" : ""}`} />
-                    {classifying ? "Classifying..." : "Classify with Gaia"}
-                  </Button>
-                )}
-              </div>
+                </div>
+              )}
               <BoxEditor boxes={boxes} onChange={setLocalBoxes} multiAddress={effectiveMultiAddress} previousReceiverAddresses={sellerHistory?.receiver_addresses} products={products} currency={data.billing_currency || data.shipping_currency || "USD"} />
             </TabsContent>
 
@@ -587,6 +566,10 @@ export function DraftDetailSheet({
               setLocalProducts={setLocalProducts}
               previousProducts={sellerHistory?.products}
               currency={data.billing_currency}
+              destinationCountry={derivedCountry || data.country || "US"}
+              boxes={boxes}
+              onBoxItemsUpdate={setLocalBoxes}
+              onClassify={onClassify ? () => onClassify(draft.id) : undefined}
             />
           </ScrollArea>
         </Tabs>
