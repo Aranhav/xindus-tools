@@ -9,6 +9,7 @@ import { TabsContent } from "@/components/ui/tabs";
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 import { currencySymbol } from "./editable-fields";
 import type { ProductDetail, ShipmentBox, TariffScenario, TariffLookupResult } from "@/types/agent";
 
@@ -243,28 +244,51 @@ interface ProductsTabProps {
   onClassify?: () => Promise<unknown>;
 }
 
-/* ── Helpers: propagate product duty to matching box items ── */
+/* ── Helpers: propagate product changes to matching box items ── */
 
-function applyDutyToMatchingBoxItems(
+function propagateProductToBoxItems(
   boxes: ShipmentBox[],
-  product: ProductDetail,
-  result: TariffLookupResult,
-): ShipmentBox[] {
-  const desc = product.product_description.toLowerCase().trim();
-  return boxes.map((box) => ({
+  oldProduct: ProductDetail,
+  newProduct: ProductDetail,
+): ShipmentBox[] | null {
+  const matchDesc = oldProduct.product_description.toLowerCase().trim();
+  if (!matchDesc) return null;
+
+  // Build a patch of only changed fields
+  const patch: Record<string, unknown> = {};
+  if (oldProduct.product_description !== newProduct.product_description)
+    patch.description = newProduct.product_description;
+  if (oldProduct.ihsn !== newProduct.ihsn)
+    patch.ihsn = newProduct.ihsn ?? "";
+  if (oldProduct.hsn_code !== newProduct.hsn_code)
+    patch.ehsn = newProduct.hsn_code ?? "";
+  if (oldProduct.duty_rate !== newProduct.duty_rate)
+    patch.duty_rate = newProduct.duty_rate;
+  if (oldProduct.base_duty_rate !== newProduct.base_duty_rate)
+    patch.base_duty_rate = newProduct.base_duty_rate;
+  if (oldProduct.tariff_scenarios !== newProduct.tariff_scenarios)
+    patch.tariff_scenarios = newProduct.tariff_scenarios;
+  if (oldProduct.country_of_origin !== newProduct.country_of_origin)
+    patch.country_of_origin = newProduct.country_of_origin ?? "";
+  if (oldProduct.unit_price !== newProduct.unit_price)
+    patch.unit_price = newProduct.unit_price;
+  if (oldProduct.gaia_classified !== newProduct.gaia_classified)
+    patch.gaia_classified = newProduct.gaia_classified;
+  if (oldProduct.hsn_confidence !== newProduct.hsn_confidence)
+    patch.hsn_confidence = newProduct.hsn_confidence;
+
+  if (Object.keys(patch).length === 0) return null;
+
+  let anyUpdated = false;
+  const updated = boxes.map((box) => ({
     ...box,
     shipment_box_items: box.shipment_box_items.map((item) => {
-      if (item.description.toLowerCase().trim() !== desc) return item;
-      return {
-        ...item,
-        ihsn: product.ihsn ?? item.ihsn,
-        duty_rate: result.duty_rate ?? item.duty_rate,
-        base_duty_rate: result.base_duty_rate ?? item.base_duty_rate,
-        tariff_scenarios: result.tariff_scenarios ?? item.tariff_scenarios,
-        gaia_classified: true,
-      };
+      if (item.description.toLowerCase().trim() !== matchDesc) return item;
+      anyUpdated = true;
+      return { ...item, ...patch };
     }),
   }));
+  return anyUpdated ? updated : null;
 }
 
 /* ── Component ────────────────────────────────────────────── */
@@ -307,23 +331,33 @@ export function ProductsTab({
         destinationCountry || "US",
         product.country_of_origin || "IN",
       );
-      if (!result) return;
+      if (!result) {
+        toast.error("Tariff lookup failed", {
+          description: `No tariff data found for ${product.ihsn}`,
+        });
+        return;
+      }
 
       // Update product
-      const next = [...products];
-      next[idx] = {
-        ...next[idx],
+      const oldProduct = products[idx];
+      const updatedProduct: ProductDetail = {
+        ...oldProduct,
         duty_rate: result.duty_rate,
         base_duty_rate: result.base_duty_rate,
         tariff_scenarios: result.tariff_scenarios,
         gaia_classified: true,
       };
+      const next = [...products];
+      next[idx] = updatedProduct;
       setLocalProducts(next);
 
       // Propagate to matching box items
       if (boxes && onBoxItemsUpdate) {
-        onBoxItemsUpdate(applyDutyToMatchingBoxItems(boxes, product, result));
+        const updatedBoxes = propagateProductToBoxItems(boxes, oldProduct, updatedProduct);
+        if (updatedBoxes) onBoxItemsUpdate(updatedBoxes);
       }
+    } catch {
+      toast.error("Tariff lookup failed");
     } finally {
       setRecalcIdx(null);
     }
@@ -383,9 +417,15 @@ export function ProductsTab({
                 product={p}
                 index={i}
                 onChange={(idx, updated) => {
+                  const old = products[idx];
                   const next = [...products];
                   next[idx] = updated;
                   setLocalProducts(next);
+                  // Propagate changes to matching box items
+                  if (boxes && onBoxItemsUpdate) {
+                    const updatedBoxes = propagateProductToBoxItems(boxes, old, updated);
+                    if (updatedBoxes) onBoxItemsUpdate(updatedBoxes);
+                  }
                 }}
                 onRemove={(idx) => {
                   setLocalProducts(products.filter((_, j) => j !== idx));

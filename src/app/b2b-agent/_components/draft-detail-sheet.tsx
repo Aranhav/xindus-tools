@@ -380,6 +380,39 @@ export function DraftDetailSheet({
     [onOpenChange],
   );
 
+  /* ── Classify with Gaia: flush pending changes, classify, reset ── */
+
+  const handleClassify = useCallback(async () => {
+    if (!onClassify || !draft || !data) return;
+
+    // 1. Flush any pending local changes before classifying
+    const corrections: CorrectionItem[] = [];
+    if (localProducts) {
+      corrections.push({
+        field_path: "product_details",
+        old_value: data.product_details,
+        new_value: localProducts,
+      });
+    }
+    if (localBoxes) {
+      corrections.push({
+        field_path: "shipment_boxes",
+        old_value: data.shipment_boxes,
+        new_value: localBoxes,
+      });
+    }
+    if (corrections.length > 0) {
+      await onCorrect(draft.id, corrections);
+    }
+
+    // 2. Classify (backend reads from DB which now has our flushed changes)
+    await onClassify(draft.id);
+
+    // 3. Reset local state so server data takes effect
+    setLocalProducts(null);
+    setLocalBoxes(null);
+  }, [onClassify, draft, data, localProducts, localBoxes, onCorrect]);
+
   // Reset when draft changes + fetch seller history
   useEffect(() => {
     setLocalBoxes(null);
@@ -569,7 +602,7 @@ export function DraftDetailSheet({
               destinationCountry={derivedCountry || data.country || "US"}
               boxes={boxes}
               onBoxItemsUpdate={setLocalBoxes}
-              onClassify={onClassify ? () => onClassify(draft.id) : undefined}
+              onClassify={onClassify ? handleClassify : undefined}
             />
           </ScrollArea>
         </Tabs>
