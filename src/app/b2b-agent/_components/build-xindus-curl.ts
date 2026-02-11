@@ -84,7 +84,7 @@ export function buildXindusPayload(data: ShipmentData) {
       shipping_method: data.shipping_method || "AN",
       terms_of_trade: data.terms_of_trade || "DAP",
       tax_type: data.tax_type || "GST",
-      service: "XB2B",
+      service: "Commercial",
       purpose: data.purpose_of_booking || "Sold",
       market_place: data.marketplace || "other",
       use_provided_hsn: true,
