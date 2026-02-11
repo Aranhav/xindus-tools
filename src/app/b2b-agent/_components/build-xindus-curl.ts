@@ -43,6 +43,20 @@ function normalizeCountry(raw: string | undefined): string {
   return COUNTRY_MAP[trimmed.toLowerCase()] || trimmed;
 }
 
+/* ── Normalize zip: strip ZIP+4 extension (e.g. 18031-1536 → 18031) */
+
+function normalizeZip(zip: string | undefined, country: string | undefined): string {
+  if (!zip) return "";
+  const trimmed = zip.trim();
+  // US ZIP+4: strip the -XXXX suffix
+  const cc = normalizeCountry(country);
+  if (cc === "US" || cc === "" || !cc) {
+    const m = trimmed.match(/^(\d{5})(-\d{4})?$/);
+    if (m) return m[1];
+  }
+  return trimmed;
+}
+
 /* ── Strip dots/periods from HSN codes ─────────────────────── */
 
 function normalizeHsn(raw: string | undefined): string {
@@ -60,7 +74,7 @@ function mapAddress(addr: ShipmentAddress | undefined) {
     phone: addr.phone || "",
     address: addr.address || "",
     city: addr.city || "",
-    zip: addr.zip || "",
+    zip: normalizeZip(addr.zip, addr.country),
     state: addr.state || "",
     country: normalizeCountry(addr.country),
     extension_number: addr.extension_number || "",
