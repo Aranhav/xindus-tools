@@ -196,6 +196,15 @@ export function buildXindusPayload(data: ShipmentData) {
     shipmentReferences: data.shipment_references || data.export_reference || data.invoice_number || "",
     exportReference: data.export_reference || data.shipment_references || data.invoice_number || "",
     invoiceDate: normalizeDate(data.invoice_date),
+
+    // Documents (backend injects real URLs; placeholder here for structure)
+    documentsDTOS: [{
+      id: Date.now(),
+      name: "invoice",
+      type: "invoice",
+      url: "",
+      documentNumber: data.invoice_number || "",
+    }],
   };
 }
 
