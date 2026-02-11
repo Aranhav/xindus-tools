@@ -116,6 +116,7 @@ export function ProductsTab({
   const sym = currencySymbol(currency);
   const [recalcIdx, setRecalcIdx] = useState<number | null>(null);
   const [classifying, setClassifying] = useState(false);
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
   // Filter out products that are already in the current list
   const currentKeys = new Set(
@@ -243,12 +244,15 @@ export function ProductsTab({
 
   return (
     <TabsContent value="products" className="mt-0 px-6 py-4">
-      <div className="mb-2 flex items-center gap-2">
+      <div className="mb-3 flex items-center gap-2">
         {productsModified && (
           <Badge variant="outline" className="text-[11px] text-primary">
             Modified (unsaved)
           </Badge>
         )}
+        <span className="text-xs text-muted-foreground">
+          {products.length} product{products.length !== 1 ? "s" : ""}
+        </span>
         <div className="flex-1" />
         {onClassify && (
           <Button
@@ -263,19 +267,17 @@ export function ProductsTab({
           </Button>
         )}
       </div>
-      <div className="overflow-x-auto rounded-md border">
+
+      <div className="overflow-hidden rounded-md border">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/30 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
-              <th className="px-3 py-2">Description</th>
-              <th className="px-3 py-2 w-28">Export HSN</th>
-              <th className="px-3 py-2 w-28">Import HSN</th>
-              <th className="px-3 py-2 w-20 text-right">Value {sym && <span className="normal-case">({sym})</span>}</th>
-              <th className="px-3 py-2 w-16">Origin</th>
-              <th className="px-3 py-2 w-20 text-right">Unit Price {sym && <span className="normal-case">({sym})</span>}</th>
-              <th className="px-3 py-2 w-20 text-right">Duty %</th>
-              <th className="px-3 py-2 w-16 text-right">IGST %</th>
-              <th className="px-3 py-2 w-12" />
+              <th className="w-7 py-2 pl-3 pr-0" />
+              <th className="py-2 pr-3">Description</th>
+              <th className="py-2 pr-3">
+                HSN {sym && <span className="normal-case text-muted-foreground/60">Export / Import</span>}
+              </th>
+              <th className="w-20 py-2 pr-3 text-right">Duty</th>
             </tr>
           </thead>
           <tbody>
@@ -284,8 +286,11 @@ export function ProductsTab({
                 key={i}
                 product={p}
                 index={i}
+                expanded={expandedIdx === i}
+                onToggle={() => setExpandedIdx(expandedIdx === i ? null : i)}
                 onSave={handleProductSave}
                 onRemove={(idx) => {
+                  setExpandedIdx(null);
                   setLocalProducts(products.filter((_, j) => j !== idx));
                 }}
                 onRecalculate={handleRecalculate}
@@ -294,7 +299,7 @@ export function ProductsTab({
             ))}
             {products.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-3 py-6 text-center text-xs text-muted-foreground">
+                <td colSpan={4} className="px-3 py-8 text-center text-xs text-muted-foreground">
                   No customs products added yet.
                 </td>
               </tr>
@@ -302,15 +307,18 @@ export function ProductsTab({
           </tbody>
         </table>
       </div>
+
       <Button
         variant="outline"
         size="sm"
         className="mt-2 w-full gap-1.5"
         onClick={() => {
+          const newIdx = products.length;
           setLocalProducts([
             ...products,
             { product_description: "", hsn_code: "", value: 0, country_of_origin: "IN" },
           ]);
+          setExpandedIdx(newIdx);
         }}
       >
         <Plus className="h-3.5 w-3.5" />
@@ -335,9 +343,6 @@ export function ProductsTab({
                 <span className="max-w-[240px] truncate">{p.product_description}</span>
                 {p.hsn_code && (
                   <span className="font-mono text-[11px] text-muted-foreground">{p.hsn_code}</span>
-                )}
-                {p.country_of_origin && (
-                  <span className="text-[11px] text-muted-foreground">{p.country_of_origin}</span>
                 )}
                 <Plus className="h-3 w-3 text-primary" />
               </button>
