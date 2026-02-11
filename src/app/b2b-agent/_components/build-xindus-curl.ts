@@ -61,6 +61,21 @@ function mapBox(box: ShipmentBox, idx: number) {
   };
 }
 
+/* ── Normalize date to yyyy-MM-dd ─────────────────────────── */
+
+function normalizeDate(raw: string | undefined): string {
+  if (!raw) return new Date().toISOString().split("T")[0];
+  // Already yyyy-MM-dd
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  // dd.MM.yyyy or dd/MM/yyyy or dd-MM-yyyy
+  const m = raw.match(/^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  // MM/dd/yyyy (US format) — try parsing
+  const parsed = new Date(raw);
+  if (!isNaN(parsed.getTime())) return parsed.toISOString().split("T")[0];
+  return new Date().toISOString().split("T")[0];
+}
+
 /* ── Main: build the Xindus Partner API payload ───────────── */
 
 export function buildXindusPayload(data: ShipmentData) {
@@ -84,7 +99,7 @@ export function buildXindusPayload(data: ShipmentData) {
     },
     order_reference_number: data.export_reference || data.shipment_references || data.invoice_number || "",
     invoice_number: data.invoice_number || "",
-    invoice_date: data.invoice_date || new Date().toISOString().split("T")[0],
+    invoice_date: normalizeDate(data.invoice_date),
     shipping_currency: data.shipping_currency || "INR",
     freight_charges: "0",
     insurance_charges: "0",
