@@ -169,7 +169,7 @@ export default function B2BAgentPage() {
 
   const handleCorrect = useCallback(
     (draftId: string, corrections: Parameters<typeof agent.applyCorrections>[1]) => {
-      agent.applyCorrections(draftId, corrections);
+      return agent.applyCorrections(draftId, corrections);
     },
     [agent],
   );

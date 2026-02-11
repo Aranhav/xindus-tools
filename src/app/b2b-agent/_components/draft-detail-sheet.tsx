@@ -67,7 +67,7 @@ interface DraftDetailSheetProps {
   draft: DraftDetail | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCorrect: (draftId: string, corrections: CorrectionItem[]) => void;
+  onCorrect: (draftId: string, corrections: CorrectionItem[]) => Promise<unknown> | void;
   onApprove: (draftId: string) => void;
   onReject: (draftId: string) => void;
   onReExtract: (draftId: string) => Promise<void> | void;

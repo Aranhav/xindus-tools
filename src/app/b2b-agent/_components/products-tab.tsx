@@ -1,77 +1,14 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Plus, Trash2, History, RefreshCw, RotateCcw } from "lucide-react";
+import { Plus, History, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { TabsContent } from "@/components/ui/tabs";
-import {
-  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { currencySymbol } from "./editable-fields";
-import type { ProductDetail, ShipmentBox, TariffScenario, TariffLookupResult } from "@/types/agent";
-
-/* ── Gaia badge (reusable) ───────────────────────────────── */
-
-function GaiaBadge({ confidence }: { confidence?: string }) {
-  const colors = confidence === "HIGH"
-    ? "bg-emerald-50 text-emerald-500 dark:bg-emerald-950/20 dark:text-emerald-500/80"
-    : confidence === "MEDIUM"
-      ? "bg-amber-50 text-amber-500 dark:bg-amber-950/20 dark:text-amber-500/80"
-      : confidence === "LOW"
-        ? "bg-red-50 text-red-400 dark:bg-red-950/20 dark:text-red-400/80"
-        : "bg-emerald-50 text-emerald-500 dark:bg-emerald-950/20 dark:text-emerald-500/80";
-  return (
-    <span className={`rounded px-1 py-px text-[9px] font-medium leading-none ${colors}`}>
-      Gaia{confidence ? ` · ${confidence[0]}${confidence.slice(1).toLowerCase()}` : ""}
-    </span>
-  );
-}
-
-/* ── Duty breakdown tooltip ─────────────────────────────── */
-
-function DutyBreakdownTooltip({
-  baseDuty,
-  scenarios,
-  children,
-}: {
-  baseDuty?: number | null;
-  scenarios?: TariffScenario[];
-  children: React.ReactNode;
-}) {
-  const active = (scenarios ?? []).filter((s) => s.is_additional && s.value > 0 && s.is_approved !== false);
-  if (baseDuty == null || active.length === 0) return <>{children}</>;
-
-  return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>{children}</TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs text-xs">
-          <div className="space-y-1">
-            <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Base MFN rate</span>
-              <span className="font-mono">{baseDuty}%</span>
-            </div>
-            {active.map((s, i) => (
-              <div key={i} className="flex justify-between gap-4">
-                <span className="text-muted-foreground">{s.title}</span>
-                <span className="font-mono">+{s.value}%</span>
-              </div>
-            ))}
-            <div className="flex justify-between gap-4 border-t pt-1 font-semibold">
-              <span>Total duty</span>
-              <span className="font-mono">
-                {(baseDuty + active.reduce((sum, s) => sum + s.value, 0)).toFixed(1)}%
-              </span>
-            </div>
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
+import { ProductRow } from "./product-row";
+import type { ProductDetail, ShipmentBox, TariffLookupResult } from "@/types/agent";
 
 /* ── Tariff lookup helper ────────────────────────────────── */
 
@@ -95,153 +32,6 @@ async function lookupTariff(
   } catch {
     return null;
   }
-}
-
-/* ── Product row ──────────────────────────────────────────── */
-
-function ProductRow({
-  product,
-  index,
-  onChange,
-  onRemove,
-  onRecalculate,
-  recalculating,
-}: {
-  product: ProductDetail;
-  index: number;
-  onChange: (i: number, p: ProductDetail) => void;
-  onRemove: (i: number) => void;
-  onRecalculate: (i: number) => void;
-  recalculating: boolean;
-}) {
-  const set = (field: keyof ProductDetail, value: unknown) => {
-    onChange(index, { ...product, [field]: value });
-  };
-
-  const isGaia = product.gaia_classified;
-  const hasIhsn = !!(product.ihsn ?? "").trim();
-
-  return (
-    <tr className="group border-b border-border/40 last:border-0">
-      <td className="py-1.5 pr-2">
-        <Input
-          value={product.product_description}
-          onChange={(e) => set("product_description", e.target.value)}
-          className="h-7 text-xs"
-          placeholder="Product description"
-        />
-      </td>
-      <td className="py-1.5 pr-2">
-        <Input
-          value={product.hsn_code}
-          onChange={(e) => set("hsn_code", e.target.value)}
-          className="h-7 font-mono text-xs"
-          placeholder="8-digit"
-        />
-      </td>
-      <td className="py-1.5 pr-2">
-        <div className="space-y-0.5">
-          <Input
-            value={product.ihsn ?? ""}
-            onChange={(e) => set("ihsn", e.target.value)}
-            className={`h-7 font-mono text-xs ${isGaia && product.ihsn ? "border-emerald-200 dark:border-emerald-900" : ""}`}
-            placeholder="10-digit"
-          />
-          <div className="flex items-center justify-between gap-1">
-            {hasIhsn && (
-              <button
-                type="button"
-                disabled={recalculating}
-                onClick={() => onRecalculate(index)}
-                className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground transition-colors hover:text-primary disabled:opacity-50"
-              >
-                <RotateCcw className={`h-2.5 w-2.5 ${recalculating ? "animate-spin" : ""}`} />
-                {recalculating ? "Looking up..." : "Recalculate duty"}
-              </button>
-            )}
-            {isGaia && product.ihsn && (
-              <GaiaBadge confidence={product.hsn_confidence} />
-            )}
-          </div>
-        </div>
-      </td>
-      <td className="py-1.5 pr-2">
-        <Input
-          type="number"
-          value={product.value ?? ""}
-          onChange={(e) => set("value", Number(e.target.value) || 0)}
-          className="h-7 text-right text-xs"
-          placeholder="0"
-        />
-      </td>
-      <td className="py-1.5 pr-2">
-        <Input
-          value={product.country_of_origin ?? ""}
-          onChange={(e) => set("country_of_origin", e.target.value)}
-          className="h-7 text-xs"
-          placeholder="IN"
-        />
-      </td>
-      <td className="py-1.5 pr-2">
-        <Input
-          type="number"
-          value={product.unit_price ?? ""}
-          onChange={(e) => set("unit_price", e.target.value ? Number(e.target.value) : null)}
-          className="h-7 text-right text-xs"
-          placeholder="0"
-        />
-      </td>
-      <td className="py-1.5 pr-2">
-        <DutyBreakdownTooltip baseDuty={product.base_duty_rate} scenarios={product.tariff_scenarios}>
-          <div className="space-y-0.5">
-            <Input
-              type="number"
-              value={product.duty_rate ?? ""}
-              onChange={(e) => set("duty_rate", e.target.value ? Number(e.target.value) : null)}
-              className={`h-7 text-right text-xs ${isGaia && product.duty_rate != null ? "border-emerald-200 dark:border-emerald-900" : ""}`}
-              placeholder="%"
-            />
-            {isGaia && product.duty_rate != null && (
-              <div className="flex justify-end"><GaiaBadge confidence={product.hsn_confidence} /></div>
-            )}
-          </div>
-        </DutyBreakdownTooltip>
-      </td>
-      <td className="py-1.5 pr-2">
-        <Input
-          type="number"
-          value={product.igst_percent ?? ""}
-          onChange={(e) => set("igst_percent", e.target.value ? Number(e.target.value) : null)}
-          className="h-7 text-right text-xs"
-          placeholder="%"
-        />
-      </td>
-      <td className="py-1.5 text-right">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-destructive opacity-0 transition-opacity group-hover:opacity-100"
-          onClick={() => onRemove(index)}
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
-      </td>
-    </tr>
-  );
-}
-
-/* ── Props ────────────────────────────────────────────────── */
-
-interface ProductsTabProps {
-  products: ProductDetail[];
-  productsModified: boolean;
-  setLocalProducts: (products: ProductDetail[] | null) => void;
-  previousProducts?: ProductDetail[];
-  currency?: string;
-  destinationCountry?: string;
-  boxes?: ShipmentBox[];
-  onBoxItemsUpdate?: (boxes: ShipmentBox[]) => void;
-  onClassify?: () => Promise<unknown>;
 }
 
 /* ── Helpers: propagate product changes to matching box items ── */
@@ -272,6 +62,8 @@ function propagateProductToBoxItems(
     patch.country_of_origin = newProduct.country_of_origin ?? "";
   if (oldProduct.unit_price !== newProduct.unit_price)
     patch.unit_price = newProduct.unit_price;
+  if (oldProduct.igst_percent !== newProduct.igst_percent)
+    patch.igst_amount = newProduct.igst_percent;
   if (oldProduct.gaia_classified !== newProduct.gaia_classified)
     patch.gaia_classified = newProduct.gaia_classified;
   if (oldProduct.hsn_confidence !== newProduct.hsn_confidence)
@@ -289,6 +81,20 @@ function propagateProductToBoxItems(
     }),
   }));
   return anyUpdated ? updated : null;
+}
+
+/* ── Props ────────────────────────────────────────────────── */
+
+interface ProductsTabProps {
+  products: ProductDetail[];
+  productsModified: boolean;
+  setLocalProducts: (products: ProductDetail[] | null) => void;
+  previousProducts?: ProductDetail[];
+  currency?: string;
+  destinationCountry?: string;
+  boxes?: ShipmentBox[];
+  onBoxItemsUpdate?: (boxes: ShipmentBox[]) => void;
+  onClassify?: () => Promise<unknown>;
 }
 
 /* ── Component ────────────────────────────────────────────── */
@@ -356,12 +162,71 @@ export function ProductsTab({
         const updatedBoxes = propagateProductToBoxItems(boxes, oldProduct, updatedProduct);
         if (updatedBoxes) onBoxItemsUpdate(updatedBoxes);
       }
+
+      toast.success("Duty recalculated", {
+        description: `${result.duty_rate}% for ${product.ihsn}`,
+      });
     } catch {
       toast.error("Tariff lookup failed");
     } finally {
       setRecalcIdx(null);
     }
   }, [products, destinationCountry, boxes, onBoxItemsUpdate, setLocalProducts]);
+
+  /* ── Save handler from ProductRow edit mode ──────────────── */
+
+  const handleProductSave = useCallback(async (
+    idx: number,
+    updated: ProductDetail,
+    original: ProductDetail,
+  ) => {
+    const next = [...products];
+    next[idx] = updated;
+    setLocalProducts(next);
+
+    // Propagate to box items — use ORIGINAL description for matching
+    if (boxes && onBoxItemsUpdate) {
+      const updatedBoxes = propagateProductToBoxItems(boxes, original, updated);
+      if (updatedBoxes) onBoxItemsUpdate(updatedBoxes);
+    }
+
+    // Auto-recalculate duty if IHSN changed
+    if (updated.ihsn && updated.ihsn !== original.ihsn) {
+      setRecalcIdx(idx);
+      try {
+        const result = await lookupTariff(
+          updated.ihsn,
+          destinationCountry || "US",
+          updated.country_of_origin || "IN",
+        );
+        if (result) {
+          const withDuty: ProductDetail = {
+            ...updated,
+            duty_rate: result.duty_rate,
+            base_duty_rate: result.base_duty_rate,
+            tariff_scenarios: result.tariff_scenarios,
+            gaia_classified: true,
+          };
+          const next2 = [...products];
+          next2[idx] = withDuty;
+          setLocalProducts(next2);
+
+          if (boxes && onBoxItemsUpdate) {
+            const dutyBoxes = propagateProductToBoxItems(boxes, original, withDuty);
+            if (dutyBoxes) onBoxItemsUpdate(dutyBoxes);
+          }
+
+          toast.success("Duty recalculated", {
+            description: `${result.duty_rate}% for ${updated.ihsn}`,
+          });
+        }
+      } catch {
+        // Tariff lookup failed — product changes still saved
+      } finally {
+        setRecalcIdx(null);
+      }
+    }
+  }, [products, boxes, onBoxItemsUpdate, setLocalProducts, destinationCountry]);
 
   const handleClassify = useCallback(async () => {
     if (!onClassify) return;
@@ -407,7 +272,7 @@ export function ProductsTab({
               <th className="px-3 py-2 w-20 text-right">Unit Price {sym && <span className="normal-case">({sym})</span>}</th>
               <th className="px-3 py-2 w-20 text-right">Duty %</th>
               <th className="px-3 py-2 w-16 text-right">IGST %</th>
-              <th className="px-3 py-2 w-8" />
+              <th className="px-3 py-2 w-12" />
             </tr>
           </thead>
           <tbody>
@@ -416,17 +281,7 @@ export function ProductsTab({
                 key={i}
                 product={p}
                 index={i}
-                onChange={(idx, updated) => {
-                  const old = products[idx];
-                  const next = [...products];
-                  next[idx] = updated;
-                  setLocalProducts(next);
-                  // Propagate changes to matching box items
-                  if (boxes && onBoxItemsUpdate) {
-                    const updatedBoxes = propagateProductToBoxItems(boxes, old, updated);
-                    if (updatedBoxes) onBoxItemsUpdate(updatedBoxes);
-                  }
-                }}
+                onSave={handleProductSave}
                 onRemove={(idx) => {
                   setLocalProducts(products.filter((_, j) => j !== idx));
                 }}
