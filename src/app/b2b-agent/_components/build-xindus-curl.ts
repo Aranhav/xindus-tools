@@ -15,7 +15,7 @@ import type {
 /* ── Address: map to Xindus format ────────────────────────── */
 
 function mapAddress(addr: ShipmentAddress | undefined) {
-  if (!addr) return {};
+  if (!addr) return undefined;
   return {
     name: addr.name || "",
     email: addr.email || "",
@@ -27,6 +27,11 @@ function mapAddress(addr: ShipmentAddress | undefined) {
     country: addr.country || "",
     extension_number: addr.extension_number || "",
   };
+}
+
+/** Returns true if an address has at least a name filled in. */
+function hasAddress(addr: ShipmentAddress | undefined): boolean {
+  return !!addr?.name?.trim();
 }
 
 /* ── Box item: map to Xindus Partner API field names ──────── */
@@ -45,6 +50,7 @@ function mapBoxItem(item: ShipmentBoxItem) {
     unit_fob_value: String(item.unit_fob_value ?? item.unit_price ?? 0),
     sku: "",
     country_of_origin: item.country_of_origin || "IN",
+    pga_docs: [],
   };
 }
 
@@ -79,6 +85,11 @@ function normalizeDate(raw: string | undefined): string {
 /* ── Main: build the Xindus Partner API payload ───────────── */
 
 export function buildXindusPayload(data: ShipmentData) {
+  // Billing falls back to shipper if not explicitly filled
+  const billingSource = hasAddress(data.billing_address)
+    ? data.billing_address
+    : data.shipper_address;
+
   return {
     shipment_config: {
       shipping_method: data.shipping_method || "AN",
@@ -95,7 +106,7 @@ export function buildXindusPayload(data: ShipmentData) {
       auto_deduct_payment: true,
       auto_generate_label: true,
       avail_xindus_assure: true,
-      pga_items_included: true,
+      pga_items_included: false,
     },
     order_reference_number: data.export_reference || data.shipment_references || data.invoice_number || "",
     invoice_number: data.invoice_number || "",
@@ -109,7 +120,7 @@ export function buildXindusPayload(data: ShipmentData) {
 
     shipper_address: mapAddress(data.shipper_address),
     receiver_address: mapAddress(data.receiver_address),
-    billing_address: mapAddress(data.billing_address),
+    billing_address: mapAddress(billingSource),
   };
 }
 
