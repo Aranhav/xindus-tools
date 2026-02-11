@@ -191,8 +191,9 @@ export function validateForXindus(data: ShipmentData): ValidationIssue[] {
         issues.push({ category: "item", message: `${itLbl} → export HSN (ehsn) is required` });
       if (!it.ihsn?.trim())
         issues.push({ category: "item", message: `${itLbl} → import HSN (ihsn) is required` });
-      if (it.unit_fob_value == null || it.unit_fob_value <= 0)
-        issues.push({ category: "item", message: `${itLbl} → FOB value must be > 0` });
+      const effectiveFob = it.unit_fob_value ?? it.unit_price ?? 0;
+      if (effectiveFob <= 0)
+        issues.push({ category: "item", message: `${itLbl} → FOB value or unit price must be > 0` });
     }
   }
 
