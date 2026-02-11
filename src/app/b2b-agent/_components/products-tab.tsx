@@ -15,14 +15,14 @@ import type { ProductDetail, TariffScenario } from "@/types/agent";
 
 function GaiaBadge({ confidence }: { confidence?: string }) {
   const colors = confidence === "HIGH"
-    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400"
+    ? "bg-emerald-50 text-emerald-500 dark:bg-emerald-950/20 dark:text-emerald-500/80"
     : confidence === "MEDIUM"
-      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400"
+      ? "bg-amber-50 text-amber-500 dark:bg-amber-950/20 dark:text-amber-500/80"
       : confidence === "LOW"
-        ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"
-        : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400";
+        ? "bg-red-50 text-red-400 dark:bg-red-950/20 dark:text-red-400/80"
+        : "bg-emerald-50 text-emerald-500 dark:bg-emerald-950/20 dark:text-emerald-500/80";
   return (
-    <span className={`rounded px-1 py-px text-[9px] font-semibold leading-none ${colors}`}>
+    <span className={`rounded px-1 py-px text-[9px] font-medium leading-none ${colors}`}>
       Gaia{confidence ? ` · ${confidence[0]}${confidence.slice(1).toLowerCase()}` : ""}
     </span>
   );
@@ -113,7 +113,7 @@ function ProductRow({
           <Input
             value={product.ihsn ?? ""}
             onChange={(e) => set("ihsn", e.target.value)}
-            className={`h-7 font-mono text-xs ${isGaia && product.ihsn ? "border-emerald-300 dark:border-emerald-800" : ""}`}
+            className={`h-7 font-mono text-xs ${isGaia && product.ihsn ? "border-emerald-200 dark:border-emerald-900" : ""}`}
             placeholder="10-digit"
           />
           {isGaia && product.ihsn && (
@@ -154,7 +154,7 @@ function ProductRow({
               type="number"
               value={product.duty_rate ?? ""}
               onChange={(e) => set("duty_rate", e.target.value ? Number(e.target.value) : null)}
-              className={`h-7 text-right text-xs ${isGaia && product.duty_rate != null ? "border-emerald-300 dark:border-emerald-800" : ""}`}
+              className={`h-7 text-right text-xs ${isGaia && product.duty_rate != null ? "border-emerald-200 dark:border-emerald-900" : ""}`}
               placeholder="%"
             />
             {isGaia && product.duty_rate != null && (
