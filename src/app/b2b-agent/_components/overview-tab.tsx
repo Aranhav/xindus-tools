@@ -55,6 +55,26 @@ import {
 } from "./editable-fields";
 import type { ShipmentData, DraftDetail } from "@/types/agent";
 
+/* ── Document type display maps ──────────────────────────── */
+
+const DOC_TYPE_LABELS: Record<string, string> = {
+  invoice: "Invoice",
+  packing_list: "Packing List",
+  certificate: "Certificate",
+  bill_of_lading: "B/L",
+  purchase_order: "PO",
+  other: "Other",
+};
+
+const DOC_TYPE_COLORS: Record<string, string> = {
+  invoice: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  packing_list: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  certificate: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
+  bill_of_lading: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+  purchase_order: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300",
+  other: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+};
+
 /* ── Field props shared by EditableField ──────────────────── */
 
 export interface FieldProps {
@@ -304,34 +324,40 @@ export function OverviewTab({
           borderColor="border-rose-200/50 dark:border-rose-900/40"
         >
           <div className="flex flex-wrap gap-2">
-            {draft.files.map((f) => (
-              <Badge key={f.id} variant="outline" className="gap-1.5 pr-1 font-normal bg-background/80">
-                <FileText className="h-3 w-3" />
-                {f.filename}
-                {f.file_type && (
-                  <span className="text-muted-foreground">({f.file_type})</span>
-                )}
-                <button
-                  type="button"
-                  className="ml-0.5 rounded p-0.5 hover:bg-muted"
-                  onClick={() => onDownloadFile(draft.id, f.id)}
-                  title="Download"
-                >
-                  <Download className="h-3 w-3 text-muted-foreground" />
-                </button>
-                {isActionable && draft.files.length > 1 && (
+            {draft.files.map((f) => {
+              const typeLabel = DOC_TYPE_LABELS[f.file_type || ""] || f.file_type;
+              const typeColor = DOC_TYPE_COLORS[f.file_type || ""] || "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
+              return (
+                <div key={f.id} className="flex items-center gap-1.5 rounded-md border bg-background/80 px-2 py-1.5">
+                  <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-sm truncate max-w-[180px]" title={f.filename}>{f.filename}</span>
+                  {f.file_type && (
+                    <span className={`text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded ${typeColor}`}>
+                      {typeLabel}
+                    </span>
+                  )}
                   <button
                     type="button"
-                    className="rounded p-0.5 hover:bg-destructive/10"
-                    onClick={() => onRemoveFile(draft.id, f.id)}
-                    title="Remove file (auto re-extracts)"
-                    disabled={loading}
+                    className="ml-0.5 rounded p-0.5 hover:bg-muted"
+                    onClick={() => onDownloadFile(draft.id, f.id)}
+                    title="Download"
                   >
-                    <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                    <Download className="h-3 w-3 text-muted-foreground" />
                   </button>
-                )}
-              </Badge>
-            ))}
+                  {isActionable && draft.files.length > 1 && (
+                    <button
+                      type="button"
+                      className="rounded p-0.5 hover:bg-destructive/10"
+                      onClick={() => onRemoveFile(draft.id, f.id)}
+                      title="Remove file (auto re-extracts)"
+                      disabled={loading}
+                    >
+                      <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
           {isActionable && (
             <AddFilesButton draftId={draft.id} onAddFiles={onAddFiles} />
