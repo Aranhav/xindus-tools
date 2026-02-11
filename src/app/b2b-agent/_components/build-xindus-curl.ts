@@ -116,6 +116,7 @@ function mapBox(box: ShipmentBox, idx: number) {
     remarks: "",
     hasBattery: 0,
     shipmentBoxItems: (box.shipment_box_items || []).map(mapBoxItem),
+    receiverAddress: mapAddress(box.receiver_address),
   };
 }
 
