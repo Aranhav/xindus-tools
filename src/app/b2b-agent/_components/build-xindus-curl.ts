@@ -174,7 +174,7 @@ export function buildXindusPayload(data: ShipmentData) {
     selfDestinationClearance: data.self_destination_clearance ?? false,
     multiAddressDestinationDelivery: data.multi_address_destination_delivery ?? false,
     marketplace: data.marketplace || "other",
-    invoiceHavePacking: false,
+    invoiceHavePacking: true,
     scancode: null,
     draftScancode: null,
     isInitiatedRequest: false,
@@ -197,13 +197,14 @@ export function buildXindusPayload(data: ShipmentData) {
     exportReference: data.export_reference || data.shipment_references || data.invoice_number || "",
     invoiceDate: normalizeDate(data.invoice_date),
 
-    // Documents (backend injects real URLs; placeholder here for structure)
-    documentsDTOS: [{
+    // Documents (backend injects real file URLs; placeholder for cURL preview)
+    // Key MUST be "documents" — Xindus @JsonProperty("documents") maps to documentsDTOS field
+    documents: [{
       id: Date.now(),
       name: "invoice",
       type: "invoice",
       url: "",
-      documentNumber: data.invoice_number || "",
+      document_number: data.invoice_number || "",
     }],
   };
 }
