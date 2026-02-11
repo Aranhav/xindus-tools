@@ -12,6 +12,44 @@ import type {
   ShipmentBoxItem,
 } from "@/types/agent";
 
+/* ── Country name → 2-char ISO code ─────────────────────── */
+
+const COUNTRY_MAP: Record<string, string> = {
+  "united states": "US", "united states of america": "US", usa: "US",
+  "united kingdom": "GB", "great britain": "GB", england: "GB",
+  india: "IN", china: "CN", japan: "JP", germany: "DE", france: "FR",
+  canada: "CA", australia: "AU", brazil: "BR", mexico: "MX",
+  "south korea": "KR", "korea": "KR", italy: "IT", spain: "ES",
+  netherlands: "NL", "the netherlands": "NL", switzerland: "CH",
+  "united arab emirates": "AE", uae: "AE", "saudi arabia": "SA",
+  singapore: "SG", malaysia: "MY", thailand: "TH", vietnam: "VN",
+  indonesia: "ID", philippines: "PH", turkey: "TR", "türkiye": "TR",
+  pakistan: "PK", bangladesh: "BD", "sri lanka": "LK", nepal: "NP",
+  "new zealand": "NZ", "south africa": "ZA", nigeria: "NG", egypt: "EG",
+  israel: "IL", russia: "RU", poland: "PL", sweden: "SE", norway: "NO",
+  denmark: "DK", finland: "FI", belgium: "BE", austria: "AT",
+  ireland: "IE", portugal: "PT", greece: "GR", "czech republic": "CZ",
+  romania: "RO", hungary: "HU", argentina: "AR", chile: "CL",
+  colombia: "CO", peru: "PE", kenya: "KE", ghana: "GH", tanzania: "TZ",
+  morocco: "MA", taiwan: "TW", "hong kong": "HK",
+};
+
+function normalizeCountry(raw: string | undefined): string {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  // Already a 2-char code
+  if (/^[A-Z]{2}$/.test(trimmed)) return trimmed;
+  // Lookup by lowercase
+  return COUNTRY_MAP[trimmed.toLowerCase()] || trimmed;
+}
+
+/* ── Strip dots/periods from HSN codes ─────────────────────── */
+
+function normalizeHsn(raw: string | undefined): string {
+  if (!raw) return "";
+  return raw.replace(/\./g, "");
+}
+
 /* ── Address: map to Xindus format ────────────────────────── */
 
 function mapAddress(addr: ShipmentAddress | undefined) {
@@ -24,7 +62,7 @@ function mapAddress(addr: ShipmentAddress | undefined) {
     city: addr.city || "",
     zip: addr.zip || "",
     state: addr.state || "",
-    country: addr.country || "",
+    country: normalizeCountry(addr.country),
     extension_number: addr.extension_number || "",
   };
 }
@@ -40,8 +78,8 @@ function mapBoxItem(item: ShipmentBoxItem) {
   return {
     name: item.description || "",
     description: item.description || "",
-    ehsn: item.ehsn || "",
-    ihsn: item.ihsn || "",
+    ehsn: normalizeHsn(item.ehsn),
+    ihsn: normalizeHsn(item.ihsn),
     duty_rate: String(item.duty_rate ?? "0"),
     quantity: String(item.quantity || 1),
     unit_weight: String(item.weight ?? 0),
@@ -49,7 +87,7 @@ function mapBoxItem(item: ShipmentBoxItem) {
     igst_rate: String(item.igst_amount ?? 0),
     unit_fob_value: String(item.unit_fob_value ?? item.unit_price ?? 0),
     sku: "",
-    country_of_origin: item.country_of_origin || "IN",
+    country_of_origin: normalizeCountry(item.country_of_origin) || "IN",
     pga_docs: [],
   };
 }
