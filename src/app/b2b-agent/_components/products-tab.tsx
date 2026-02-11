@@ -28,7 +28,10 @@ async function lookupTariff(
       }),
     });
     if (!res.ok) return null;
-    return await res.json();
+    const data = await res.json();
+    // Validate response has actual duty data (not an error object)
+    if (data.duty_rate == null && data.base_duty_rate == null) return null;
+    return data;
   } catch {
     return null;
   }
