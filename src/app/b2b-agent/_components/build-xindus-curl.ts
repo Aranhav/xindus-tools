@@ -113,6 +113,92 @@ export function buildXindusPayload(data: ShipmentData) {
   };
 }
 
+/* ── Validate required fields before Xindus submission ───── */
+
+export interface ValidationIssue {
+  category: "address" | "box" | "item" | "shipment";
+  message: string;
+}
+
+const ADDR_REQUIRED = ["name", "email", "phone", "address", "city", "state", "zip", "country"] as const;
+
+function validateAddress(
+  addr: ShipmentAddress | undefined,
+  label: string,
+  issues: ValidationIssue[],
+) {
+  if (!addr) {
+    issues.push({ category: "address", message: `${label} is missing` });
+    return;
+  }
+  const a = addr as unknown as Record<string, string>;
+  for (const field of ADDR_REQUIRED) {
+    if (!a[field]?.trim()) {
+      issues.push({ category: "address", message: `${label} → ${field} is required` });
+    }
+  }
+}
+
+export function validateForXindus(data: ShipmentData): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+
+  // Top-level fields
+  if (!data.invoice_number?.trim())
+    issues.push({ category: "shipment", message: "Invoice number is required" });
+  if (!data.invoice_date?.trim())
+    issues.push({ category: "shipment", message: "Invoice date is required" });
+
+  // Addresses
+  validateAddress(data.shipper_address, "Shipper", issues);
+  validateAddress(data.receiver_address, "Receiver", issues);
+  // Billing: only validate if provided (Xindus copies from receiver if empty)
+  if (data.billing_address?.name?.trim()) {
+    validateAddress(data.billing_address, "Billing", issues);
+  }
+
+  // Boxes
+  const boxes = data.shipment_boxes || [];
+  if (boxes.length === 0) {
+    issues.push({ category: "box", message: "At least one box is required" });
+  }
+  for (let i = 0; i < boxes.length; i++) {
+    const b = boxes[i];
+    const lbl = `Box ${i + 1}`;
+    if (!b.length || b.length <= 0)
+      issues.push({ category: "box", message: `${lbl} → length must be > 0` });
+    if (!b.width || b.width <= 0)
+      issues.push({ category: "box", message: `${lbl} → width must be > 0` });
+    if (!b.height || b.height <= 0)
+      issues.push({ category: "box", message: `${lbl} → height must be > 0` });
+    if (!b.weight || b.weight <= 0)
+      issues.push({ category: "box", message: `${lbl} → weight must be > 0` });
+
+    // Box items
+    const items = b.shipment_box_items || [];
+    if (items.length === 0) {
+      issues.push({ category: "item", message: `${lbl} → must have at least one item` });
+    }
+    for (let j = 0; j < items.length; j++) {
+      const it = items[j];
+      const itLbl = `${lbl}, Item ${j + 1}`;
+      if (!it.description?.trim())
+        issues.push({ category: "item", message: `${itLbl} → description is required` });
+      if (!it.quantity || it.quantity <= 0)
+        issues.push({ category: "item", message: `${itLbl} → quantity must be > 0` });
+      if (it.unit_price == null || it.unit_price <= 0)
+        issues.push({ category: "item", message: `${itLbl} → unit price must be > 0` });
+      if (!it.ehsn?.trim())
+        issues.push({ category: "item", message: `${itLbl} → export HSN (ehsn) is required` });
+      if (!it.ihsn?.trim())
+        issues.push({ category: "item", message: `${itLbl} → import HSN (ihsn) is required` });
+      if (it.unit_fob_value == null || it.unit_fob_value <= 0)
+        issues.push({ category: "item", message: `${itLbl} → FOB value must be > 0` });
+    }
+  }
+
+  return issues;
+}
+
 /* ── Build the cURL string ────────────────────────────────── */
 
 export function buildXindusCurl(

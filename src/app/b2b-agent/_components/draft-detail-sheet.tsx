@@ -19,6 +19,7 @@ import {
   Send,
   Loader2,
   Copy,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -57,7 +58,12 @@ import { SellerMatch } from "./seller-match";
 import { currencySymbol } from "./editable-fields";
 import { DraftStatusBadge } from "./draft-table";
 import { getNestedValue } from "./helpers";
-import { buildXindusCurl, buildXindusPayload } from "./build-xindus-curl";
+import {
+  buildXindusCurl,
+  buildXindusPayload,
+  validateForXindus,
+  type ValidationIssue,
+} from "./build-xindus-curl";
 import type {
   DraftDetail,
   CorrectionItem,
@@ -125,6 +131,7 @@ export function DraftDetailSheet({
   const [manualMultiAddress, setManualMultiAddress] = useState(false);
   const [curlCopied, setCurlCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationIssue[]>([]);
 
   // Refs for stable access inside debounced effects
   const draftRef = useRef(draft);
@@ -384,6 +391,49 @@ export function DraftDetailSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localProducts]);
 
+  /* ── Submit to Xindus (after validation passes) ─────────── */
+
+  const handleSubmitToXindus = useCallback(async () => {
+    if (!draft || !data || !onSubmitToXindus || submitting) return;
+    setSubmitting(true);
+    try {
+      const payload = buildXindusPayload(data as ShipmentData);
+      const result = await onSubmitToXindus(
+        draft.id,
+        payload,
+        sellerProfile?.xindus_customer_id,
+      );
+      if (!result) return;
+      if (result.success) {
+        toast.success(
+          `Shipment created${result.scancode ? `: ${result.scancode}` : ""}`,
+        );
+        const blob = new Blob(
+          [JSON.stringify(result.response, null, 2)],
+          { type: "application/json" },
+        );
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `xindus-response-${result.scancode || draft.id.substring(0, 8)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        if (result.has_label) {
+          window.open(
+            `/api/b2b-agent/submissions/${result.submission_id}/label`,
+            "_blank",
+          );
+        }
+      } else {
+        toast.error(
+          result.error_description || `Xindus API error (HTTP ${result.http_status})`,
+        );
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  }, [draft, data, onSubmitToXindus, submitting, sellerProfile?.xindus_customer_id]);
+
   const handleOpenChange = useCallback(
     (isOpen: boolean) => {
       if (!isOpen) {
@@ -532,47 +582,14 @@ export function DraftDetailSheet({
                   {onSubmitToXindus && (
                     <DropdownMenuItem
                       disabled={submitting}
-                      onClick={async () => {
+                      onClick={() => {
                         if (!draft || !data || submitting) return;
-                        setSubmitting(true);
-                        try {
-                          const payload = buildXindusPayload(data as ShipmentData);
-                          const result = await onSubmitToXindus(
-                            draft.id,
-                            payload,
-                            sellerProfile?.xindus_customer_id,
-                          );
-                          if (!result) return;
-                          if (result.success) {
-                            toast.success(
-                              `Shipment created${result.scancode ? `: ${result.scancode}` : ""}`,
-                            );
-                            // Auto-download response JSON
-                            const blob = new Blob(
-                              [JSON.stringify(result.response, null, 2)],
-                              { type: "application/json" },
-                            );
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = `xindus-response-${result.scancode || draft.id.substring(0, 8)}.json`;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                            // Auto-download label PDF if available
-                            if (result.has_label) {
-                              window.open(
-                                `/api/b2b-agent/submissions/${result.submission_id}/label`,
-                                "_blank",
-                              );
-                            }
-                          } else {
-                            toast.error(
-                              result.error_description || `Xindus API error (HTTP ${result.http_status})`,
-                            );
-                          }
-                        } finally {
-                          setSubmitting(false);
+                        const issues = validateForXindus(data as ShipmentData);
+                        if (issues.length > 0) {
+                          setValidationErrors(issues);
+                          return;
                         }
+                        handleSubmitToXindus();
                       }}
                     >
                       <Send className="mr-2 h-4 w-4" />
@@ -781,6 +798,60 @@ export function DraftDetailSheet({
           </div>
         </div>
       </SheetContent>
+
+      {/* ── Validation errors dialog ──────────────────────────── */}
+      <AlertDialog
+        open={validationErrors.length > 0}
+        onOpenChange={(open) => { if (!open) setValidationErrors([]); }}
+      >
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Missing Required Fields
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              The following fields are required by the Xindus API. Please fix them before submitting.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="max-h-72 overflow-y-auto">
+            {(["address", "box", "item", "shipment"] as const).map((cat) => {
+              const catIssues = validationErrors.filter((e) => e.category === cat);
+              if (catIssues.length === 0) return null;
+              const labels: Record<string, string> = {
+                address: "Addresses",
+                box: "Box Dimensions",
+                item: "Box Items",
+                shipment: "Shipment Info",
+              };
+              const icons: Record<string, string> = {
+                address: "MapPin",
+                box: "Package",
+                item: "Receipt",
+                shipment: "Settings2",
+              };
+              return (
+                <div key={cat} className="mb-3">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {labels[cat]} ({catIssues.length})
+                  </p>
+                  <ul className="space-y-0.5">
+                    {catIssues.map((issue, i) => (
+                      <li key={i} className="flex items-start gap-1.5 text-sm text-foreground">
+                        <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-500" />
+                        {issue.message}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }
