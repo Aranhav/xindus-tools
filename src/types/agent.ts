@@ -64,6 +64,7 @@ export interface TariffScenario {
   title: string;
   value: number;
   is_additional: boolean;
+  is_approved: boolean;
   is_rumored: boolean;
   tariff_code?: string;
   tariff_category?: string;

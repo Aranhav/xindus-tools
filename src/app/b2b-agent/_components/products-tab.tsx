@@ -39,7 +39,7 @@ function DutyBreakdownTooltip({
   scenarios?: TariffScenario[];
   children: React.ReactNode;
 }) {
-  const active = (scenarios ?? []).filter((s) => s.is_additional && s.value > 0);
+  const active = (scenarios ?? []).filter((s) => s.is_additional && s.value > 0 && s.is_approved !== false);
   if (baseDuty == null || active.length === 0) return <>{children}</>;
 
   return (
