@@ -14,7 +14,13 @@ import {
   ChevronDown,
   FileSpreadsheet,
   Table2,
+  Terminal,
+  Check,
+  Send,
+  Loader2,
+  Copy,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -51,14 +57,17 @@ import { SellerMatch } from "./seller-match";
 import { currencySymbol } from "./editable-fields";
 import { DraftStatusBadge } from "./draft-table";
 import { getNestedValue } from "./helpers";
+import { buildXindusCurl, buildXindusPayload } from "./build-xindus-curl";
 import type {
   DraftDetail,
   CorrectionItem,
   ShipmentBox,
+  ShipmentData,
   ProductDetail,
   SellerProfile,
   SellerMatchResult,
   SellerHistory,
+  XindusSubmissionResult,
 } from "@/types/agent";
 
 /* ── Main Component ───────────────────────────────────────── */
@@ -81,6 +90,11 @@ interface DraftDetailSheetProps {
   sellerHistory?: SellerHistory | null;
   onFetchSellerHistory?: (sellerId: string) => Promise<SellerHistory | null>;
   onClassify?: (draftId: string) => Promise<unknown>;
+  onSubmitToXindus?: (
+    draftId: string,
+    payload: Record<string, unknown>,
+    consignorId?: number | null,
+  ) => Promise<XindusSubmissionResult | null>;
 }
 
 export function DraftDetailSheet({
@@ -101,6 +115,7 @@ export function DraftDetailSheet({
   sellerHistory,
   onFetchSellerHistory,
   onClassify,
+  onSubmitToXindus,
 }: DraftDetailSheetProps) {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -108,6 +123,8 @@ export function DraftDetailSheet({
   const [localProducts, setLocalProducts] = useState<ProductDetail[] | null>(null);
   const [reExtracting, setReExtracting] = useState(false);
   const [manualMultiAddress, setManualMultiAddress] = useState(false);
+  const [curlCopied, setCurlCopied] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Refs for stable access inside debounced effects
   const draftRef = useRef(draft);
@@ -476,7 +493,97 @@ export function DraftDetailSheet({
                 )}
               </SheetDescription>
             </div>
-            <div className="flex shrink-0 items-center gap-3">
+            <div className="flex shrink-0 items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1"
+                    disabled={submitting}
+                  >
+                    {submitting ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : curlCopied ? (
+                      <Check className="h-3.5 w-3.5 text-emerald-500" />
+                    ) : (
+                      <Terminal className="h-3.5 w-3.5" />
+                    )}
+                    {submitting ? "Submitting..." : curlCopied ? "Copied" : "API"}
+                    <ChevronDown className="h-3 w-3 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const curl = buildXindusCurl(data, sellerProfile?.xindus_customer_id);
+                      navigator.clipboard.writeText(curl);
+                      setCurlCopied(true);
+                      setTimeout(() => setCurlCopied(false), 2000);
+                      toast.success("cURL copied to clipboard");
+                    }}
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    <div>
+                      <p className="text-sm font-medium">Copy cURL</p>
+                      <p className="text-xs text-muted-foreground">Copy API command to clipboard</p>
+                    </div>
+                  </DropdownMenuItem>
+                  {onSubmitToXindus && (
+                    <DropdownMenuItem
+                      disabled={submitting}
+                      onClick={async () => {
+                        if (!draft || !data || submitting) return;
+                        setSubmitting(true);
+                        try {
+                          const payload = buildXindusPayload(data as ShipmentData);
+                          const result = await onSubmitToXindus(
+                            draft.id,
+                            payload,
+                            sellerProfile?.xindus_customer_id,
+                          );
+                          if (!result) return;
+                          if (result.success) {
+                            toast.success(
+                              `Shipment created${result.scancode ? `: ${result.scancode}` : ""}`,
+                            );
+                            // Auto-download response JSON
+                            const blob = new Blob(
+                              [JSON.stringify(result.response, null, 2)],
+                              { type: "application/json" },
+                            );
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `xindus-response-${result.scancode || draft.id.substring(0, 8)}.json`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            // Auto-download label PDF if available
+                            if (result.has_label) {
+                              window.open(
+                                `/api/b2b-agent/submissions/${result.submission_id}/label`,
+                                "_blank",
+                              );
+                            }
+                          } else {
+                            toast.error(
+                              result.error_description || `Xindus API error (HTTP ${result.http_status})`,
+                            );
+                          }
+                        } finally {
+                          setSubmitting(false);
+                        }
+                      }}
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      <div>
+                        <p className="text-sm font-medium">Submit to Xindus (UAT)</p>
+                        <p className="text-xs text-muted-foreground">Send shipment to UAT API</p>
+                      </div>
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-8 gap-1">

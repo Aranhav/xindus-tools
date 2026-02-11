@@ -379,6 +379,21 @@ export interface TariffLookupResult {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Xindus submission result                                           */
+/* ------------------------------------------------------------------ */
+
+export interface XindusSubmissionResult {
+  submission_id: string;
+  success: boolean;
+  http_status: number;
+  scancode?: string | null;
+  error_code?: string | null;
+  error_description?: string | null;
+  response?: Record<string, unknown> | null;
+  has_label: boolean;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Correction                                                         */
 /* ------------------------------------------------------------------ */
 

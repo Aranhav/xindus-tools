@@ -344,6 +344,7 @@ export default function B2BAgentPage() {
         sellerHistory={agent.sellerHistory}
         onFetchSellerHistory={agent.fetchSellerHistory}
         onClassify={agent.classifyItems}
+        onSubmitToXindus={agent.submitToXindus}
       />
     </PageContainer>
   );

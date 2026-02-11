@@ -13,6 +13,7 @@ import type {
   SellerMatchResult,
   SellerHistory,
   ActiveBatchesResponse,
+  XindusSubmissionResult,
 } from "@/types/agent";
 
 export type DraftTab = "all" | "pending_review" | "approved" | "rejected" | "archived";
@@ -655,6 +656,39 @@ export function useB2BAgent() {
     [],
   );
 
+  // ── Submit to Xindus UAT ──────────────────────────────────
+
+  const submitToXindus = useCallback(
+    async (
+      draftId: string,
+      payload: Record<string, unknown>,
+      consignorId?: number | null,
+    ): Promise<XindusSubmissionResult | null> => {
+      try {
+        const res = await fetch(`/api/b2b-agent/drafts/${draftId}/submit-xindus`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ payload, consignor_id: consignorId }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: "Submission failed" }));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+        const data: XindusSubmissionResult = await res.json();
+        // Refresh drafts + active draft on success
+        if (data.success) {
+          fetchDrafts();
+          fetchDraft(draftId);
+        }
+        return data;
+      } catch (err) {
+        setError((err as Error).message);
+        return null;
+      }
+    },
+    [fetchDrafts, fetchDraft],
+  );
+
   return {
     // Tab state
     activeTab,
@@ -694,6 +728,7 @@ export function useB2BAgent() {
     searchSellers,
     linkSellerToDraft,
     fetchSellerHistory,
+    submitToXindus,
     setActiveDraft,
     setError,
   };
