@@ -352,10 +352,20 @@ function mapPartnerBox(box: ShipmentBox, idx: number) {
   };
 }
 
+/** Partner API requires names with at least 2 words (2+ and 3+ chars). */
+function ensureTwoWordName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return `${name.trim()} INC`;
+  const has2 = parts.some((p) => p.length >= 2);
+  const has3 = parts.some((p) => p.length >= 3);
+  if (!(has2 && has3)) return `${name.trim()} INC`;
+  return name;
+}
+
 function mapPartnerAddress(addr: ShipmentAddress | undefined) {
   if (!addr) return {};
   return {
-    name: addr.name || "",
+    name: ensureTwoWordName(addr.name || ""),
     email: addr.email || "",
     phone: addr.phone || "",
     address: addr.address || "",
