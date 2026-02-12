@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Download,
@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   XCircle,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 
 import { ConfidenceBadge } from "@/components/confidence-badge";
@@ -25,7 +26,7 @@ import {
 } from "@/components/ui/table";
 import type { JobStatus, LineItem, Box } from "@/types/b2b";
 
-import { cv, fmtNum, staggerContainer, fadeUp, downloadCards } from "./helpers";
+import { cv, fmtNum, staggerContainer, fadeUp, downloadXindusExcel } from "./helpers";
 import { AddressCard, StatCard, ResultBanner } from "./address-card";
 
 function BoxRow({ box, index }: { box: Box; index: number }) {
@@ -81,6 +82,24 @@ export function ResultsView({ job, onJsonExport, onNewExtraction }: ResultsViewP
   const result = job.result;
   const invoice = result?.invoice;
   const packing = result?.packing_list;
+  const [downloading, setDownloading] = useState<"single" | "multi" | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  const handleDownload = useCallback(
+    async (format: "single" | "multi") => {
+      if (!result || downloading) return;
+      setDownloading(format);
+      setDownloadError(null);
+      try {
+        await downloadXindusExcel(result as unknown as Record<string, unknown>, format);
+      } catch (err) {
+        setDownloadError(err instanceof Error ? err.message : "Download failed");
+      } finally {
+        setDownloading(null);
+      }
+    },
+    [result, downloading],
+  );
 
   return (
     <motion.div
@@ -89,7 +108,7 @@ export function ResultsView({ job, onJsonExport, onNewExtraction }: ResultsViewP
       initial="initial"
       animate="animate"
       exit="exit"
-      className="space-y-6"
+      className="space-y-6 pb-24"
     >
       <motion.div variants={fadeUp}>
         <ResultBanner job={job} />
@@ -251,39 +270,52 @@ export function ResultsView({ job, onJsonExport, onNewExtraction }: ResultsViewP
           ))}
         </motion.div>
       )}
-      <motion.div variants={fadeUp}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {downloadCards.map((card) => (
-            <Card
-              key={card.type}
-              className="cursor-pointer transition-colors hover:bg-muted/50"
-              onClick={() =>
-                window.open(`/api/b2b/download/${job.job_id}/${card.type}`)
-              }
+
+      {/* Sticky floating download bar */}
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={onJsonExport}>
+              <FileJson className="h-4 w-4" />
+              Raw JSON
+            </Button>
+            <Button variant="outline" size="sm" onClick={onNewExtraction}>
+              <ArrowLeft className="h-4 w-4" />
+              New Extraction
+            </Button>
+          </div>
+          {downloadError && (
+            <p className="text-xs text-destructive">{downloadError}</p>
+          )}
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={downloading !== null}
+              onClick={() => handleDownload("single")}
             >
-              <CardContent className="flex items-center gap-4 px-5 py-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Download className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold">{card.title}</p>
-                  <p className="text-xs text-muted-foreground">{card.description}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+              {downloading === "single" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              Single Address
+            </Button>
+            <Button
+              size="sm"
+              disabled={downloading !== null}
+              onClick={() => handleDownload("multi")}
+            >
+              {downloading === "multi" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              Multi Address
+            </Button>
+          </div>
         </div>
-      </motion.div>
-      <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-3">
-        <Button variant="outline" onClick={onJsonExport}>
-          <FileJson className="h-4 w-4" />
-          Raw JSON
-        </Button>
-        <Button variant="outline" onClick={onNewExtraction}>
-          <ArrowLeft className="h-4 w-4" />
-          New Extraction
-        </Button>
-      </motion.div>
+      </div>
     </motion.div>
   );
 }

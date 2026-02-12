@@ -38,33 +38,33 @@ export const fadeUp = {
 };
 
 /* ------------------------------------------------------------------ */
-/*  Download card data                                                 */
+/*  Download helpers                                                    */
 /* ------------------------------------------------------------------ */
 
-export const downloadCards = [
-  {
-    type: "xindus_single",
-    title: "Xindus Single Address",
-    description: "12-column format for single-receiver shipments",
-  },
-  {
-    type: "xindus_multi",
-    title: "Xindus Multi Address",
-    description: "21-column format with per-box receivers",
-  },
-  {
-    type: "multi",
-    title: "Multi Address Sheet",
-    description: "XpressB2B flat format with receivers inline",
-  },
-  {
-    type: "simplified",
-    title: "Simplified Template",
-    description: "Multi-sheet format (Items, Receivers, Boxes)",
-  },
-  {
-    type: "b2b_shipment",
-    title: "B2B Shipment",
-    description: "Grouped by destination with address headers",
-  },
-];
+export async function downloadXindusExcel(
+  extractionResult: Record<string, unknown>,
+  format: "single" | "multi",
+) {
+  const res = await fetch(
+    `/api/b2b/download/generate-xindus?format=${format}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ extraction_result: extractionResult }),
+    },
+  );
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Download failed (${res.status})`);
+  }
+
+  const blob = await res.blob();
+  const suffix = format === "multi" ? "Multi" : "Single";
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Xindus_${suffix}_Address.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
