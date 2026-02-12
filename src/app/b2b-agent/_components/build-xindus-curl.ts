@@ -352,20 +352,10 @@ function mapPartnerBox(box: ShipmentBox, idx: number) {
   };
 }
 
-/** Partner API requires names with at least 2 words (2+ and 3+ chars). */
-function ensureTwoWordName(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length < 2) return `${name.trim()} INC`;
-  const has2 = parts.some((p) => p.length >= 2);
-  const has3 = parts.some((p) => p.length >= 3);
-  if (!(has2 && has3)) return `${name.trim()} INC`;
-  return name;
-}
-
 function mapPartnerAddress(addr: ShipmentAddress | undefined) {
   if (!addr) return {};
   return {
-    name: ensureTwoWordName(addr.name || ""),
+    name: addr.name || "",
     email: addr.email || "",
     phone: addr.phone || "",
     address: addr.address || "",
@@ -375,6 +365,35 @@ function mapPartnerAddress(addr: ShipmentAddress | undefined) {
     country: normalizeCountry(addr.country),
     extension_number: addr.extension_number || "",
   };
+}
+
+/** Validate address names for Partner API (requires 2+ words). */
+function validatePartnerName(name: string): boolean {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return false;
+  const has2 = parts.some((p) => p.length >= 2);
+  const has3 = parts.some((p) => p.length >= 3);
+  return has2 && has3;
+}
+
+/** Validate shipment data for Partner API. Returns error message or null. */
+export function validatePartnerPayload(data: ShipmentData): string | null {
+  const checks: { label: string; name: string }[] = [
+    { label: "Shipper", name: data.shipper_address?.name || "" },
+    { label: "Receiver", name: data.receiver_address?.name || "" },
+  ];
+  if (data.billing_address?.name) {
+    checks.push({ label: "Billing", name: data.billing_address.name });
+  }
+  if (data.ior_address?.name) {
+    checks.push({ label: "IOR", name: data.ior_address.name });
+  }
+  const invalid = checks.filter((c) => c.name && !validatePartnerName(c.name));
+  if (invalid.length > 0) {
+    const names = invalid.map((c) => `${c.label} ("${c.name}")`).join(", ");
+    return `Partner API requires names with at least two words. Please update: ${names}`;
+  }
+  return null;
 }
 
 export function buildPartnerPayload(data: ShipmentData) {

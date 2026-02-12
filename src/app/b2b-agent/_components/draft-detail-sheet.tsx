@@ -65,6 +65,7 @@ import {
   buildPartnerPayload,
   buildPartnerCurl,
   validateForXindus,
+  validatePartnerPayload,
   type ValidationIssue,
 } from "./build-xindus-curl";
 import type {
@@ -399,6 +400,14 @@ export function DraftDetailSheet({
 
   const handleSubmitToXindus = useCallback(async (method: "express" | "partner" = "express") => {
     if (!draft || !data || !onSubmitToXindus || submitting) return;
+    // Partner API has stricter name validation
+    if (method === "partner") {
+      const partnerError = validatePartnerPayload(data as ShipmentData);
+      if (partnerError) {
+        toast.error(partnerError);
+        return;
+      }
+    }
     setSubmitting(true);
     try {
       const payload = method === "partner"
@@ -609,6 +618,11 @@ export function DraftDetailSheet({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => {
+                      const partnerError = validatePartnerPayload(data as ShipmentData);
+                      if (partnerError) {
+                        toast.error(partnerError);
+                        return;
+                      }
                       const curl = buildPartnerCurl(data as ShipmentData);
                       navigator.clipboard.writeText(curl);
                       setCurlCopied(true);
