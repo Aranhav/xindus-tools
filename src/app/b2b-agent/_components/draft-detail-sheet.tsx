@@ -615,8 +615,17 @@ export function DraftDetailSheet({
                   >
                     <Table2 className="mr-2 h-4 w-4" />
                     <div>
-                      <p className="text-sm font-medium">XpressB2B Sheet</p>
-                      <p className="text-xs text-muted-foreground">Xindus bulk upload format</p>
+                      <p className="text-sm font-medium">XpressB2B (Single Address)</p>
+                      <p className="text-xs text-muted-foreground">Standard single-receiver format</p>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => window.open(`/api/b2b-agent/drafts/${draft.id}/download?format=xpressb2b-multi`, "_blank")}
+                  >
+                    <Table2 className="mr-2 h-4 w-4" />
+                    <div>
+                      <p className="text-sm font-medium">XpressB2B (Multi Address)</p>
+                      <p className="text-xs text-muted-foreground">FBA split / multiple receivers</p>
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem
