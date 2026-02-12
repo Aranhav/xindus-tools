@@ -367,33 +367,134 @@ function mapPartnerAddress(addr: ShipmentAddress | undefined) {
   };
 }
 
-/** Validate address names for Partner API (requires 2+ words). */
-function validatePartnerName(name: string): boolean {
+/* ── Partner API–specific validation (stricter than XOS) ──── */
+
+function isValidPartnerName(name: string): boolean {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length < 2) return false;
-  const has2 = parts.some((p) => p.length >= 2);
-  const has3 = parts.some((p) => p.length >= 3);
-  return has2 && has3;
+  return parts.some((p) => p.length >= 2) && parts.some((p) => p.length >= 3);
 }
 
-/** Validate shipment data for Partner API. Returns error message or null. */
+function isValidPhone(phone: string): boolean {
+  const digits = phone.replace(/[^0-9]/g, "");
+  return digits.length >= 10 && digits.length <= 15;
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidHsn(hsn: string): boolean {
+  const clean = hsn.replace(/[.\s-]/g, "");
+  return /^\d{6,10}$/.test(clean);
+}
+
+function validatePartnerAddress(
+  addr: ShipmentAddress | undefined,
+  label: string,
+  issues: ValidationIssue[],
+) {
+  if (!addr) {
+    issues.push({ category: "address", message: `${label} address is missing` });
+    return;
+  }
+  if (!addr.name?.trim())
+    issues.push({ category: "address", message: `${label} → name is required` });
+  else if (!isValidPartnerName(addr.name))
+    issues.push({ category: "address", message: `${label} → name must have at least two words (e.g. "${addr.name} INC")` });
+
+  if (!addr.phone?.trim())
+    issues.push({ category: "address", message: `${label} → phone is required` });
+  else if (!isValidPhone(addr.phone))
+    issues.push({ category: "address", message: `${label} → phone must be 10–15 digits (got "${addr.phone}")` });
+
+  if (!addr.email?.trim())
+    issues.push({ category: "address", message: `${label} → email is required` });
+  else if (!isValidEmail(addr.email))
+    issues.push({ category: "address", message: `${label} → email format is invalid` });
+
+  if (!addr.address?.trim())
+    issues.push({ category: "address", message: `${label} → street address is required` });
+  if (!addr.city?.trim())
+    issues.push({ category: "address", message: `${label} → city is required` });
+  if (!addr.state?.trim())
+    issues.push({ category: "address", message: `${label} → state is required` });
+  if (!addr.zip?.trim())
+    issues.push({ category: "address", message: `${label} → zip is required` });
+  if (!addr.country?.trim())
+    issues.push({ category: "address", message: `${label} → country is required` });
+}
+
+/** Full Partner API validation. Returns issues list (empty = valid). */
 export function validatePartnerPayload(data: ShipmentData): string | null {
-  const checks: { label: string; name: string }[] = [
-    { label: "Shipper", name: data.shipper_address?.name || "" },
-    { label: "Receiver", name: data.receiver_address?.name || "" },
-  ];
-  if (data.billing_address?.name) {
-    checks.push({ label: "Billing", name: data.billing_address.name });
+  const issues: ValidationIssue[] = [];
+
+  // Shipment-level
+  if (!data.invoice_number?.trim())
+    issues.push({ category: "shipment", message: "Invoice number is required" });
+  if (!data.invoice_date?.trim())
+    issues.push({ category: "shipment", message: "Invoice date is required" });
+  if (!data.shipping_currency?.trim())
+    issues.push({ category: "shipment", message: "Shipping currency is required" });
+
+  // Addresses
+  validatePartnerAddress(data.shipper_address, "Shipper", issues);
+  validatePartnerAddress(data.receiver_address, "Receiver", issues);
+  if (data.billing_address?.name?.trim()) {
+    validatePartnerAddress(data.billing_address, "Billing", issues);
   }
-  if (data.ior_address?.name) {
-    checks.push({ label: "IOR", name: data.ior_address.name });
+  if (data.ior_address?.name?.trim()) {
+    validatePartnerAddress(data.ior_address, "IOR", issues);
   }
-  const invalid = checks.filter((c) => c.name && !validatePartnerName(c.name));
-  if (invalid.length > 0) {
-    const names = invalid.map((c) => `${c.label} ("${c.name}")`).join(", ");
-    return `Partner API requires names with at least two words. Please update: ${names}`;
+
+  // Boxes
+  const boxes = data.shipment_boxes || [];
+  if (boxes.length === 0) {
+    issues.push({ category: "box", message: "At least one box is required" });
   }
-  return null;
+  for (let i = 0; i < boxes.length; i++) {
+    const b = boxes[i];
+    const lbl = `Box ${i + 1}`;
+    if (!b.length || b.length <= 0)
+      issues.push({ category: "box", message: `${lbl} → length must be > 0` });
+    if (!b.width || b.width <= 0)
+      issues.push({ category: "box", message: `${lbl} → width must be > 0` });
+    if (!b.height || b.height <= 0)
+      issues.push({ category: "box", message: `${lbl} → height must be > 0` });
+    if (!b.weight || b.weight <= 0)
+      issues.push({ category: "box", message: `${lbl} → weight must be > 0` });
+
+    const items = b.shipment_box_items || [];
+    if (items.length === 0) {
+      issues.push({ category: "item", message: `${lbl} → must have at least one item` });
+    }
+    for (let j = 0; j < items.length; j++) {
+      const it = items[j];
+      const itLbl = `${lbl}, Item ${j + 1}`;
+      if (!it.description?.trim())
+        issues.push({ category: "item", message: `${itLbl} → description is required` });
+      if (!it.quantity || it.quantity <= 0)
+        issues.push({ category: "item", message: `${itLbl} → quantity must be > 0` });
+      if (it.unit_price == null || it.unit_price <= 0)
+        issues.push({ category: "item", message: `${itLbl} → unit price must be > 0` });
+      // FOB value: must be > 0 since use_provided_fob=true
+      const fob = it.unit_fob_value || it.fob_value || it.unit_price || 0;
+      if (!fob || fob <= 0)
+        issues.push({ category: "item", message: `${itLbl} → FOB value is required (set unit price)` });
+      // HSN validation
+      if (!it.ehsn?.trim())
+        issues.push({ category: "item", message: `${itLbl} → export HSN is required` });
+      else if (!isValidHsn(it.ehsn))
+        issues.push({ category: "item", message: `${itLbl} → export HSN must be 6–10 digits ("${it.ehsn}")` });
+    }
+  }
+
+  if (issues.length === 0) return null;
+
+  // Return first 5 issues as a readable string
+  const msgs = issues.slice(0, 5).map((i) => i.message);
+  if (issues.length > 5) msgs.push(`...and ${issues.length - 5} more issues`);
+  return msgs.join("\n");
 }
 
 export function buildPartnerPayload(data: ShipmentData) {
