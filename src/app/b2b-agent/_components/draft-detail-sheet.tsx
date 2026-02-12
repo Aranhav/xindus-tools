@@ -577,12 +577,12 @@ export function DraftDetailSheet({
                       navigator.clipboard.writeText(curl);
                       setCurlCopied(true);
                       setTimeout(() => setCurlCopied(false), 2000);
-                      toast.success("Express-Shipment cURL copied");
+                      toast.success("XOS cURL copied");
                     }}
                   >
                     <Copy className="mr-2 h-4 w-4" />
                     <div>
-                      <p className="text-sm font-medium">Copy cURL (Express)</p>
+                      <p className="text-sm font-medium">Copy cURL (XOS)</p>
                       <p className="text-xs text-muted-foreground">Multipart: Excel + JSON</p>
                     </div>
                   </DropdownMenuItem>
@@ -601,7 +601,7 @@ export function DraftDetailSheet({
                     >
                       <Send className="mr-2 h-4 w-4" />
                       <div>
-                        <p className="text-sm font-medium">Submit (Express API)</p>
+                        <p className="text-sm font-medium">Submit (XOS)</p>
                         <p className="text-xs text-muted-foreground">2-step initiate/create flow</p>
                       </div>
                     </DropdownMenuItem>
