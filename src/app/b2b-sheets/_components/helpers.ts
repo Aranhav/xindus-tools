@@ -44,9 +44,12 @@ export const fadeUp = {
 export async function downloadXindusExcel(
   extractionResult: Record<string, unknown>,
   format: "single" | "multi",
+  fillOptional = false,
 ) {
+  const params = new URLSearchParams({ format });
+  if (fillOptional) params.set("fill_optional", "true");
   const res = await fetch(
-    `/api/b2b/download/generate-xindus?format=${format}`,
+    `/api/b2b/download/generate-xindus?${params}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

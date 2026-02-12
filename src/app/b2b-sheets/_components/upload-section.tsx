@@ -29,11 +29,13 @@ interface UploadSectionProps {
   currency: string;
   exchangeRate: string;
   hsCodeSync: boolean;
+  fillOptional: boolean;
   error: string | null;
   onFiles: (files: File[]) => void;
   onCurrencyChange: (value: string) => void;
   onExchangeRateChange: (value: string) => void;
   onHsCodeSyncChange: (value: boolean) => void;
+  onFillOptionalChange: (value: boolean) => void;
   onExtract: () => void;
   onRetry: () => void;
 }
@@ -43,11 +45,13 @@ export function UploadSection({
   currency,
   exchangeRate,
   hsCodeSync,
+  fillOptional,
   error,
   onFiles,
   onCurrencyChange,
   onExchangeRateChange,
   onHsCodeSyncChange,
+  onFillOptionalChange,
   onExtract,
   onRetry,
 }: UploadSectionProps) {
@@ -73,7 +77,7 @@ export function UploadSection({
           <CardTitle className="text-base">Export Options</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
               <Label htmlFor="currency">Output Currency</Label>
               <Select value={currency} onValueChange={onCurrencyChange}>
@@ -105,7 +109,15 @@ export function UploadSection({
               <Label>HS Code Sync</Label>
               <Switch checked={hsCodeSync} onCheckedChange={onHsCodeSyncChange} />
               <p className="text-xs text-muted-foreground">
-                Copy origin HS codes to destination when missing
+                Copy origin HS to destination when missing
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Fill Optional Fields</Label>
+              <Switch checked={fillOptional} onCheckedChange={onFillOptionalChange} />
+              <p className="text-xs text-muted-foreground">
+                Fill weight, dest HS code, IGST in Excel
               </p>
             </div>
           </div>

@@ -4,11 +4,12 @@ import { proxyFetch, errorResponse } from "@/lib/api";
 export async function POST(req: NextRequest) {
   try {
     const format = req.nextUrl.searchParams.get("format") || "single";
+    const fillOptional = req.nextUrl.searchParams.get("fill_optional") || "false";
     const body = await req.json();
 
     const res = await proxyFetch(
       "b2b",
-      `/api/download/generate-xindus?format=${format}`,
+      `/api/download/generate-xindus?format=${format}&fill_optional=${fillOptional}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

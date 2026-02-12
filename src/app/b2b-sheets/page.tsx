@@ -33,7 +33,8 @@ export default function B2BSheetsPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [currency, setCurrency] = useState("auto");
   const [exchangeRate, setExchangeRate] = useState("");
-  const [hsCodeSync, setHsCodeSync] = useState(true);
+  const [hsCodeSync, setHsCodeSync] = useState(false);
+  const [fillOptional, setFillOptional] = useState(false);
 
   const handleFiles = useCallback((selected: File[]) => {
     setFiles(selected);
@@ -63,7 +64,8 @@ export default function B2BSheetsPage() {
     setFiles([]);
     setCurrency("auto");
     setExchangeRate("");
-    setHsCodeSync(true);
+    setHsCodeSync(false);
+    setFillOptional(false);
     reset();
   };
 
@@ -82,11 +84,13 @@ export default function B2BSheetsPage() {
             currency={currency}
             exchangeRate={exchangeRate}
             hsCodeSync={hsCodeSync}
+            fillOptional={fillOptional}
             error={error}
             onFiles={handleFiles}
             onCurrencyChange={setCurrency}
             onExchangeRateChange={setExchangeRate}
             onHsCodeSyncChange={setHsCodeSync}
+            onFillOptionalChange={setFillOptional}
             onExtract={handleExtract}
             onRetry={handleNewExtraction}
           />
@@ -104,6 +108,7 @@ export default function B2BSheetsPage() {
         {state === "results" && job && (
           <ResultsView
             job={job}
+            fillOptional={fillOptional}
             onJsonExport={handleJsonExport}
             onNewExtraction={handleNewExtraction}
           />

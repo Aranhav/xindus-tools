@@ -74,11 +74,12 @@ function BoxRow({ box, index }: { box: Box; index: number }) {
 
 interface ResultsViewProps {
   job: JobStatus;
+  fillOptional: boolean;
   onJsonExport: () => void;
   onNewExtraction: () => void;
 }
 
-export function ResultsView({ job, onJsonExport, onNewExtraction }: ResultsViewProps) {
+export function ResultsView({ job, fillOptional, onJsonExport, onNewExtraction }: ResultsViewProps) {
   const result = job.result;
   const invoice = result?.invoice;
   const packing = result?.packing_list;
@@ -91,14 +92,14 @@ export function ResultsView({ job, onJsonExport, onNewExtraction }: ResultsViewP
       setDownloading(format);
       setDownloadError(null);
       try {
-        await downloadXindusExcel(result as unknown as Record<string, unknown>, format);
+        await downloadXindusExcel(result as unknown as Record<string, unknown>, format, fillOptional);
       } catch (err) {
         setDownloadError(err instanceof Error ? err.message : "Download failed");
       } finally {
         setDownloading(null);
       }
     },
-    [result, downloading],
+    [result, downloading, fillOptional],
   );
 
   return (
