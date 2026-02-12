@@ -334,7 +334,7 @@ function mapPartnerBoxItem(item: ShipmentBoxItem, boxIdx: number, itemIdx: numbe
     unit_weight: String(item.weight ?? 0),
     unit_price: String(item.unit_price ?? 0),
     igst_rate: String(item.igst_amount ?? 0),
-    unit_fob_value: String(item.fob_value ?? 0),
+    unit_fob_value: String(item.unit_fob_value || item.fob_value || item.unit_price || 0),
     country_of_origin: normalizeCountry(item.country_of_origin) || "IN",
   };
 }
