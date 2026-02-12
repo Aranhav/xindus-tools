@@ -385,6 +385,7 @@ export function OverviewTab({
             options={DEST_CLEARANCE_OPTIONS}
             onChanged={addFieldCorrection}
             sellerDefault={sellerDefaults?.destination_clearance_type as string | undefined}
+            required
           />
           <div className="space-y-1">
             <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Shipping Method</Label>
@@ -471,6 +472,7 @@ export function OverviewTab({
             options={countryOptions}
             onChanged={addFieldCorrection}
             sellerDefault={sellerDefaults?.country as string | undefined}
+            required
           />
           <SelectField
             label="Marketplace"
@@ -508,6 +510,7 @@ export function OverviewTab({
             label="Invoice Number"
             value={data.invoice_number}
             fieldPath="invoice_number"
+            required
             {...fieldProps}
           />
           <EditableField
@@ -515,6 +518,7 @@ export function OverviewTab({
             value={data.invoice_date}
             fieldPath="invoice_date"
             type="date"
+            required
             {...fieldProps}
           />
           <SelectField

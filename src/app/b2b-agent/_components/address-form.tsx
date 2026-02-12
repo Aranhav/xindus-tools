@@ -247,7 +247,7 @@ export function AddressForm({
         <div className="grid grid-cols-3 gap-x-4 gap-y-2 px-3 pb-3 pt-2">
           {ADDRESS_FIELDS.map((f) => (
             <div key={f.key} className={f.span === "full" ? "col-span-3" : ""}>
-              <Label className="mb-0.5 text-[11px] uppercase tracking-wider text-muted-foreground">{f.label}</Label>
+              <Label className="mb-0.5 text-[11px] uppercase tracking-wider text-muted-foreground">{f.label}{f.required && <span className="text-red-500"> *</span>}</Label>
               {f.key === "address" && isUSCountry ? (
                 <AddressAutocomplete
                   value={formValues[f.key] || ""}

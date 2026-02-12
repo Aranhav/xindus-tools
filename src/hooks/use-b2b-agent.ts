@@ -65,7 +65,9 @@ export function useB2BAgent() {
           limit: "50",
           offset: String(offset),
         });
-        if (tab !== "all") {
+        if (tab === "approved") {
+          qs.set("status", "approved,pushed");
+        } else if (tab !== "all") {
           qs.set("status", tab);
         } else {
           qs.set("exclude_status", "archived");
@@ -663,12 +665,13 @@ export function useB2BAgent() {
       draftId: string,
       payload: Record<string, unknown>,
       consignorId?: number | null,
+      apiMethod: "express" | "partner" = "express",
     ): Promise<XindusSubmissionResult | null> => {
       try {
         const res = await fetch(`/api/b2b-agent/drafts/${draftId}/submit-xindus`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ payload, consignor_id: consignorId }),
+          body: JSON.stringify({ payload, consignor_id: consignorId, method: apiMethod }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: "Submission failed" }));

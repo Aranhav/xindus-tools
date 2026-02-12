@@ -99,25 +99,25 @@ function BoxCard({
           {/* Compact dimensions */}
           <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
             <div>
-              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">L (cm)</Label>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">L (cm)<span className="text-red-500"> *</span></Label>
               <Input type="number" value={box.length || ""} placeholder="0"
                 onChange={(e) => setField("length", Number(e.target.value) || 0)}
                 className="h-7 w-20 text-xs text-center" />
             </div>
             <div>
-              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">W (cm)</Label>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">W (cm)<span className="text-red-500"> *</span></Label>
               <Input type="number" value={box.width || ""} placeholder="0"
                 onChange={(e) => setField("width", Number(e.target.value) || 0)}
                 className="h-7 w-20 text-xs text-center" />
             </div>
             <div>
-              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">H (cm)</Label>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">H (cm)<span className="text-red-500"> *</span></Label>
               <Input type="number" value={box.height || ""} placeholder="0"
                 onChange={(e) => setField("height", Number(e.target.value) || 0)}
                 className="h-7 w-20 text-xs text-center" />
             </div>
             <div>
-              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Weight (kg)</Label>
+              <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Weight (kg)<span className="text-red-500"> *</span></Label>
               <Input type="number" value={box.weight || ""}
                 onChange={(e) => setField("weight", Number(e.target.value) || 0)}
                 className="h-7 w-24 text-xs" />

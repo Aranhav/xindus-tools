@@ -40,6 +40,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -61,6 +62,8 @@ import { getNestedValue } from "./helpers";
 import {
   buildXindusCurl,
   buildXindusPayload,
+  buildPartnerPayload,
+  buildPartnerCurl,
   validateForXindus,
   type ValidationIssue,
 } from "./build-xindus-curl";
@@ -100,6 +103,7 @@ interface DraftDetailSheetProps {
     draftId: string,
     payload: Record<string, unknown>,
     consignorId?: number | null,
+    method?: "express" | "partner",
   ) => Promise<XindusSubmissionResult | null>;
 }
 
@@ -393,15 +397,18 @@ export function DraftDetailSheet({
 
   /* ── Submit to Xindus (after validation passes) ─────────── */
 
-  const handleSubmitToXindus = useCallback(async () => {
+  const handleSubmitToXindus = useCallback(async (method: "express" | "partner" = "express") => {
     if (!draft || !data || !onSubmitToXindus || submitting) return;
     setSubmitting(true);
     try {
-      const payload = buildXindusPayload(data as ShipmentData);
+      const payload = method === "partner"
+        ? buildPartnerPayload(data as ShipmentData)
+        : buildXindusPayload(data as ShipmentData);
       const result = await onSubmitToXindus(
         draft.id,
         payload,
         sellerProfile?.xindus_customer_id,
+        method,
       );
       if (!result) return;
       if (result.success) {
@@ -563,20 +570,20 @@ export function DraftDetailSheet({
                     <ChevronDown className="h-3 w-3 opacity-50" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-64">
                   <DropdownMenuItem
                     onClick={() => {
                       const curl = buildXindusCurl(data, sellerProfile?.xindus_customer_id);
                       navigator.clipboard.writeText(curl);
                       setCurlCopied(true);
                       setTimeout(() => setCurlCopied(false), 2000);
-                      toast.success("cURL copied to clipboard");
+                      toast.success("Express-Shipment cURL copied");
                     }}
                   >
                     <Copy className="mr-2 h-4 w-4" />
                     <div>
-                      <p className="text-sm font-medium">Copy cURL</p>
-                      <p className="text-xs text-muted-foreground">Copy API command to clipboard</p>
+                      <p className="text-sm font-medium">Copy cURL (Express)</p>
+                      <p className="text-xs text-muted-foreground">Multipart: Excel + JSON</p>
                     </div>
                   </DropdownMenuItem>
                   {onSubmitToXindus && (
@@ -589,13 +596,49 @@ export function DraftDetailSheet({
                           setValidationErrors(issues);
                           return;
                         }
-                        handleSubmitToXindus();
+                        handleSubmitToXindus("express");
                       }}
                     >
                       <Send className="mr-2 h-4 w-4" />
                       <div>
-                        <p className="text-sm font-medium">Submit to Xindus (UAT)</p>
-                        <p className="text-xs text-muted-foreground">Send shipment to UAT API</p>
+                        <p className="text-sm font-medium">Submit (Express API)</p>
+                        <p className="text-xs text-muted-foreground">2-step initiate/create flow</p>
+                      </div>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const curl = buildPartnerCurl(data as ShipmentData);
+                      navigator.clipboard.writeText(curl);
+                      setCurlCopied(true);
+                      setTimeout(() => setCurlCopied(false), 2000);
+                      toast.success("Partner API cURL copied");
+                    }}
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    <div>
+                      <p className="text-sm font-medium">Copy cURL (Partner)</p>
+                      <p className="text-xs text-muted-foreground">Single-step JSON API</p>
+                    </div>
+                  </DropdownMenuItem>
+                  {onSubmitToXindus && (
+                    <DropdownMenuItem
+                      disabled={submitting}
+                      onClick={() => {
+                        if (!draft || !data || submitting) return;
+                        const issues = validateForXindus(data as ShipmentData);
+                        if (issues.length > 0) {
+                          setValidationErrors(issues);
+                          return;
+                        }
+                        handleSubmitToXindus("partner");
+                      }}
+                    >
+                      <Send className="mr-2 h-4 w-4" />
+                      <div>
+                        <p className="text-sm font-medium">Submit (Partner API)</p>
+                        <p className="text-xs text-muted-foreground">Single JSON — no Excel needed</p>
                       </div>
                     </DropdownMenuItem>
                   )}

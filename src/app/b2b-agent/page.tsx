@@ -16,7 +16,7 @@ import { DraftDetailSheet } from "./_components/draft-detail-sheet";
 const TAB_OPTIONS: { value: DraftTab; label: string }[] = [
   { value: "all", label: "All" },
   { value: "pending_review", label: "Pending Review" },
-  { value: "approved", label: "Approved" },
+  { value: "approved", label: "Approved / Pushed" },
   { value: "rejected", label: "Rejected" },
   { value: "archived", label: "Archived" },
 ];

@@ -243,7 +243,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                   <Input
                     value={item.description}
                     className="h-8 min-w-0 flex-1 text-sm font-medium"
-                    placeholder="Item description"
+                    placeholder="Item description *"
                     onChange={(e) => updateItem(i, "description", e.target.value)}
                   />
                   {hasProducts && (
@@ -253,7 +253,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                     />
                   )}
                   <div className="flex shrink-0 items-center gap-1.5">
-                    <span className="text-[11px] text-muted-foreground">Qty</span>
+                    <span className="text-[11px] text-muted-foreground">Qty<span className="text-red-500"> *</span></span>
                     <Input
                       type="number"
                       value={item.quantity}
@@ -261,7 +261,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                       onChange={(e) => updateItem(i, "quantity", Number(e.target.value) || 0)}
                     />
                     <span className="text-xs text-muted-foreground">&times;</span>
-                    <span className="text-[11px] text-muted-foreground">Price</span>
+                    <span className="text-[11px] text-muted-foreground">Price<span className="text-red-500"> *</span></span>
                     <Input
                       type="number"
                       value={item.unit_price ?? ""}
@@ -288,7 +288,7 @@ export function ItemsTable({ items, onChange, onAdd, products, currency }: {
                 {/* Row 2: Customs & classification grid (always visible) */}
                 <div className="grid grid-cols-6 gap-x-3 border-t border-border/40 bg-muted/30 px-3 py-2 pl-10">
                   <div>
-                    <span className="mb-0.5 block text-[11px] text-muted-foreground">Export HSN</span>
+                    <span className="mb-0.5 block text-[11px] text-muted-foreground">Export HSN<span className="text-red-500"> *</span></span>
                     <Input
                       value={item.ehsn}
                       className="h-7 font-mono text-xs"

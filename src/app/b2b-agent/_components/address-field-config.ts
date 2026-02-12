@@ -1,19 +1,19 @@
 import { Warehouse, MapPin, Building2, FileCheck } from "lucide-react";
 
 export const ADDRESS_FIELDS = [
-  { key: "name", label: "Company / Name", span: 1 },
-  { key: "contact_name", label: "Contact Name", span: 1 },
-  { key: "address", label: "Street Address", span: "full" },
-  { key: "city", label: "City", span: 1 },
-  { key: "district", label: "District", span: 1 },
-  { key: "state", label: "State", span: 1 },
-  { key: "zip", label: "ZIP / Postal Code", span: 1 },
-  { key: "country", label: "Country", span: 1 },
-  { key: "phone", label: "Phone", span: 1 },
-  { key: "email", label: "Email", span: 1 },
-  { key: "contact_phone", label: "Contact Phone", span: 1 },
-  { key: "extension_number", label: "Extension", span: 1 },
-  { key: "eori_number", label: "EORI Number", span: 1 },
+  { key: "name", label: "Company / Name", span: 1, required: true },
+  { key: "contact_name", label: "Contact Name", span: 1, required: false },
+  { key: "address", label: "Street Address", span: "full", required: true },
+  { key: "city", label: "City", span: 1, required: true },
+  { key: "district", label: "District", span: 1, required: false },
+  { key: "state", label: "State", span: 1, required: true },
+  { key: "zip", label: "ZIP / Postal Code", span: 1, required: true },
+  { key: "country", label: "Country", span: 1, required: true },
+  { key: "phone", label: "Phone", span: 1, required: true },
+  { key: "email", label: "Email", span: 1, required: true },
+  { key: "contact_phone", label: "Contact Phone", span: 1, required: false },
+  { key: "extension_number", label: "Extension", span: 1, required: false },
+  { key: "eori_number", label: "EORI Number", span: 1, required: false },
 ] as const;
 
 export type AddressType = "shipper" | "receiver" | "billing" | "ior";

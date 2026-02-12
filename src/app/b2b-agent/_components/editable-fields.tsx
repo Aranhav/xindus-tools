@@ -76,6 +76,7 @@ export function EditableField({
   onEditValueChange,
   sellerDefault,
   type = "text",
+  required,
 }: {
   label: string;
   value: string;
@@ -88,13 +89,14 @@ export function EditableField({
   onEditValueChange: (val: string) => void;
   sellerDefault?: string;
   type?: string;
+  required?: boolean;
 }) {
   const isEditing = editingField === fieldPath;
   const showDefault = sellerDefault && sellerDefault !== value && !isEditing;
 
   return (
     <div className="space-y-1">
-      <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</Label>
+      <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}{required && <span className="text-red-500"> *</span>}</Label>
       {isEditing ? (
         <div className="flex items-center gap-1">
           <Input
@@ -153,6 +155,7 @@ export function SelectField({
   options,
   onChanged,
   sellerDefault,
+  required,
 }: {
   label: string;
   value: string;
@@ -160,12 +163,13 @@ export function SelectField({
   options: string[];
   onChanged: (path: string, oldVal: unknown, newVal: string) => void;
   sellerDefault?: string;
+  required?: boolean;
 }) {
   const safeOptions = options.filter(Boolean);
   const showDefault = sellerDefault && sellerDefault !== value;
   return (
     <div className="space-y-1">
-      <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</Label>
+      <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}{required && <span className="text-red-500"> *</span>}</Label>
       <Select
         value={value || undefined}
         onValueChange={(v) => {

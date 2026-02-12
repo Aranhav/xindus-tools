@@ -319,3 +319,101 @@ export function buildXindusCurl(
 
   return lines.join("\n");
 }
+
+/* ── Partner API: build payload (single-step JSON) ────────── */
+
+function mapPartnerBoxItem(item: ShipmentBoxItem, boxIdx: number, itemIdx: number) {
+  return {
+    name: item.description || "",
+    description: item.description || "",
+    sku: `ITEM-${boxIdx + 1}-${itemIdx + 1}`,
+    ehsn: normalizeHsn(item.ehsn),
+    ihsn: normalizeHsn(item.ihsn),
+    duty_rate: String(item.duty_rate ?? 0),
+    quantity: String(item.quantity || 1),
+    unit_weight: String(item.weight ?? 0),
+    unit_price: String(item.unit_price ?? 0),
+    igst_rate: String(item.igst_amount ?? 0),
+    unit_fob_value: String(item.fob_value ?? 0),
+    country_of_origin: normalizeCountry(item.country_of_origin) || "IN",
+  };
+}
+
+function mapPartnerBox(box: ShipmentBox, idx: number) {
+  return {
+    box_id: String(idx + 1),
+    weight: String(box.weight || 0),
+    width: String(box.width || 0),
+    length: String(box.length || 0),
+    height: String(box.height || 0),
+    shipment_box_items: (box.shipment_box_items || []).map((it, j) =>
+      mapPartnerBoxItem(it, idx, j),
+    ),
+  };
+}
+
+function mapPartnerAddress(addr: ShipmentAddress | undefined) {
+  if (!addr) return {};
+  return {
+    name: addr.name || "",
+    email: addr.email || "",
+    phone: addr.phone || "",
+    address: addr.address || "",
+    city: addr.city || "",
+    state: addr.state || "",
+    zip: normalizeZip(addr.zip, addr.country),
+    country: normalizeCountry(addr.country),
+    extension_number: addr.extension_number || "",
+  };
+}
+
+export function buildPartnerPayload(data: ShipmentData) {
+  return {
+    shipment_config: {
+      shipping_method: data.shipping_method || "AN",
+      terms_of_trade: data.terms_of_trade || "DDP",
+      tax_type: data.tax_type || "GST",
+      service: "Commercial",
+      purpose: data.purpose_of_booking || "Sold",
+      market_place: data.marketplace || "other",
+      use_provided_hsn: true,
+      use_provided_duty_rate: true,
+      use_provided_fob: true,
+      ready_to_ship: false,
+      auto_generate_invoice: false,
+      auto_deduct_payment: true,
+      auto_generate_label: true,
+      avail_xindus_assure: false,
+      pga_items_included: false,
+    },
+    order_reference_number:
+      data.export_reference || data.shipment_references || data.invoice_number || "",
+    invoice_number: data.invoice_number || "",
+    invoice_date: normalizeDate(data.invoice_date),
+    shipping_currency: data.shipping_currency || "INR",
+    freight_charges: "0",
+    insurance_charges: "0",
+    shipper_address: mapPartnerAddress(data.shipper_address),
+    receiver_address: mapPartnerAddress(data.receiver_address),
+    billing_address: mapPartnerAddress(
+      hasAddress(data.billing_address) ? data.billing_address : data.shipper_address,
+    ),
+    shipment_boxes: (data.shipment_boxes || []).map((b, i) => mapPartnerBox(b, i)),
+  };
+}
+
+export function buildPartnerCurl(data: ShipmentData): string {
+  const payload = buildPartnerPayload(data);
+  const jsonStr = JSON.stringify(payload, null, 2);
+  const base = "https://uat.xindus.net";
+
+  const lines = [
+    `# Partner Shipment API (B2B) — single-step JSON`,
+    `curl -X POST '${base}/xos/api/partner/shipment' \\`,
+    `  -H 'Authorization: Bearer <YOUR_TOKEN>' \\`,
+    `  -H 'Content-Type: application/json' \\`,
+    `  -d '${jsonStr.replace(/'/g, "'\\''")}'`,
+  ];
+
+  return lines.join("\n");
+}
