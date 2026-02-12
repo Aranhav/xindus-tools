@@ -125,7 +125,10 @@ export default function B2BAgentPage() {
         archived: 0,
       };
       for (const d of agent.drafts) {
-        if (d.status in counts) {
+        if (d.status === "pushed") {
+          // Pushed drafts count toward the "Approved / Pushed" tab
+          counts.approved++;
+        } else if (d.status in counts) {
           counts[d.status as DraftTab]++;
         }
       }

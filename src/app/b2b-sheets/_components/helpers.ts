@@ -43,6 +43,16 @@ export const fadeUp = {
 
 export const downloadCards = [
   {
+    type: "xindus_single",
+    title: "Xindus Single Address",
+    description: "12-column format for single-receiver shipments",
+  },
+  {
+    type: "xindus_multi",
+    title: "Xindus Multi Address",
+    description: "21-column format with per-box receivers",
+  },
+  {
     type: "multi",
     title: "Multi Address Sheet",
     description: "XpressB2B flat format with receivers inline",
